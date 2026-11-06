@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { assess, assessArchitecture, POLICY } from './no-deploy-control.mjs';
 const head = '3124453043b7c511f3cb1c7c93f91d592e798d84';
 const main = '64626a7325eb180d829455d9446b90d7336f173f';
@@ -68,4 +70,50 @@ test('architecture never authorizes live cutover', () => {
 test('architecture blocks Daily regression', () => {
   const res=assessArchitecture({productionProjectUntouched:true,isolatedProject:true,mainAutoDeploy:false,dailyPublishingReplacementProven:false,productionControlsVerified:true,manualReleaseGateDesigned:true,rollbackAndFailClosedTestsPassed:true});
   assert.ok(res.reasons.includes('DAILY_PUBLISHING_REPLACEMENT_NOT_PROVEN'));
+});
+
+
+test('malformed architecture object denies all actions', () => {
+  const out = assessArchitecture(null);
+  assert.deepEqual(out, { status:'HOLD', stageOnly:false, mergeAuthorized:false, deploymentAuthorized:false, reasons:['INVALID_PLAN'] });
+});
+test('architecture missing mainAutoDeploy is a specific HOLD', () => {
+  const out = assessArchitecture({productionProjectUntouched:true,isolatedProject:true,dailyPublishingReplacementProven:true,productionControlsVerified:true,manualReleaseGateDesigned:true,rollbackAndFailClosedTestsPassed:true});
+  assert.equal(out.status, 'HOLD');
+  assert.equal(out.mergeAuthorized, false);
+  assert.ok(out.reasons.includes('MAIN_AUTODEPLOY_STATE_UNVERIFIED'));
+});
+const runCli = args => spawnSync(process.execPath, [fileURLToPath(new URL('./no-deploy-control.mjs', import.meta.url)), ...args], { encoding:'utf8', timeout: 5000 });
+test('CLI rejects deliberately invalid snapshot with explicit denial fields', () => {
+  const run = runCli([fileURLToPath(new URL('./snapshot.template.json', import.meta.url))]);
+  assert.equal(run.status, 1);
+  const result = JSON.parse(run.stdout);
+  assert.equal(result.status, 'HOLD');
+  assert.equal(result.stageOnly, false);
+  assert.equal(result.mergeAuthorized, false);
+  assert.equal(result.deploymentAuthorized, false);
+});
+test('CLI missing file fails closed with consistent authorization flags and no paths', () => {
+  const run = runCli(['/absolute-nonexistent-deployment-pilot.json']);
+  assert.equal(run.status, 1);
+  const result = JSON.parse(run.stderr);
+  assert.deepEqual(result, {status:'HOLD',stageOnly:false,mergeAuthorized:false,deploymentAuthorized:false,reasons:['INPUT_ERROR']});
+  assert.ok(!run.stderr.includes('/absolute-nonexistent'));
+});
+test('CLI malformed JSON fails closed without disclosing source input', () => {
+  const run = runCli([fileURLToPath(new URL('./no-deploy-control.test.mjs', import.meta.url))]);
+  assert.equal(run.status, 1);
+  const result = JSON.parse(run.stderr);
+  assert.equal(result.status, 'HOLD');
+  assert.equal(result.mergeAuthorized, false);
+  assert.equal(result.deploymentAuthorized, false);
+  assert.ok(!run.stderr.includes('import test'));
+});
+test('CLI requires exactly one snapshot argument', () => {
+  const run = runCli([]);
+  assert.equal(run.status, 1);
+  const result = JSON.parse(run.stderr);
+  assert.equal(result.status,'HOLD');
+  assert.equal(result.mergeAuthorized,false);
+  assert.equal(result.deploymentAuthorized,false);
 });

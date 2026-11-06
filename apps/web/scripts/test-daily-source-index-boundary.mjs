@@ -81,7 +81,7 @@ check('BLS monthly calendar pointers fail closed across URL variants', () => {
   ]) {
     assert.notEqual(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
   }
-  assert.match(SOURCE_DATE_RULES, /month-specific schedule/);
+  assert.match(SOURCE_DATE_RULES, /month-specific release calendars/);
 });
 check('supported living calendars unchanged', () => {
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-october.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);

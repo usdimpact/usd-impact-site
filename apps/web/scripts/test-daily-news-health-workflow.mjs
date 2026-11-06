@@ -266,6 +266,28 @@ try {
     '',
   ].join('\n'), { mode: 0o755 });
 
+  // Vercel's minimal build image does not install jq. Mock only the exact
+  // read-only jq expressions exercised by the extracted Health preamble.
+  // Keep the real production shell unchanged and fail for any new expression.
+  const mockJqPath = join(mockDir, 'jq');
+  await writeFile(mockJqPath, [
+    '#!/usr/bin/env node',
+    'const fs = require("node:fs");',
+    'const argv = process.argv.slice(2);',
+    'const expression = argv.at(-1);',
+    'if (argv.length > 2 || (argv.length === 2 && argv[0] !== "-r")) process.exit(2);',
+    'const json = JSON.parse(fs.readFileSync(0, "utf8"));',
+    'let value;',
+    'if (expression === "length") value = json.length;',
+    'else {',
+    '  const match = String(expression).match(/^\\.\\[0\\]\\.([A-Za-z][A-Za-z0-9]*)(?: \\/\\/ "(unknown)")?$/);',
+    '  if (!match || !Array.isArray(json)) process.exit(2);',
+    '  value = json[0]?.[match[1]] ?? (match[2] || "null");',
+    '}',
+    'process.stdout.write(String(value) + "\\n");',
+    '',
+  ].join('\\n'), { mode: 0o755 });
+
   const utcMinutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
   const fakeRun = (id, event, status, conclusion, minutesAgo) => ({
     databaseId: id,

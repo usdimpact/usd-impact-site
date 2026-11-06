@@ -3,7 +3,7 @@
 Disposable 127.0.0.1 PG17.6 only, synthetic identities only. Run owner_model.py
 first (52 main migrations + the P1 migration, executed by non-superuser
 `postgres`). Usage: p1_pg.py <label>"""
-import sys, uuid, threading, time, json, psycopg
+import sys, uuid, threading, time, json, psycopg, datetime
 LABEL = sys.argv[1] if len(sys.argv) > 1 else "P1"
 LP = "read-the-dollar-first-guided-interactive-edition"
 R = []
@@ -63,7 +63,9 @@ def research_member():
     t = svc(TR, (sid, f"p1-first-{psub}", f"evt-first-{psub}", psub, "pending", "active", "active", "2026-11-01T00:00:00Z"))
     assert t[0] == "OK", t
     return a, sid, psub
-def ready(a): return svc("SELECT public.check_research_deletion_billing_readiness(%s)", (a,))
+# The old Auth-first service_role API loses EXECUTE at Part 11. This
+# disposable test uses the owner to assert the internal readiness invariants.
+def ready(a): return own("SELECT public.check_research_deletion_billing_readiness(%s)", (a,))
 # SQL owner harness exercises the legacy inner function's billing invariants,
 # while the live service_role must NEVER call that RPC directly after cutover.
 # Real callers use only the atomic finalize_deletion_and_queue_auth_cleanup RPC.
@@ -136,6 +138,102 @@ rec("I4", "hold history is append-only", r[0] == "ERR" and "append-only" in r[1]
 
 # ---------------- O1: signed provider event ordering under row lock ----------------
 oa,osid,ops=research_member()
+# Research invoice notifications are durable billing facts, NOT permission
+# to change the subscription state or grant entitlements.
+invoice_key="lemon-squeezy:invoice-synthetic-"+ops
+invoice_event="lemon-squeezy:subscription_payment_success:subscription-invoices:invoice-"+ops
+invoice_at="2026-11-06T01:00:00Z"
+invoice_meta=json.dumps({
+    "lemonEventName":"subscription_payment_success",
+    "lemonDataType":"subscription-invoices",
+    "replayFingerprintVersion":1,
+    "replayFingerprint":"a"*64,
+})
+invoice_rpc="""SELECT public.record_research_signed_invoice_receipt(
+  %s,%s,%s,'subscription_payment_success',%s::timestamptz,%s::jsonb)"""
+prior_state=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
+  FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
+  WHERE s.id=%s""",(osid,))
+invoice=svc(invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
+repeat_invoice=svc(invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
+after_invoice=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
+  FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
+  WHERE s.id=%s""",(osid,))
+rec("I4", "signed Research invoice success is retained with no paid-state change",
+    invoice[0]=="OK" and invoice[1]["action"]=="invoice_recorded"
+    and repeat_invoice[0]=="OK" and repeat_invoice[1]["action"]=="duplicate"
+    and prior_state==after_invoice
+    and su("""SELECT count(*) FROM public.subscription_events
+      WHERE event_key=%s AND reason='subscription_payment_success'
+        AND metadata->>'researchP1InvoiceReceipt'='true'
+        AND from_state=to_state""",(invoice_key,))==1,
+    f"invoice={invoice} replay={repeat_invoice}")
+bad_meta=json.dumps({
+    "lemonEventName":"subscription_payment_success",
+    "lemonDataType":"subscription-invoices",
+    "replayFingerprintVersion":1,
+    "replayFingerprint":"b"*64,
+})
+collision=svc(invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,bad_meta))
+rec("I4", "conflicting invoice replay cannot overwrite signed billing fingerprint",
+    collision[0]=="ERR" and collision[1].startswith("23505"),str(collision))
+no_public=as_role("authenticated",invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
+rec("I4", "authenticated app client cannot directly forge invoice receipts",
+    no_public[0]=="ERR" and no_public[1].startswith("42501"),str(no_public))
+# Invoice receipts are payment evidence, NOT provider state transitions.
+# Reproduce the three independent orderings from the adversarial #1173 P1:
+# same-second renewal, one-second-earlier renewal, and earlier cancellation
+# after a later delivered refund. All three must APPLY normally.
+for case_index, case_label, invoice_name, target, entitlement, offset in [
+    (1,"renewal same second as signed payment receipt",
+      "subscription_payment_success","active","active",9),
+    (2,"renewal one second before signed payment receipt",
+      "subscription_payment_success","active","active",8),
+    (3,"cancellation one second before signed refund receipt",
+      "subscription_payment_refunded","cancelled","revoked",8),
+]:
+    acct,sid,psub=research_member()
+    latest_state_at=su("""SELECT max(ev.occurred_at) FROM public.subscription_events ev
+      WHERE ev.subscription_id=%s AND ev.actor_type='provider_webhook'
+        AND ev.metadata->>'researchP1InvoiceReceipt' IS DISTINCT FROM 'true'
+        AND ev.metadata->>'researchP1StaleHeld' IS DISTINCT FROM 'true'
+        AND ev.metadata->>'researchP1NonactiveHeld' IS DISTINCT FROM 'true'""",(sid,))
+    assert latest_state_at is not None
+    invoice_at=latest_state_at+datetime.timedelta(seconds=9)
+    transition_at=latest_state_at+datetime.timedelta(seconds=offset)
+    key="p1-invoice-order-"+str(case_index)+"-"+psub
+    invoice_meta=json.dumps({
+      "lemonEventName":invoice_name,
+      "lemonDataType":"subscription-invoices",
+      "replayFingerprintVersion":1,
+      "replayFingerprint":("deabc"+str(case_index)).ljust(64,"d"),
+    })
+    receipt=svc("""SELECT public.record_research_signed_invoice_receipt(
+      %s,%s,%s,%s,%s::timestamptz,%s::jsonb)""",
+      (sid,key,"evt-invoice-order-"+psub,invoice_name,invoice_at,invoice_meta))
+    before_ver=su("SELECT version FROM public.subscriptions WHERE id=%s",(sid,))
+    ordered_sql=TR.replace("'p1 synthetic',now(),'{}'::jsonb)",
+                             "'p1 synthetic',%s::timestamptz,'{}'::jsonb)")
+    evt_key="p1-transition-order-"+str(case_index)+"-"+psub
+    transition=svc(ordered_sql,
+       (sid,evt_key,"evt-transition-order-"+psub,psub,
+        "active",target,entitlement,None,transition_at))
+    current=su("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))
+    current_version=su("SELECT version FROM public.subscriptions WHERE id=%s",(sid,))
+    entitlement_now=su("""SELECT state::text FROM public.entitlements
+      WHERE account_id=%s AND product_id='research-membership'""",(acct,))
+    history=su("""SELECT to_jsonb(e) FROM public.subscription_events e
+      WHERE e.event_key=%s""",(evt_key,))
+    rec("O1-INVOICE",case_label+" applies without losing financial receipt",
+      receipt[0]=="OK" and receipt[1]["action"]=="invoice_recorded"
+      and transition[0]=="OK" and transition[1]["action"]=="applied"
+      and current==target and current_version==before_ver+1
+      and entitlement_now==entitlement
+      and history is not None
+      and history["metadata"].get("researchP1StaleHeld") is None
+      and su("SELECT count(*) FROM public.subscription_events WHERE event_key=%s",(key,))==1,
+      f"receipt={receipt} transition={transition} state={current} entitlement={entitlement_now}")
+
 before_older=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
   FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
   WHERE s.id=%s""",(osid,))
@@ -293,12 +391,12 @@ rec("R3", "escalation claimed once; immediate re-check does not re-escalate (D36
 su("UPDATE public.research_deletion_billing_holds SET escalation_claimed_at=now()-interval '2 hours' WHERE account_id=%s", (m,))
 e3 = ready(m)
 rec("R3", "unconfirmed claim expires after 1h and is re-claimed (lost escalation recovers)", e3[1]["escalate"] is True, str(e3[1]))
-mk = svc("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
-mk2 = svc("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
+mk = own("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
+mk2 = own("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
 su("UPDATE public.research_deletion_billing_holds SET escalation_claimed_at=now()-interval '2 hours' WHERE account_id=%s", (m,))
 e4 = ready(m)
 rec("R3", "after escalation is confirmed, no further escalations", mk == ("OK", True) and mk2 == ("OK", False) and e4[1]["escalate"] is False, f"{mk} {mk2} {e4[1]['escalate']}")
-bad = svc("SELECT public.mark_research_deletion_hold_escalated(%s,'alice@example.com')", (m,))
+bad = own("SELECT public.mark_research_deletion_hold_escalated(%s,'alice@example.com')", (m,))
 rec("R3", "escalation reference must be opaque (no PII)", bad[0] == "ERR" and bad[1].startswith("22023"), str(bad))
 hist = su("SELECT string_agg(event_type, ',' ORDER BY id) FROM public.research_deletion_billing_hold_events WHERE account_id=%s", (m,))
 rec("R4", "reason history preserved per check (D37-5)", hist.startswith("held,escalation_claimed,rechecked"), hist)

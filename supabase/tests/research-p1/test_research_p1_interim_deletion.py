@@ -14,6 +14,7 @@ Usage: test_research_p1_interim_deletion.py <repo>
 import re
 import sys
 import uuid
+import hashlib
 from pathlib import Path
 
 import psycopg
@@ -52,8 +53,21 @@ grant anon, authenticated, service_role to postgres;
 create schema extensions; create extension pgcrypto with schema extensions;
 create schema auth;
 create table auth.users(id uuid primary key,email text);
+-- SYNTHETIC ONLY: model both legacy GUCs and modern structured claims.
+-- request.jwt.claim wins over request.jwt.claims for JWT JSON; individual
+-- request.jwt.claim.sub is honored by auth.uid() first, with a JSON fallback.
+create function auth.jwt() returns jsonb language sql stable set search_path='' as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim',true),'')::jsonb,
+    nullif(current_setting('request.jwt.claims',true),'')::jsonb,
+    case when nullif(current_setting('request.jwt.claim.sub',true),'') is not null
+      then jsonb_build_object('sub',current_setting('request.jwt.claim.sub',true))
+      else '{{}}'::jsonb end) $$;
 create function auth.uid() returns uuid language sql stable set search_path='' as $$
-  select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub',true),''),
+    nullif((select auth.jwt()->>'sub'),'')
+  )::uuid $$;
 create schema storage;
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,
   allowed_mime_types text[],owner uuid,created_at timestamptz default now(),updated_at timestamptz default now());
@@ -66,6 +80,29 @@ grant all on schema public to postgres; grant create on database {DB} to postgre
 """
 
 migrations = sorted((REPO / "supabase/migrations").glob("*.sql"))
+# CI-only pinned Development source overlay; no files added to normal
+# supabase/migrations or to any hosted database.
+ui_source = next((p.split("=",1)[1] for p in sys.argv[2:]
+                  if p.startswith("--ui-source=")), None)
+if ui_source:
+    source_dir = Path(ui_source) / "supabase/migrations"
+    pinned = {
+      "20261030214706_ui02_atomic_purchase_access_locale_dev.sql":
+        "4ebdeb72cfb140ea8bd24ae0f84f91b3e81b5762",
+      "20261030221037_ui02_language_privacy_lifecycle_dev.sql":
+        "0df302812a95982b7c0d9dbdbe5fc983849ccc5a",
+      "20261030234009_ui03_account_media_locale_preview_dev.sql":
+        "63a15deb451704efa94e6f0f6a561fe1b817d01d",
+    }
+    for filename, expected in pinned.items():
+        path=source_dir/filename
+        data=path.read_bytes()
+        actual=hashlib.sha1(b"blob "+str(len(data)).encode()+bytes([0])+data).hexdigest()
+        if actual!=expected or any(m.name==filename for m in migrations):
+            raise SystemExit(f"Refusing unpinned or duplicate UI source: {filename}")
+        migrations.append(path)
+    migrations.sort(key=lambda path:path.name)
+    print("F3_INTERIM_UI_SOURCE pinned=7005aa0585301892c96490d341c3c5645a616890 blobs=3",flush=True)
 live = [m for m in migrations if m.name not in DRAFT_ONLY]
 with admin(DB) as c:
     c.execute(BOOTSTRAP)

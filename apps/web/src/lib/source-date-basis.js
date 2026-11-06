@@ -75,7 +75,11 @@ export function sourceDateBasisForUrl(value) {
       ? SOURCE_DATE_BASIS.LAST_UPDATED
       : SOURCE_DATE_BASIS.PUBLISHED;
   }
-  if (hostname === 'bls.gov' && BLS_MONTHLY_CALENDAR_PATH.test(url.pathname.replace(/\/+$/, '').toLowerCase())) {
+  // Use the same decoded, normalized path for monthly schedules as for blocked indexes.
+  // An invalid encoding receives no special date-classification exemption.
+  let monthlyPath = '';
+  try { monthlyPath = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase(); } catch { /* keep default basis */ }
+  if (hostname === 'bls.gov' && BLS_MONTHLY_CALENDAR_PATH.test(monthlyPath)) {
     return SOURCE_DATE_BASIS.LAST_UPDATED;
   }
   if (hostname === 'bls.gov' && /^\/cpi\/?$/i.test(url.pathname)) {

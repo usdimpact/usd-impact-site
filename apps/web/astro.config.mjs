@@ -24,6 +24,7 @@ const privatePaths = new Set([
   '/internal/ask-usd-impact',
   '/internal/localization/spanish-privacy-review',
   '/macro-reviews/weekly/2026-10-30', // first independent Weekly: public but noindex-first pending separate SEO authorization
+  '/macro-reviews/weekly/review-2026-11-06', // review-only Weekly preview; never an approved dated edition
 ]);
 
 const previewOnlySitemapPrefixes = [

@@ -60,7 +60,7 @@ create function auth.jwt() returns jsonb language sql stable set search_path='' 
   select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,
     case when nullif(current_setting('request.jwt.claim.sub',true),'') is not null
       then jsonb_build_object('sub',current_setting('request.jwt.claim.sub',true))
-      else '{{}}'::jsonb end) $;
+      else '{{}}'::jsonb end) $$;
 create schema storage;
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,
   allowed_mime_types text[],owner uuid,created_at timestamptz default now(),updated_at timestamptz default now());

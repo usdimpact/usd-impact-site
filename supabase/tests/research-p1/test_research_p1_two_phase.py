@@ -113,6 +113,15 @@ for role in ("anon","authenticated"):
 for role in ("service_role","anon","authenticated"):
     result=exec_role(role,"SELECT count(*) FROM research_lifecycle_private.deletion_auth_cleanup")
     rec(f"G {role} denied private ledger SELECT",result[0]=="ERR" and result[1].startswith("42501"),result)
+for role in ("service_role","anon","authenticated"):
+    forbidden=exec_role(role,
+      "SELECT public.resolve_research_deletion_billing_incident(%s,%s,%s)",
+      (uuid.uuid4(),uuid.uuid4(),"p1-test-no-access-00001"))
+    rec(f"G {role} cannot clear owner-only post-finalization financial incidents",
+        forbidden[0]=="ERR" and forbidden[1].startswith("42501"),forbidden)
+    hidden=exec_role(role,"SELECT count(*) FROM research_lifecycle_private.deletion_billing_incidents")
+    rec(f"G {role} cannot read private financial incident ledger",
+        hidden[0]=="ERR" and hidden[1].startswith("42501"),hidden)
 for n in (0,26):
     r=claim(n)
     rec(f"G invalid batch size {n} denied",r[0]=="ERR" and r[1].startswith("22023"),r)
@@ -306,6 +315,17 @@ rec("C F1 late bound signed Research renewal invalidates preexisting owner clear
 after=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
     ("syn-late-"+hold.hex[:12],hold,"syn-checkout-"+hold.hex[:14]))
+inc=su("""SELECT to_jsonb(i) FROM research_lifecycle_private.deletion_billing_incidents i
+    WHERE i.account_id=%s""",(hold,))
+hold_row=su("SELECT to_jsonb(h) FROM public.research_deletion_billing_holds h WHERE h.account_id=%s",(hold,))
+rec("C F2 late bound and unbound events create one durable post-Phase-A incident",
+    inc is not None and inc["status"]=="open"
+    and inc["observation_count"]>=2
+    and "signed_bound_research_event" in inc["reason_codes"]
+    and "signed_unbound_paid_event" in inc["reason_codes"]
+    and hold_row is not None and hold_row["status"]=="open"
+    and ledger(hold)["last_error_code"]=="RESEARCH_POST_PHASE_A_FINANCIAL_INCIDENT",
+    f"incident={inc}, hold={hold_row}")
 after_fence=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
 after_ack=confirm(hold,hold_lease)
 rec("C post-Phase-A signed payment refuses pre-Auth fence and leaves Auth intact",
@@ -398,6 +418,44 @@ rec("C late paid event after DB phase is durably quarantined, without reopening 
     after[0]=="OK"
     and row(hold)["status"]=="deleted"
     and su("SELECT count(*) FROM public.research_paid_binding_quarantine WHERE claimed_account_id=%s AND resolved_at IS NULL",(hold,))==1,after)
+
+# F2: Ad hoc quarantine changes or pre-event merchant clearances must NOT
+# resolve a post-Auth financial incident. Only an owner-only fresh clearance and
+# explicit case resolution permit the durable queue to continue.
+stale_clearance=su("""SELECT id FROM public.research_billing_clearances
+  WHERE account_id=%s ORDER BY recorded_at DESC LIMIT 1""",(hold,))
+premature=own("""SELECT public.resolve_research_deletion_billing_incident(%s,%s,%s)""",
+    (hold,stale_clearance,"p1-synthetic-case-000001"))
+rec("C F2 pre-event merchant clearance cannot resolve the financial incident",
+    premature[0]=="ERR" and premature[1].startswith("55000"),premature)
+quarantine_resolve=su("""UPDATE public.research_paid_binding_quarantine
+  SET resolved_at=now(),resolution_reference='p1-synthetic-reconciled'
+  WHERE claimed_account_id=%s AND resolved_at IS NULL
+  RETURNING id""",(hold,))
+after_q_edit=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",
+                 (hold,hold_lease))
+rec("C F2 manual quarantine resolution cannot silently release Auth/email fence",
+    quarantine_resolve is not None and after_q_edit[0]=="ERR"
+    and after_q_edit[1].startswith("55000"),str(after_q_edit))
+fresh_clearance=own("""SELECT public.record_research_billing_clearance(
+  %s,'provider_api','syn-post-incident-owner-00001',now(),'synthetic-owner')""",(hold,))
+rec("C F2 owner-only fresh merchant evidence can be entered after incident",
+    fresh_clearance[0]=="OK",str(fresh_clearance))
+still_open=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",
+               (hold,hold_lease))
+rec("C F2 new clearance alone does not bypass explicit incident resolution",
+    still_open[0]=="ERR" and still_open[1].startswith("55000"),str(still_open))
+resolved=own("SELECT public.resolve_research_deletion_billing_incident(%s,%s,%s)",
+    (hold,fresh_clearance[1],"p1-synthetic-case-000001"))
+after_owner=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",
+                (hold,hold_lease))
+incident_after=su("""SELECT to_jsonb(i) FROM research_lifecycle_private.deletion_billing_incidents i
+  WHERE i.account_id=%s""",(hold,))
+rec("C F2 explicit owner resolution plus later clearance permits recovery, no access restoration",
+    resolved==("OK",True) and after_owner==("OK",True)
+    and incident_after["status"]=="resolved" and incident_after["resolution_clearance_id"]==str(fresh_clearance[1])
+    and ledger(hold)["last_error_code"] is None
+    and row(hold)["status"]=="deleted",f"resolve={resolved} fence={after_owner}")
 
 # C2 - forged local cancellation or unresolved signed quarantine cannot give permission.
 blocked=synthetic_user()

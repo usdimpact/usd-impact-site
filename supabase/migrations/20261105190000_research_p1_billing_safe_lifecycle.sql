@@ -1175,7 +1175,12 @@ declare
   v_reasons text[] := '{}';
   v_latest timestamptz;
   v_cleared timestamptz;
+  v_incident_open boolean := false;
 begin
+  select exists (
+    select 1 from research_lifecycle_private.deletion_billing_incidents i
+    where i.account_id=p_account_id and i.status='open'
+  ) into v_incident_open;
   select max(s.updated_at) into v_latest
   from public.subscriptions s
   where s.account_id = p_account_id and s.product_id = 'research-membership';
@@ -1215,6 +1220,20 @@ begin
     v_reasons := pg_catalog.array_append(v_reasons, 'research_checkout_window_open');
   end if;
 
+  -- Signed quarantine history is still financial evidence after owner
+  -- resolution. A pre-event clearance cannot silently become valid again
+  -- merely because an operator changes resolved_at.
+  select greatest(v_latest,max(q.last_seen_at)) into v_latest
+  from public.research_paid_binding_quarantine q
+  where q.claimed_account_id=p_account_id
+     or p_account_id=any(q.seen_claimed_account_ids)
+     or exists (
+       select 1 from public.research_checkout_attempts a
+       where a.account_id=p_account_id
+         and (a.checkout_key=q.checkout_key
+              or a.checkout_key=any(q.seen_checkout_keys))
+     );
+
   -- A signed paid refusal may claim the WRONG or NO account but carry the
   -- canonical DB-issued checkout key. Billing must hold the checkout owner
   -- as well as the claimed account until the conflict is reconciled.
@@ -1232,19 +1251,10 @@ begin
     )
   ) then
     v_reasons := pg_catalog.array_append(v_reasons, 'research_paid_binding_quarantined');
-    select greatest(v_latest, max(q.updated_at)) into v_latest
-    from public.research_paid_binding_quarantine q
-    where q.claimed_account_id = p_account_id
-      or p_account_id = any(q.seen_claimed_account_ids)
-      or exists (
-        select 1 from public.research_checkout_attempts a
-        where a.account_id = p_account_id
-          and (a.checkout_key = q.checkout_key
-               or a.checkout_key = any(q.seen_checkout_keys))
-      );
   end if;
 
   if cardinality(v_reasons) = 0 then
+    if v_incident_open then return array['research_post_finalization_incident']; end if;
     return v_reasons;
   end if;
 
@@ -1252,6 +1262,9 @@ begin
   -- by a clearance record: they mean a provider charge may still be created.
   if 'research_checkout_window_open' = any(v_reasons)
      or 'research_paid_binding_quarantined' = any(v_reasons) then
+    if v_incident_open then
+      v_reasons:=pg_catalog.array_append(v_reasons,'research_post_finalization_incident');
+    end if;
     return v_reasons;
   end if;
 
@@ -1261,7 +1274,11 @@ begin
   from public.research_billing_clearances c
   where c.account_id = p_account_id;
   if v_cleared is not null and v_cleared > v_latest then
+    if v_incident_open then return array['research_post_finalization_incident']; end if;
     return '{}';
+  end if;
+  if v_incident_open then
+    v_reasons:=pg_catalog.array_append(v_reasons,'research_post_finalization_incident');
   end if;
   return v_reasons;
 end;
@@ -2543,3 +2560,222 @@ revoke all on function public.bind_research_membership_subscription(
 grant execute on function public.bind_research_membership_subscription(
   uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
   to service_role;
+
+
+-- ---------------------------------------------------------------------------
+-- Part 14. POST-PHASE-A financial incidents. A signed provider event that
+-- commits after database deletion must create durable incident custody in the
+-- SAME transaction, including when the Auth operation is already in flight.
+-- This does not close the cross-service Auth race; it makes it auditable and
+-- requires an owner-only, fresh provider attestation before any continuation.
+-- ---------------------------------------------------------------------------
+create table if not exists research_lifecycle_private.deletion_billing_incidents (
+  account_id uuid primary key references public.profiles(account_id) on delete restrict,
+  status text not null default 'open',
+  reason_codes text[] not null default '{}'::text[],
+  first_observed_at timestamptz not null default pg_catalog.clock_timestamp(),
+  last_observed_at timestamptz not null default pg_catalog.clock_timestamp(),
+  observation_count integer not null default 1,
+  resolution_reference text,
+  resolution_clearance_id uuid references public.research_billing_clearances(id) on delete restrict,
+  resolved_at timestamptz,
+  constraint deletion_billing_incident_status check (status in ('open','resolved')),
+  constraint deletion_billing_incident_count check (observation_count > 0),
+  constraint deletion_billing_incident_resolution_shape check (
+    (status='open' and resolved_at is null and resolution_reference is null
+      and resolution_clearance_id is null)
+    or (status='resolved' and resolved_at is not null and resolution_reference is not null
+      and resolution_clearance_id is not null)
+  )
+);
+alter table research_lifecycle_private.deletion_billing_incidents enable row level security;
+alter table research_lifecycle_private.deletion_billing_incidents force row level security;
+revoke all on table research_lifecycle_private.deletion_billing_incidents
+  from public,anon,authenticated,service_role;
+
+create or replace function research_lifecycle_private.record_post_finalization_billing_incident(
+  p_account_id uuid, p_reason text
+)
+returns boolean language plpgsql security definer set search_path='' as $incident$
+declare
+  v_status public.account_status;
+  v_phase text;
+  v_now timestamptz := pg_catalog.clock_timestamp();
+begin
+  if p_account_id is null
+     or p_reason not in ('signed_bound_research_event','signed_unbound_paid_event') then
+    raise exception using errcode='22023', message='invalid post-finalization incident identifier';
+  end if;
+  -- Lock order: profile SHARE, then private cleanup row UPDATE, consistent
+  -- with Phase A and Phase B/C. Never upgrade a writer's SHARE profile lock.
+  select p.status into v_status from public.profiles p
+    where p.account_id=p_account_id for share;
+  if not found or v_status<>'deleted' then return false; end if;
+  select q.phase into v_phase from research_lifecycle_private.deletion_auth_cleanup q
+    where q.account_id=p_account_id for update;
+  if not found then return false; end if;
+
+  insert into research_lifecycle_private.deletion_billing_incidents as i
+    (account_id,status,reason_codes,first_observed_at,last_observed_at)
+  values (p_account_id,'open',array[p_reason],v_now,v_now)
+  on conflict (account_id) do update
+    set status='open',
+        reason_codes=array(
+          select distinct r.code from pg_catalog.unnest(
+            i.reason_codes || excluded.reason_codes
+          ) as r(code) order by r.code
+        ),
+        last_observed_at=v_now,
+        observation_count=i.observation_count+1,
+        resolution_reference=null,
+        resolution_clearance_id=null,
+        resolved_at=null;
+
+  update research_lifecycle_private.deletion_auth_cleanup q
+    set last_error_code='RESEARCH_POST_PHASE_A_FINANCIAL_INCIDENT'
+    where q.account_id=p_account_id;
+
+  insert into public.research_deletion_billing_holds as h
+    (account_id,status,reason_codes,first_held_at,last_checked_at)
+  values (
+    p_account_id,'open',array['research_post_finalization_incident'],v_now,v_now
+  )
+  on conflict (account_id) do update
+    set status='open',
+        reason_codes=array['research_post_finalization_incident'],
+        last_checked_at=v_now,
+        check_count=h.check_count+1,
+        cleared_at=null,
+        escalation_claimed_at=null,
+        escalated_at=null,
+        escalation_reference=null,
+        first_held_at=case when h.status='cleared' then v_now else h.first_held_at end;
+  insert into public.research_deletion_billing_hold_events
+    (account_id,event_type,reason_codes,occurred_at)
+  values (p_account_id,'held',array['research_post_finalization_incident'],v_now);
+  return true;
+end;
+$incident$;
+revoke all on function research_lifecycle_private.record_post_finalization_billing_incident(uuid,text)
+  from public,anon,authenticated,service_role;
+-- Only the owner of the event-inserting trigger can call this definer.
+
+create or replace function research_lifecycle_private.note_signed_bound_after_deletion()
+returns trigger language plpgsql security definer set search_path='' as $event_trigger$
+begin
+  if new.actor_type='provider_webhook' and new.product_id='research-membership' then
+    perform research_lifecycle_private.record_post_finalization_billing_incident(
+      new.account_id,'signed_bound_research_event'
+    );
+  end if;
+  return null;
+end;
+$event_trigger$;
+revoke all on function research_lifecycle_private.note_signed_bound_after_deletion()
+  from public,anon,authenticated,service_role;
+drop trigger if exists research_signed_event_post_deletion_incident on public.subscription_events;
+create trigger research_signed_event_post_deletion_incident
+  after insert on public.subscription_events
+  for each row execute function research_lifecycle_private.note_signed_bound_after_deletion();
+
+create or replace function research_lifecycle_private.note_signed_unbound_after_deletion()
+returns trigger language plpgsql security definer set search_path='' as $quarantine_trigger$
+declare v_account record;
+begin
+  -- Quarantine resolution alone is not a new signed observation. Only new
+  -- deliveries (INSERT or increased signed delivery_count) may reopen custody.
+  if tg_op='INSERT' or new.delivery_count>old.delivery_count then
+    for v_account in
+      select p.account_id from public.profiles p
+      where p.account_id=new.claimed_account_id
+        or p.account_id=any(new.seen_claimed_account_ids)
+        or exists (
+          select 1 from public.research_checkout_attempts a
+          where a.account_id=p.account_id and
+            (a.checkout_key=new.checkout_key
+             or a.checkout_key=any(new.seen_checkout_keys))
+        )
+      order by p.account_id
+    loop
+      perform research_lifecycle_private.record_post_finalization_billing_incident(
+        v_account.account_id,'signed_unbound_paid_event'
+      );
+    end loop;
+  end if;
+  return null;
+end;
+$quarantine_trigger$;
+revoke all on function research_lifecycle_private.note_signed_unbound_after_deletion()
+  from public,anon,authenticated,service_role;
+drop trigger if exists research_quarantine_post_deletion_incident on public.research_paid_binding_quarantine;
+create trigger research_quarantine_post_deletion_incident
+  after insert or update on public.research_paid_binding_quarantine
+  for each row execute function research_lifecycle_private.note_signed_unbound_after_deletion();
+
+-- Only the accountable owner, after reviewing authenticated provider proof
+-- and resolving every signed/checkout conflict, may clear incident custody.
+-- This is not delegated to the web application or an automated worker.
+create or replace function public.resolve_research_deletion_billing_incident(
+  p_account_id uuid, p_clearance_id uuid, p_resolution_reference text
+)
+returns boolean language plpgsql security definer set search_path='' as $resolve_incident$
+declare
+  v_profile public.profiles;
+  v_incident research_lifecycle_private.deletion_billing_incidents;
+  v_clearance public.research_billing_clearances;
+  v_reasons text[];
+  v_now timestamptz := pg_catalog.clock_timestamp();
+begin
+  if p_account_id is null or p_clearance_id is null
+     or p_resolution_reference is null
+     or p_resolution_reference !~ '^p1-[a-z0-9-]{12,80}$' then
+    raise exception using errcode='22023', message='incident resolution requires opaque owner case reference';
+  end if;
+  select p.* into v_profile from public.profiles p
+    where p.account_id=p_account_id for update;
+  if not found or v_profile.status<>'deleted' then
+    raise exception using errcode='55000', message='incident account is not finalized';
+  end if;
+  select i.* into v_incident
+    from research_lifecycle_private.deletion_billing_incidents i
+    where i.account_id=p_account_id for update;
+  if not found then
+    raise exception using errcode='P0002', message='post-finalization financial incident not found';
+  end if;
+  if v_incident.status='resolved' then
+    return v_incident.resolution_clearance_id=p_clearance_id
+       and v_incident.resolution_reference=p_resolution_reference;
+  end if;
+  select c.* into v_clearance from public.research_billing_clearances c
+    where c.id=p_clearance_id and c.account_id=p_account_id for share;
+  if not found or v_clearance.verified_at<=v_incident.last_observed_at
+     or v_clearance.verified_at>v_now then
+    raise exception using errcode='55000', message='fresh post-incident merchant clearance is required';
+  end if;
+  v_reasons := research_lifecycle_private.billing_hold_reasons(p_account_id);
+  v_reasons := pg_catalog.array_remove(v_reasons,'research_post_finalization_incident');
+  if pg_catalog.cardinality(v_reasons)>0 then
+    raise exception using errcode='55000', message='Research financial conflict remains unresolved';
+  end if;
+
+  update research_lifecycle_private.deletion_billing_incidents i
+    set status='resolved',resolved_at=v_now,
+        resolution_reference=p_resolution_reference,
+        resolution_clearance_id=p_clearance_id
+    where i.account_id=p_account_id;
+  update public.research_deletion_billing_holds h
+    set status='cleared',cleared_at=v_now,last_checked_at=v_now,
+        check_count=h.check_count+1
+    where h.account_id=p_account_id and h.status='open';
+  insert into public.research_deletion_billing_hold_events
+    (account_id,event_type,reason_codes,occurred_at)
+  values (p_account_id,'cleared','{}'::text[],v_now);
+  update research_lifecycle_private.deletion_auth_cleanup q
+    set last_error_code=null
+    where q.account_id=p_account_id and
+      q.last_error_code='RESEARCH_POST_PHASE_A_FINANCIAL_INCIDENT';
+  return true;
+end;
+$resolve_incident$;
+revoke all on function public.resolve_research_deletion_billing_incident(uuid,uuid,text)
+  from public,anon,authenticated,service_role;

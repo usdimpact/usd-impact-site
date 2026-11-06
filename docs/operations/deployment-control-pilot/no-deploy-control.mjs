@@ -25,14 +25,15 @@ export const POLICY = Object.freeze({
 const sha40 = /^[a-f0-9]{40}$/;
 const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const object = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+const hold = reasons => ({ status: 'HOLD', stageOnly: false, mergeAuthorized: false, deploymentAuthorized: false, reasons });
 
 export function assess(snapshot, nowMs = Date.now()) {
   const reasons = [];
-  if (!object(snapshot)) return { status: 'HOLD', stageOnly: false, mergeAuthorized: false, deploymentAuthorized: false, reasons: ['INVALID_SNAPSHOT'] };
+  if (!object(snapshot)) return hold(['INVALID_SNAPSHOT']);
   const { action, github, vercel, controls, evidence } = snapshot;
   if (action !== 'stage') reasons.push('MERGE_OR_DEPLOY_NEVER_AUTHORIZED_BY_THIS_TOOL');
   if (!object(github) || !object(vercel) || !object(controls) || !object(evidence)) {
-    return { status: 'HOLD', stageOnly: false, mergeAuthorized: false, deploymentAuthorized: false, reasons: [...reasons, 'INCOMPLETE_EVIDENCE'] };
+    return hold([...reasons, 'INCOMPLETE_EVIDENCE']);
   }
   if (github.repo !== POLICY.repo || github.pr !== POLICY.pr) reasons.push('WRONG_REPOSITORY_OR_PR');
   if (github.state !== 'open' || github.draft !== true || github.merged !== false) reasons.push('PR_NOT_DRAFT_OPEN_UNMERGED');
@@ -80,7 +81,8 @@ export function assess(snapshot, nowMs = Date.now()) {
 
 export function assessArchitecture(plan) {
   const reasons = [];
-  if (!object(plan)) return { status: 'HOLD', reasons: ['INVALID_PLAN'] };
+  if (!object(plan)) return hold(['INVALID_PLAN']);
+  if (typeof plan.mainAutoDeploy !== 'boolean') reasons.push('MAIN_AUTODEPLOY_STATE_UNVERIFIED');
   if (plan.productionProjectUntouched !== true) reasons.push('PRODUCTION_PROJECT_MUST_REMAIN_UNCHANGED');
   if (plan.isolatedProject !== true) reasons.push('NONPRODUCTION_ISOLATION_NOT_SHOWN');
   if (plan.mainAutoDeploy === false && plan.dailyPublishingReplacementProven !== true) reasons.push('DAILY_PUBLISHING_REPLACEMENT_NOT_PROVEN');
@@ -88,7 +90,7 @@ export function assessArchitecture(plan) {
   if (plan.manualReleaseGateDesigned !== true) reasons.push('OWNER_GATED_RELEASE_PATH_MISSING');
   if (plan.rollbackAndFailClosedTestsPassed !== true) reasons.push('ROLLBACK_AND_NEGATIVE_TESTS_MISSING');
   if (reasons.length === 0) reasons.push('SEPARATE_EXACT_SCOPE_OWNER_CUTOVER_APPROVAL_REQUIRED');
-  return { status: 'HOLD', mergeAuthorized: false, deploymentAuthorized: false, reasons };
+  return hold(reasons);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -99,7 +101,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     process.exitCode = result.stageOnly ? 0 : 1;
   } catch (error) {
-    process.stderr.write(JSON.stringify({status:'HOLD',reasons:['INPUT_ERROR'],detail:String(error.message)}) + '\n');
+    process.stderr.write(JSON.stringify(hold(['INPUT_ERROR'])) + '\n');
     process.exitCode = 1;
   }
 }

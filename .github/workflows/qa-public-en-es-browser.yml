@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/qa-public-en-es-browser.yml'
       - 'apps/web/scripts/qa-public-en-es-browser.py'
+      - 'apps/web/src/layouts/BaseLayout.astro'
+      - 'apps/web/src/styles/global.css'
+      - 'apps/web/src/pages/**'
+      - 'apps/web/src/content/pages/**'
   workflow_dispatch:
 
 permissions:

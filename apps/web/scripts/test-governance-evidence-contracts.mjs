@@ -65,5 +65,6 @@ for (const [path, expected] of [
 }
 
 await import('./test-research-launch-surfaces.mjs');
+await import('./test-account-sign-in-library-context.mjs');
 
 console.log('Governance, media, and responsive-asset evidence contracts passed.');

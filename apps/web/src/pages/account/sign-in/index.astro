@@ -17,6 +17,23 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     </section>
 
     <div class="container account-shell page-content">
+      <aside
+        id="library-sign-in-context"
+        class="card account-panel"
+        aria-labelledby="library-sign-in-context-heading"
+        hidden
+      >
+        <h2 id="library-sign-in-context-heading">Looking for the Guided Edition or media library?</h2>
+        <p>
+          The Guided Edition, audiobook and Video Library are available only to accounts with an eligible previous
+          Library Pass purchase. Sign in with the account used for that purchase.
+        </p>
+        <p>New Library Pass purchases are currently unavailable.</p>
+        <p>
+          You can <a href="/book/read-the-dollar-first/preview">read the public book sample</a> without signing in.
+        </p>
+      </aside>
+
       <section class="card account-panel" aria-labelledby="sign-in-heading">
         <h2 id="sign-in-heading">Secure sign-in</h2>
         <form id="passwordless-sign-in" class="account-form">
@@ -195,6 +212,20 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     if (nextInput) {
       const requestedNext = new URLSearchParams(window.location.search).get('next');
       nextInput.value = safeNextPath(requestedNext);
+    }
+
+    // Library context: only reveals static, hard-coded copy. Nothing from the query string is rendered.
+    // Uses the already-sanitized next path and an exact path-segment match on /guided-edition.
+    const libraryContext = document.getElementById('library-sign-in-context');
+    if (libraryContext) {
+      let nextPathname = '';
+      try {
+        nextPathname = new URL(safeNextPath(new URLSearchParams(window.location.search).get('next')), window.location.origin).pathname;
+      } catch {
+        nextPathname = '';
+      }
+      const fromLibrary = nextPathname === '/guided-edition' || nextPathname.startsWith('/guided-edition/');
+      libraryContext.hidden = !fromLibrary;
     }
 
     const loadPasskeyAvailability = async () => {

@@ -14,11 +14,34 @@ on:
       - 'docs/operations/research-p1-two-phase/f3-development-schema-parity-audit.md'
       - 'docs/operations/research-p1-two-phase/f3-development-catalog-readonly.sql'
       - 'docs/operations/research-p1-two-phase/interim-deletion-review-queue.sql'
+      # Direct modules and tests invoked by this security workflow must
+      # themselves trigger the workflow; no deployment or main trigger.
+      - 'apps/web/package.json'
+      - 'apps/web/api/guided-edition.js'
+      - 'apps/web/src/lib/research-membership-persistence.js'
+      - 'apps/web/src/lib/research-membership-event-adapter.js'
+      - 'apps/web/src/lib/research-membership-runtime.js'
+      - 'apps/web/src/lib/research-access-gate.js'
+      - 'apps/web/src/lib/supabase-server.js'
+      - 'apps/web/src/lib/launch-email-dispatch-common.js'
+      - 'apps/web/src/lib/launch-email-dispatch-ledger.js'
+      - 'apps/web/src/lib/launch-email-templates.js'
+      - 'apps/web/src/lib/account-deletion-email.js'
+      - 'apps/web/src/lib/account-deletion-completed-email.js'
+      - 'apps/web/src/lib/score-member-handler.js'
+      - 'apps/web/src/lib/score-membership-handler.js'
+      - 'apps/web/src/lib/book-delivery-handler.js'
+      - 'apps/web/src/lib/audiobook-handler.js'
+      - 'apps/web/src/lib/video-library-handler.js'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/lemon-squeezy-research-membership-adapter.js'
       - 'apps/web/src/lib/research-membership-webhook-handler.js'
       - 'apps/web/src/lib/research-preview-route.js'
       - 'apps/web/scripts/test-lemon-squeezy-research-membership-adapter.mjs'
+      - 'apps/web/scripts/test-research-membership-first-purchase.mjs'
+      - 'apps/web/scripts/test-research-membership-persistence.mjs'
+      - 'apps/web/scripts/test-account-deletion-finalizer.mjs'
+      - 'apps/web/scripts/test-account-deletion-two-phase-financial-hold.mjs'
       - 'apps/web/scripts/test-research-membership-webhook-replay.mjs'
       - 'apps/web/scripts/test-research-preview-route.mjs'
       - 'apps/web/scripts/test-account-deletion-interim-mode.mjs'
@@ -152,4 +175,7 @@ jobs:
           python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
+          # Exercise real UI02/UI03 RLS, account_export, outbox denial,
+          # two-user negative cases and Phase A deletion on pinned migrations.
+          python3 supabase/tests/research-p1/test_research_p1_ui_locale_combined.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"

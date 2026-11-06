@@ -39,15 +39,21 @@ grant anon, authenticated, service_role to postgres;
 create schema extensions; create extension pgcrypto with schema extensions;
 create schema auth;
 create table auth.users(id uuid primary key,email text);
-create function auth.uid() returns uuid language sql stable set search_path='' as $$
-  select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
--- Disposable synthetic Supabase Auth helper required by UI02 locale policies.
--- No service key, session or real hosted Auth data is accessed by this stub.
+-- SYNTHETIC ONLY: model both legacy GUCs and modern structured claims.
+-- request.jwt.claim wins over request.jwt.claims for JWT JSON; individual
+-- request.jwt.claim.sub is honored by auth.uid() first, with a JSON fallback.
 create function auth.jwt() returns jsonb language sql stable set search_path='' as $$
-  select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,
+  select coalesce(
+    nullif(current_setting('request.jwt.claim',true),'')::jsonb,
+    nullif(current_setting('request.jwt.claims',true),'')::jsonb,
     case when nullif(current_setting('request.jwt.claim.sub',true),'') is not null
       then jsonb_build_object('sub',current_setting('request.jwt.claim.sub',true))
       else '{}'::jsonb end) $$;
+create function auth.uid() returns uuid language sql stable set search_path='' as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub',true),''),
+    nullif((select auth.jwt()->>'sub'),'')
+  )::uuid $$;
 create schema storage;
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,
   allowed_mime_types text[],owner uuid,created_at timestamptz default now(),updated_at timestamptz default now());

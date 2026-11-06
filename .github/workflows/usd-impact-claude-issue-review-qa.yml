@@ -1,0 +1,33 @@
+name: Claude Manual Issue Review - Offline Security Tests
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/usd-impact-claude-issue-review.yml'
+      - '.github/workflows/usd-impact-claude-issue-review-qa.yml'
+      - 'scripts/claude/manual-issue-review.mjs'
+      - 'scripts/claude/manual-issue-review.test.mjs'
+      - 'scripts/claude/manual-issue-identity-check.mjs'
+      - 'scripts/claude/manual-issue-identity-check.test.mjs'
+      - 'docs/operations/claude-wif-identity-check-beginner.md'
+      - 'docs/operations/claude-manual-issue-review-beginner.md'
+
+permissions:
+  contents: read
+jobs:
+  negative-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Run offline validation; no secrets, GitHub writes or Claude calls
+        run: |
+          set -euo pipefail
+          node --check scripts/claude/manual-issue-review.mjs
+          node --test scripts/claude/manual-issue-review.test.mjs
+          node --check scripts/claude/manual-issue-identity-check.mjs
+          node --test scripts/claude/manual-issue-identity-check.test.mjs

@@ -2164,13 +2164,16 @@ grant execute on function public.finalize_deletion_and_queue_auth_cleanup(uuid)
 -- Phase B lease: SKIP LOCKED prevents two workers from deleting the same Auth
 -- identity concurrently; expiry permits recovery when a worker crashes after
 -- DB commit or midway through the Auth HTTP operation.
+-- The SQL lease must match the one-account maximum imposed by the only
+-- owner-gated Draft worker. Unlike the non-destructive due scan (<=25), no
+-- service_role caller may reserve a batch of unprocessed Auth identities.
 create or replace function public.claim_deletion_auth_cleanup_batch(p_limit integer)
 returns table (account_id uuid, phase text, lease_id uuid, attempt_count integer)
 language plpgsql security definer set search_path='' as $claim$
 declare v_item record; v_now timestamptz:=pg_catalog.clock_timestamp();
 begin
-  if p_limit is null or p_limit<1 or p_limit>25 then
-    raise exception using errcode='22023', message='Auth cleanup batch must be between 1 and 25';
+  if p_limit is distinct from 1 then
+    raise exception using errcode='22023', message='Auth cleanup claim must lease exactly one account';
   end if;
   for v_item in
     select q.account_id from research_lifecycle_private.deletion_auth_cleanup q

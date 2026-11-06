@@ -92,7 +92,7 @@ check('discovery instructions distinguish document dates', () => {
   assert.match(SOURCE_DATE_RULES, /BLS annual and month-specific release calendars/);
   assert.match(SOURCE_DATE_RULES, /BLS CPS release calendar/);
   assert.match(SOURCE_DATE_RULES, /month-specific release calendars/);
-  assert.match(SOURCE_DATE_RULES, /Verify each economic event date separately/);
+  assert.match(SOURCE_DATE_RULES, /check future event dates separately/);
   assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report schedule page/);
   assert.match(SOURCE_DATE_RULES, /no page-level publication or Last Updated date/i);
 });

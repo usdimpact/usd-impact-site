@@ -4,6 +4,7 @@ No Production/Development connections, merchant calls or real accounts.
 Run AFTER owner_model_replay.py and test_research_p1_lifecycle.py.
 """
 import hashlib
+import json
 import threading
 import time
 import uuid
@@ -208,9 +209,18 @@ rec("B duplicate finish is idempotent and retains no email",
 
 # C - actual Research billing evidence holds before any DB irreversible work.
 hold=synthetic_user()
+hold_key="p1two-checkout-"+hold.hex
+attempt=svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",(hold,hold_key))
+assert attempt[0]=="OK",attempt
+attached=svc("SELECT public.attach_research_checkout_attempt(%s,%s,%s,now()+interval '30 minutes')",
+             (attempt[1],hold,"ck-two-"+hold.hex[:12]))
+assert attached==("OK",True),attached
+su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '1 minute' WHERE id=%s",
+   (attempt[1],))
 binding=svc("""SELECT public.bind_research_membership_subscription(
-    %s,'lemon-squeezy',%s,%s,'313','monthly',now(),'{}'::jsonb)""",
-    (hold,"p1two-sub-"+hold.hex[:14],"p1two-cust-"+hold.hex[:14]))
+    %s,'lemon-squeezy',%s,%s,'313','monthly',now(),%s::jsonb)""",
+    (hold,"p1two-sub-"+hold.hex[:14],"p1two-cust-"+hold.hex[:14],
+     json.dumps({"bindingSource":"signed-subscription-created","checkoutKey":hold_key})))
 # A genuine retained Research event makes the stale-JWT RLS proof non-vacuous.
 su("""INSERT INTO public.subscription_events
       (event_key,subscription_id,account_id,product_id,from_state,to_state,

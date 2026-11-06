@@ -1414,14 +1414,16 @@ begin
      or p_provider_expires_at is null then
     raise exception using errcode = '22023', message = 'research checkout attachment input is incomplete';
   end if;
+  -- Lock the account first, then the attempt. This matches issuance,
+  -- signed billing evidence and the finalization profile-first lock order.
+  select p.status, p.deletion_requested_at into v_status, v_deletion
+  from public.profiles p where p.account_id = p_account_id for share;
+
   select a.* into v_attempt from public.research_checkout_attempts a
   where a.id = p_attempt_id and a.account_id = p_account_id for update;
   if not found or v_attempt.status <> 'issued' or v_attempt.created_at < v_now - interval '15 minutes' then
     raise exception using errcode = '42501', message = 'research p1: checkout attempt is not attachable';
   end if;
-
-  select p.status, p.deletion_requested_at into v_status, v_deletion
-  from public.profiles p where p.account_id = p_account_id for share;
   if not found or v_status <> 'active' or v_deletion is not null then
     -- Keep the attempt (and its deletion hold window): the merchant checkout
     -- exists even though no URL will be returned.
@@ -2317,3 +2319,166 @@ create policy subscription_events_select_own on public.subscription_events
     select 1 from public.profiles p
     where p.account_id=(select auth.uid()) and p.status<>'deleted'
   ));
+
+-- ---------------------------------------------------------------------------
+-- Part 13. First-purchase binding must match the canonical checkout owner.
+-- Overrides the pre-custody binder from the September migration (no live
+-- migration is applied by this Draft). Key and account are checked in one
+-- transaction after taking the same profile-first locks as deletion.
+-- ---------------------------------------------------------------------------
+create or replace function public.bind_research_membership_subscription(
+  p_account_id uuid,
+  p_provider text,
+  p_provider_subscription_id text,
+  p_provider_customer_id text,
+  p_provider_price_id text,
+  p_billing_interval public.subscription_billing_interval,
+  p_occurred_at timestamptz,
+  p_metadata jsonb default '{}'::jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_existing public.subscriptions%rowtype;
+  v_current public.subscriptions%rowtype;
+  v_created public.subscriptions%rowtype;
+  v_attempt public.research_checkout_attempts%rowtype;
+  v_checkout_key text;
+begin
+  if p_account_id is null then
+    raise exception 'Research Membership account id is required';
+  end if;
+  if p_provider <> 'lemon-squeezy' then
+    raise exception 'Research Membership provider mismatch';
+  end if;
+  if p_provider_subscription_id is null or btrim(p_provider_subscription_id) = '' then
+    raise exception 'Research Membership provider subscription id is required';
+  end if;
+  if p_provider_customer_id is null or btrim(p_provider_customer_id) = '' then
+    raise exception 'Research Membership provider customer id is required';
+  end if;
+  if p_provider_price_id is null or btrim(p_provider_price_id) = '' then
+    raise exception 'Research Membership provider price id is required';
+  end if;
+  if p_occurred_at is null then
+    raise exception 'Research Membership binding occurred_at is required';
+  end if;
+  if p_metadata is null or jsonb_typeof(p_metadata) <> 'object' then
+    raise exception 'Research Membership binding metadata must be a JSON object';
+  end if;
+
+  -- Serialize first-binding attempts per account. A concurrent delivery waits
+  -- here, then observes the binding committed by the winner and returns the
+  -- exact existing subscription instead of surfacing a uniqueness race.
+  perform 1
+    from public.profiles
+   where account_id = p_account_id
+     and status = 'active'
+   for update;
+
+  if not found then
+    raise exception 'Research Membership account is not an active profile';
+  end if;
+
+  -- Signed first-purchase metadata must resolve to an attached DB-issued
+  -- checkout owned by this account. Lock profile first, checkout second,
+  -- matching other lifecycle operations and preventing misbound paid grants.
+  v_checkout_key := nullif(pg_catalog.btrim(p_metadata ->> 'checkoutKey'), '');
+  if p_metadata ->> 'bindingSource' is distinct from 'signed-subscription-created'
+     or v_checkout_key is null then
+    raise exception using errcode='42501',
+      message='Research paid binding lacks signed checkout custody';
+  end if;
+  select a.* into v_attempt from public.research_checkout_attempts a
+    where a.checkout_key=v_checkout_key for share;
+  if not found or v_attempt.account_id is distinct from p_account_id
+     or v_attempt.billing_interval is distinct from p_billing_interval
+     or v_attempt.status<>'attached'
+     or v_attempt.provider_checkout_id is null then
+    raise exception using errcode='42501',
+      message='Research paid binding checkout owner/attachment mismatch';
+  end if;
+
+  select *
+    into v_existing
+    from public.subscriptions
+   where provider = p_provider
+     and provider_subscription_id = p_provider_subscription_id
+   for update;
+
+  if found then
+    if v_existing.account_id <> p_account_id
+       or v_existing.product_id <> 'research-membership'
+       or v_existing.provider <> p_provider
+       or v_existing.provider_customer_id is distinct from p_provider_customer_id
+       or v_existing.provider_price_id is distinct from p_provider_price_id
+       or v_existing.billing_interval <> p_billing_interval
+       or v_existing.metadata ->> 'checkoutKey' is distinct from v_checkout_key then
+      raise exception 'Research Membership provider subscription binding conflicts with existing evidence';
+    end if;
+
+    return jsonb_build_object(
+      'action', 'existing',
+      'subscription_id', v_existing.id,
+      'subscription_state', v_existing.state
+    );
+  end if;
+
+  select *
+    into v_current
+    from public.subscriptions
+   where account_id = p_account_id
+     and product_id = 'research-membership'
+     and state in ('pending', 'active', 'past_due', 'cancel_scheduled')
+   order by created_at desc
+   limit 1
+   for update;
+
+  if found then
+    raise exception 'Research Membership account already has a current subscription';
+  end if;
+
+  insert into public.subscriptions (
+    account_id,
+    product_id,
+    provider,
+    provider_subscription_id,
+    provider_customer_id,
+    provider_price_id,
+    billing_interval,
+    state,
+    metadata,
+    created_at,
+    updated_at
+  ) values (
+    p_account_id,
+    'research-membership',
+    p_provider,
+    p_provider_subscription_id,
+    p_provider_customer_id,
+    p_provider_price_id,
+    p_billing_interval,
+    'pending',
+    p_metadata,
+    p_occurred_at,
+    p_occurred_at
+  )
+  returning * into v_created;
+
+  return jsonb_build_object(
+    'action', 'created',
+    'subscription_id', v_created.id,
+    'subscription_state', v_created.state
+  );
+end;
+$$;
+
+revoke all on function public.bind_research_membership_subscription(
+  uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
+  from public,anon,authenticated,service_role;
+grant execute on function public.bind_research_membership_subscription(
+  uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
+  to service_role;

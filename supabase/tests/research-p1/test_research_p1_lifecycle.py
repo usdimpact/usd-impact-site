@@ -39,12 +39,27 @@ def request_del(a, c=None):
         if o: c.close()
 def make_due(a):  # synthetic: deletion due now and Auth link detached (models a completed Auth step)
     su("UPDATE public.profiles SET deletion_due_at=now()-interval '1 minute', deletion_requested_at=now()-interval '31 days', auth_user_id=null WHERE account_id=%s", (a,))
-BIND = "SELECT public.bind_research_membership_subscription(%s,'lemon-squeezy',%s,%s,'313','monthly',now(),'{}'::jsonb)"
+BIND = "SELECT public.bind_research_membership_subscription(%s,'lemon-squeezy',%s,%s,'313','monthly',now(),%s::jsonb)"
+def signed_checkout_metadata(key):
+    return json.dumps({"bindingSource":"signed-subscription-created","checkoutKey":key})
+def attach_synthetic_checkout(a, key):
+    issued=svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",(a,key))
+    assert issued[0]=="OK",issued
+    attached=svc("SELECT public.attach_research_checkout_attempt(%s,%s,%s,now()+interval '30 minutes')",
+                 (issued[1],a,"ck-synthetic-"+a.hex[-12:]))
+    assert attached==("OK",True),attached
+    # Model an EXPIRED checkout with independent provider reconciliation; this
+    # test's billing clearance still must postdate its last financial footprint.
+    su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '1 minute' WHERE id=%s",(issued[1],))
+    return key
 TR = """SELECT public.apply_research_membership_transition(%s,%s,%s,'lemon-squeezy',%s,%s::public.subscription_state,%s::public.subscription_state,
         now(),now()+interval '30 days',false,%s::public.entitlement_state,%s,null,'p1 synthetic',now(),'{}'::jsonb)"""
 def research_member():
     a = user(); psub = f"p1-sub-{a.hex[-6:]}"
-    b = svc(BIND, (a, psub, f"p1-cus-{a.hex[-6:]}")); sid = b[1]["subscription_id"]
+    key=attach_synthetic_checkout(a,"p1-binding-"+a.hex)
+    b = svc(BIND, (a, psub, f"p1-cus-{a.hex[-6:]}", signed_checkout_metadata(key)))
+    assert b[0]=="OK",b
+    sid = b[1]["subscription_id"]
     t = svc(TR, (sid, f"p1-first-{psub}", f"evt-first-{psub}", psub, "pending", "active", "active", "2026-11-01T00:00:00Z"))
     assert t[0] == "OK", t
     return a, sid, psub
@@ -128,6 +143,27 @@ r = svc("SELECT public.create_research_checkout_attempt(%s,'p1-checkout-key-0000
 rec("C1", "checkout key cannot be replayed by another account", r[0] == "ERR" and r[1].startswith("23505"), str(r))
 r = svc("SELECT public.attach_research_checkout_attempt(%s,%s,'chk-p1-0001',now()+interval '30 minutes')", (r1[1], a))
 rec("C2", "attach while active -> true (URL may be issued)", r == ("OK", True), str(r))
+misbound=svc(BIND,(a2,"p1-misbound-signed-sub","p1-misbound-cus",
+                   signed_checkout_metadata("p1-checkout-key-00000001")))
+rec("C2", "signed checkout key owned by A cannot bind paid subscription to B",
+    misbound[0]=="ERR" and misbound[1].startswith("42501")
+    and su("SELECT count(*) FROM public.subscriptions WHERE provider_subscription_id='p1-misbound-signed-sub'")==0,
+    str(misbound))
+missing_key=svc(BIND,(a2,"p1-missing-custody-sub","p1-missing-custody-cus",
+                      signed_checkout_metadata("p1-key-not-issued-anywhere")))
+rec("C2", "unissued key cannot create paid subscription",
+    missing_key[0]=="ERR" and missing_key[1].startswith("42501"),str(missing_key))
+no_signed_key=svc(BIND,(a2,"p1-no-signed-key-sub","p1-no-signed-key-cus","{}"))
+rec("C2", "missing signed checkout metadata cannot bypass binding custody",
+    no_signed_key[0]=="ERR" and no_signed_key[1].startswith("42501"),str(no_signed_key))
+valid_bind=svc(BIND,(a,"p1-valid-attached-sub","p1-valid-attached-cus",
+                     signed_checkout_metadata("p1-checkout-key-00000001")))
+valid_repeat=svc(BIND,(a,"p1-valid-attached-sub","p1-valid-attached-cus",
+                       signed_checkout_metadata("p1-checkout-key-00000001")))
+rec("C2", "correct attached checkout owner binds once and duplicate is idempotent",
+    valid_bind[0]=="OK" and valid_bind[1]["action"]=="created"
+    and valid_repeat[0]=="OK" and valid_repeat[1]["action"]=="existing",
+    f"first={valid_bind} replay={valid_repeat}")
 r = svc("SELECT public.attach_research_checkout_attempt(%s,%s,'chk-p1-0002',now()+interval '30 minutes')", (r1[1], a))
 rec("C2", "second attach of same attempt refused", r[0] == "ERR" and r[1].startswith("42501"), str(r))
 r = svc("SELECT public.create_research_checkout_attempt(%s,'p1-checkout-key-00000001','monthly')", (a,))
@@ -170,7 +206,8 @@ rec("C5", "race B: uncommitted deletion request blocks attempt; attempt then ref
 
 # ---------------- Q: paid-but-unbound quarantine (D37-2, D38-2, D38-5) ----------------
 q = user(); request_del(q)
-bnd = svc(BIND, (q, "p1-unbound-sub-1", "p1-unbound-cus-1"))
+bnd = svc(BIND, (q, "p1-unbound-sub-1", "p1-unbound-cus-1",
+                 signed_checkout_metadata("p1-checkout-key-q1")))
 rec("Q1", "binding refused for deletion_pending (existing RPC)", bnd[0] == "ERR", str(bnd))
 r1 = svc("SELECT public.record_research_paid_binding_refusal('lemon-squeezy','p1-unbound-sub-1',%s,'p1-checkout-key-q1','RESEARCH_FIRST_PURCHASE_BINDING_FAILED')", (q,))
 r2 = svc("SELECT public.record_research_paid_binding_refusal('lemon-squeezy','p1-unbound-sub-1',%s,'p1-checkout-key-q1','RESEARCH_FIRST_PURCHASE_BINDING_FAILED')", (q,))

@@ -16,8 +16,9 @@ const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
 const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{4}-press-fomc\.htm$/;
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
-// Month-specific BLS release calendars display a mutable page-level Last Modified Date.
-// Historical editions may legitimately cite different verified updates to the same URL.
+// Month-specific BLS calendar URLs are mutable and historical editions disagree
+// about their Last Modified date. Block as discovery-only until independently
+// verified source-specific date evidence can be bound to the edition.
 const BLS_MONTHLY_CALENDAR_PATH = /^\/schedule\/\d{4}\/(?:0?[1-9]|1[0-2])_sched(?:_list)?\.htm$/;
 // The CPS standing calendar lists future event dates but is not a dated news release.
 // Its page Last Modified date is distinct from the events it lists.
@@ -65,7 +66,7 @@ export function sourceDateBasisForUrl(value) {
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
       || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)))
-      || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
+      || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
       || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
@@ -74,13 +75,6 @@ export function sourceDateBasisForUrl(value) {
     return LIVING_FEDERAL_RESERVE_PATHS.some((pattern) => pattern.test(url.pathname))
       ? SOURCE_DATE_BASIS.LAST_UPDATED
       : SOURCE_DATE_BASIS.PUBLISHED;
-  }
-  // Use the same decoded, normalized path for monthly schedules as for blocked indexes.
-  // An invalid encoding receives no special date-classification exemption.
-  let monthlyPath = '';
-  try { monthlyPath = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase(); } catch { /* keep default basis */ }
-  if (hostname === 'bls.gov' && BLS_MONTHLY_CALENDAR_PATH.test(monthlyPath)) {
-    return SOURCE_DATE_BASIS.LAST_UPDATED;
   }
   if (hostname === 'bls.gov' && /^\/cpi\/?$/i.test(url.pathname)) {
     return SOURCE_DATE_BASIS.CURRENT_RELEASE;
@@ -126,6 +120,9 @@ export function sourceDateAttributionIssue(value) {
   if (hostname === 'bls.gov') {
     if (pathname === BLS_CPS_RELEASE_CALENDAR_PATH) {
       return 'BLS CPS release calendar is a reusable schedule index, not a news release. Its Last Modified date is different from the dates of listed events. Use a verified dated BLS news release or the relevant month-specific schedule with its own displayed Last Modified date; never assign an event date, edition date or access date as the publication date of the CPS calendar. If no eligible dated source supports the claim, omit the source and unsupported claim. Do not modify archived citations.';
+    }
+    if (BLS_MONTHLY_CALENDAR_PATH.test(pathname)) {
+      return 'BLS month-specific release schedule is a mutable calendar with conflicting historical Last Modified dates. Use for event discovery only; cite a verified dated BLS release or official document supporting the claim. Never borrow a historical citation date, event date, edition date, or access date to satisfy source validation; omit the unsupported source and claim.';
     }
     return 'BLS annual release calendar aggregates separately updated monthly sections. Cite the relevant month-specific schedule with its own verified Last Modified date, or a directly linked dated release. Verify the event date separately; never use an access date, edition date, event date or another month section date as the annual page publication date. If no such source is verifiable, omit the unsupported source and claim.';
   }

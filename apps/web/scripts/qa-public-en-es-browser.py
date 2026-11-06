@@ -64,8 +64,63 @@ def skips(browser, js):
             page.keyboard.press("Enter")
             focused = page.evaluate("document.activeElement?.id === 'main-content'")
             assert page.url.endswith("#main-content") or focused, f"{route} Enter did not reach main"
+            # Strengthened: the next Tab must land on <main> or inside it, with JS on and off.
+            page.keyboard.press("Tab")
+            in_main = page.evaluate("""() => { const a = document.activeElement;
+                return !!a && a !== document.body && !!a.closest('main#main-content'); }""")
+            assert in_main, f"{route} Tab after skip did not reach main content, JS={js}"
         assert all(c["name"] != "usd_impact_consent" for c in ctx.cookies()), "Consent was mutated"
         return {"routes":len(routes), "javascript":js}
+    finally:
+        ctx.close()
+
+def nojs_navigation(browser, language, width):
+    """Without JavaScript the header navigation must stay reachable (no inert Menu button)."""
+    ctx, page = setup(browser, width=width, js=False)
+    try:
+        route = "/" if language == "en" else "/es/"
+        visit(page, route)
+        state = page.evaluate("""() => {
+            const visible = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+            const toggle = document.querySelector('.nav-toggle');
+            const nav = document.querySelector('#site-navigation');
+            return { toggleVisible: visible(toggle), navVisible: visible(nav),
+                     reachable: [...nav.querySelectorAll('summary, a.nav-direct')].filter(visible).length,
+                     overflow: document.documentElement.scrollWidth > window.innerWidth + 1 };
+        }""")
+        assert not state["toggleVisible"], f"{route} {width}px: inert Menu button shown without JS"
+        assert state["navVisible"] and state["reachable"] >= 4, f"{route} {width}px: header navigation not reachable without JS ({state})"
+        assert not state["overflow"], f"{route} {width}px: horizontal overflow without JS"
+        if page.locator("#site-navigation summary").count() > 0:
+            # Grouped (EN) navigation: native <details> must open from the keyboard without JS.
+            page.locator("#site-navigation summary").first.focus()
+            page.keyboard.press("Enter")
+            assert page.evaluate("document.querySelector('#site-navigation details[open]') !== null"), f"{route} {width}px: native disclosure did not open without JS"
+        else:
+            # Flat (ES) navigation: sequential Tab from the page start must reach a header nav link.
+            reached = False
+            for _ in range(8):
+                page.keyboard.press("Tab")
+                if page.evaluate("!!document.activeElement.closest('#site-navigation')"):
+                    reached = True
+                    break
+            assert reached, f"{route} {width}px: keyboard Tab did not reach header navigation without JS"
+        return {"language": language, "width": width, "reachable": state["reachable"]}
+    finally:
+        ctx.close()
+
+def js_collapsed(browser, language, width):
+    """With JavaScript the enhanced collapsed header (Menu button) is unchanged at the 961px boundary."""
+    ctx, page = setup(browser, width=width, js=True)
+    try:
+        route = "/" if language == "en" else "/es/"
+        visit(page, route)
+        state = page.evaluate("""() => ({ toggle: getComputedStyle(document.querySelector('.nav-toggle')).display,
+            nav: getComputedStyle(document.querySelector('#site-navigation')).display })""")
+        collapsed = width <= 960
+        assert (state["toggle"] != "none") == collapsed, f"{route} {width}px JS: toggle display {state}"
+        assert (state["nav"] == "none") == collapsed, f"{route} {width}px JS: nav display {state}"
+        return {"language": language, "width": width, **state}
     finally:
         ctx.close()
 
@@ -128,6 +183,14 @@ try:
             check(f"EN tablet/mobile {width}px Enter-Tab-Escape", lambda width=width: mobile_menu(browser, "en", width))
         for width in (961, 1280):
             check(f"EN desktop {width}px Enter-Escape", lambda width=width: desktop_menu(browser, width))
+        for width in (390, 760, 761, 768, 959, 960):
+            for language in ("en", "es"):
+                check(f"{language.upper()} no-JS header navigation reachable {width}px",
+                      lambda width=width, language=language: nojs_navigation(browser, language, width))
+        for width in (760, 761, 959, 960, 961):
+            for language in ("en", "es"):
+                check(f"{language.upper()} JS collapsed-header boundary {width}px",
+                      lambda width=width, language=language: js_collapsed(browser, language, width))
         for route in ("/", "/es/", "/news/", "/reports/", "/learn/", "/quiz/"):
             check("reflow " + route, lambda route=route: reflow(browser, route))
         browser.close()

@@ -102,6 +102,12 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
       </style>
     )}
     {locale === 'en' && <script is:inline src="/assets/session-entry.js" defer></script>}
+    <noscript>
+      {/* Without JavaScript the Menu button cannot open the collapsed header (<=960px), so this
+          same-origin stylesheet keeps the navigation visible as its existing stacked list.
+          It loads only when scripting is unavailable; the JavaScript experience is unchanged. */}
+      <link rel="stylesheet" href="/assets/nav-no-js.css" />
+    </noscript>
   </head>
   <body data-content-language={locale}>
     <a class="skip-link" href="#main-content">{shellCopy.skipLink}</a>

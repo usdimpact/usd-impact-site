@@ -501,6 +501,13 @@ rec("R11", "both owners remain billing-held despite the earlier merchant proof",
 su("""UPDATE public.research_paid_binding_quarantine
       SET resolved_at=now(),resolution_reference='synthetic-review'
       WHERE provider='lemon-squeezy' AND provider_subscription_id='synthetic-conflict-paid-sub-01'""")
+stale_resolved_a,stale_resolved_b=ready(claimed_a),ready(claimed_b)
+rec("R11", "manual quarantine resolution cannot reuse earlier merchant clearance",
+    stale_resolved_a[1]["clear"] is False and stale_resolved_b[1]["clear"] is False,
+    f"{stale_resolved_a[1]['reasons']} {stale_resolved_b[1]['reasons']}")
+for who in (claimed_a,claimed_b):
+    own("""SELECT public.record_research_billing_clearance(
+        %s,'provider_api','synthetic-conflicting-proof-002',now(),'owner-synthetic')""",(who,))
 after_resolve_a,after_resolve_b=ready(claimed_a),ready(claimed_b)
 redelivery=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy','synthetic-conflict-paid-sub-01',%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",(claimed_b,key_b))

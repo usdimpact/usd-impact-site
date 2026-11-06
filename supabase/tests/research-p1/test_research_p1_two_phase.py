@@ -293,9 +293,12 @@ rec("C post-Phase-A signed payment refuses pre-Auth fence and leaves Auth intact
 su("DELETE FROM auth.users WHERE id=%s",(hold,))
 after_auth_race=confirm(hold,hold_lease)
 recovery=ledger(hold)
+# Phase A intentionally pseudonymizes privacy_requests.account_id. The
+# private recovery ledger is the authoritative list of affected request IDs.
+privacy_ids=[uuid.UUID(x) for x in recovery["privacy_request_ids"]]
 privacy=su("""SELECT count(*) FROM public.privacy_requests
-  WHERE account_id=%s AND request_type='deletion'
-    AND status='in_progress' AND completed_at IS NULL""",(hold,))
+  WHERE id=ANY(%s::uuid[]) AND request_type='deletion'
+    AND status='in_progress' AND completed_at IS NULL""",(privacy_ids,))
 released=su("""SELECT count(*) FROM public.notification_outbox
   WHERE message_id='account_deletion_completed'
     AND business_object_id=%s AND status IN ('queued','sending','accepted','delivered')""",(str(hold),))
@@ -305,7 +308,7 @@ rec("C NEGATIVE WITNESS: late signed payment after fence can precede Auth deleti
     and row(hold)["status"]=="deleted"
     and recovery["phase"]=="auth_pending"
     and recovery["recipient_email"] is not None
-    and privacy>=1 and released==0
+    and len(privacy_ids)>=1 and privacy==len(privacy_ids) and released==0
     and su("""SELECT count(*) FROM public.research_paid_binding_quarantine
       WHERE claimed_account_id=%s AND resolved_at IS NULL""",(hold,))>=1,
     f"auth_absent=1 phase={recovery['phase']} privacy_pending={privacy} sent={released} confirm={after_auth_race}")

@@ -12,6 +12,10 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
+      - 'apps/web/src/lib/lemon-squeezy-research-membership-adapter.js'
+      - 'apps/web/scripts/test-lemon-squeezy-research-membership-adapter.mjs'
+      - 'apps/web/src/lib/research-membership-webhook-handler.js'
+      - 'apps/web/scripts/test-research-membership-webhook-replay.mjs'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'
       - 'apps/web/src/lib/account-deletion-two-phase-preflight.js'
@@ -64,6 +68,7 @@ jobs:
           node --check src/lib/research-membership-first-purchase.js
           node --check src/lib/account-deletion-finalizer.js
           node scripts/test-research-membership-first-purchase.mjs
+          node scripts/test-lemon-squeezy-research-membership-adapter.mjs
           node scripts/test-research-membership-persistence.mjs
           node scripts/test-research-membership-webhook-replay.mjs
           node scripts/test-account-deletion-finalizer.mjs

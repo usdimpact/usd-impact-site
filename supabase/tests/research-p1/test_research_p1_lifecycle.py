@@ -3,7 +3,7 @@
 Disposable 127.0.0.1 PG17.6 only, synthetic identities only. Run owner_model.py
 first (52 main migrations + the P1 migration, executed by non-superuser
 `postgres`). Usage: p1_pg.py <label>"""
-import sys, uuid, threading, time, json, psycopg
+import sys, uuid, threading, time, json, psycopg, datetime
 LABEL = sys.argv[1] if len(sys.argv) > 1 else "P1"
 LP = "read-the-dollar-first-guided-interactive-edition"
 R = []
@@ -180,6 +180,60 @@ rec("I4", "conflicting invoice replay cannot overwrite signed billing fingerprin
 no_public=as_role("authenticated",invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
 rec("I4", "authenticated app client cannot directly forge invoice receipts",
     no_public[0]=="ERR" and no_public[1].startswith("42501"),str(no_public))
+# Invoice receipts are payment evidence, NOT provider state transitions.
+# Reproduce the three independent orderings from the adversarial #1173 P1:
+# same-second renewal, one-second-earlier renewal, and earlier cancellation
+# after a later delivered refund. All three must APPLY normally.
+for case_index, case_label, invoice_name, target, entitlement, offset in [
+    (1,"renewal same second as signed payment receipt",
+      "subscription_payment_success","active","active",9),
+    (2,"renewal one second before signed payment receipt",
+      "subscription_payment_success","active","active",8),
+    (3,"cancellation one second before signed refund receipt",
+      "subscription_payment_refunded","cancelled","revoked",8),
+]:
+    acct,sid,psub=research_member()
+    latest_state_at=su("""SELECT max(ev.occurred_at) FROM public.subscription_events ev
+      WHERE ev.subscription_id=%s AND ev.actor_type='provider_webhook'
+        AND ev.metadata->>'researchP1InvoiceReceipt' IS DISTINCT FROM 'true'
+        AND ev.metadata->>'researchP1StaleHeld' IS DISTINCT FROM 'true'
+        AND ev.metadata->>'researchP1NonactiveHeld' IS DISTINCT FROM 'true'""",(sid,))
+    assert latest_state_at is not None
+    invoice_at=latest_state_at+datetime.timedelta(seconds=9)
+    transition_at=latest_state_at+datetime.timedelta(seconds=offset)
+    key="p1-invoice-order-"+str(case_index)+"-"+psub
+    invoice_meta=json.dumps({
+      "lemonEventName":invoice_name,
+      "lemonDataType":"subscription-invoices",
+      "replayFingerprintVersion":1,
+      "replayFingerprint":("deabc"+str(case_index)).ljust(64,"d"),
+    })
+    receipt=svc("""SELECT public.record_research_signed_invoice_receipt(
+      %s,%s,%s,%s,%s::timestamptz,%s::jsonb)""",
+      (sid,key,"evt-invoice-order-"+psub,invoice_name,invoice_at,invoice_meta))
+    before_ver=su("SELECT version FROM public.subscriptions WHERE id=%s",(sid,))
+    ordered_sql=TR.replace("'p1 synthetic',now(),'{}'::jsonb)",
+                             "'p1 synthetic',%s::timestamptz,'{}'::jsonb)")
+    evt_key="p1-transition-order-"+str(case_index)+"-"+psub
+    transition=svc(ordered_sql,
+       (sid,evt_key,"evt-transition-order-"+psub,psub,
+        "active",target,entitlement,None,transition_at))
+    current=su("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))
+    current_version=su("SELECT version FROM public.subscriptions WHERE id=%s",(sid,))
+    entitlement_now=su("""SELECT state::text FROM public.entitlements
+      WHERE account_id=%s AND product_id='research-membership'""",(acct,))
+    history=su("""SELECT to_jsonb(e) FROM public.subscription_events e
+      WHERE e.event_key=%s""",(evt_key,))
+    rec("O1-INVOICE",case_label+" applies without losing financial receipt",
+      receipt[0]=="OK" and receipt[1]["action"]=="invoice_recorded"
+      and transition[0]=="OK" and transition[1]["action"]=="applied"
+      and current==target and current_version==before_ver+1
+      and entitlement_now==entitlement
+      and history is not None
+      and history["metadata"].get("researchP1StaleHeld") is None
+      and su("SELECT count(*) FROM public.subscription_events WHERE event_key=%s",(key,))==1,
+      f"receipt={receipt} transition={transition} state={current} entitlement={entitlement_now}")
+
 before_older=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
   FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
   WHERE s.id=%s""",(osid,))

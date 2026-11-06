@@ -162,16 +162,18 @@ begin
     raise exception 'subscription state drift: expected %, found %', p_expected_from_state, v_subscription.state;
   end if;
 
-  -- Under the subscription row lock, never let an older or same-timestamp
-  -- distinct signed event overwrite a newer provider state. Retain the signed
-  -- fact as a non-applied event; webhook replay verifies its original request.
-  -- The database event's created_at (not backdated occurred_at) invalidates
-  -- earlier merchant clearances until manual reconciliation.
+  -- Only APPLIED provider transitions establish state chronology. Signed
+  -- invoice receipts, stale holds and nonactive holds are financial evidence,
+  -- not state mutations: including them would suppress a legitimate renewal
+  -- or cancellation arriving after a same-second payment/refund receipt.
+  -- Financial deletion holds independently include ALL event created_at rows.
   select max(ev.occurred_at) into v_last_provider_at
   from public.subscription_events ev
   where ev.subscription_id=p_subscription_id
     and ev.actor_type='provider_webhook'
-    and ev.metadata ->> 'researchP1StaleHeld' is distinct from 'true';
+    and ev.metadata ->> 'researchP1StaleHeld' is distinct from 'true'
+    and ev.metadata ->> 'researchP1NonactiveHeld' is distinct from 'true'
+    and ev.metadata ->> 'researchP1InvoiceReceipt' is distinct from 'true';
   if v_profile_status<>'deleted' and v_last_provider_at is not null
      and p_occurred_at<=v_last_provider_at then
     insert into public.subscription_events

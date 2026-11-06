@@ -11,6 +11,39 @@ import {
   resolveSupportedLocale,
 } from '../src/lib/localization-policy.js';
 
+import { SITE_NAVIGATION, SPANISH_GROUPED_NAVIGATION } from '../src/lib/site-navigation.js';
+
+assert.equal(SPANISH_GROUPED_NAVIGATION.length, SITE_NAVIGATION.length, 'Spanish uses the same three navigation groups');
+assert.deepEqual(SPANISH_GROUPED_NAVIGATION.map(({ label }) => label), ['Aprender', 'Actualizaciones', 'Biblioteca']);
+assert.deepEqual(
+  SPANISH_GROUPED_NAVIGATION.map(({ links }) => links.length),
+  SITE_NAVIGATION.map(({ links }) => links.length),
+  'Spanish uses exactly the same navigation hierarchy',
+);
+assert.deepEqual(
+  SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links.map(({ englishHref }) => englishHref)),
+  SITE_NAVIGATION.flatMap(({ links }) => links.map(({ href }) => href)),
+  'Spanish must map each menu position to its exact English destination, not an adjacent article',
+);
+assert.equal(
+  SPANISH_GROUPED_NAVIGATION[0].links[1].href,
+  '/es/framework/dollar-transmission-chain/',
+  'Framework must resolve to the translated version of the linked English Framework page',
+);
+assert.ok(SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
+  .filter(({ contentLocale }) => contentLocale === 'en')
+  .every(({ href, englishHref }) => href === englishHref),
+  'English-only fallback destinations must not change paths when locale is Spanish',
+);
+const publicEsLinks = new Set(['/es/start-here/', '/es/framework/dollar-transmission-chain/']);
+const englishFallbacks = SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
+  .filter(({ contentLocale }) => contentLocale === 'en');
+assert.ok(englishFallbacks.length > 0);
+assert.ok(englishFallbacks.every(({ href }) => !href.startsWith('/es/')), 'unpublished ES paths must never be fabricated');
+assert.ok(SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
+  .filter(({ contentLocale }) => contentLocale === 'es')
+  .every(({ href }) => publicEsLinks.has(href)), 'only reviewed ES destinations in the grouped nav');
+
 assert.equal(DEFAULT_LOCALE, 'en');
 assert.deepEqual([...SUPPORTED_LOCALES], ['en', 'es']);
 assert.equal(resolveSupportedLocale('en'), 'en');
@@ -91,6 +124,20 @@ assert.match(baseLayout, /<html lang=\{locale\}>/);
 assert.match(baseLayout, /requestedLocale = 'en'/);
 assert.match(baseLayout, /siteShellCopyForLocale\(locale\)/);
 assert.match(baseLayout, /SPANISH_PUBLIC_NAVIGATION/);
+assert.match(baseLayout, /SPANISH_GROUPED_NAVIGATION\.map/);
+assert.match(baseLayout, /data-site-language-choice=\{languageSwitchTarget\}/);
+assert.match(baseLayout, /data-public-alternate-href=\{alternateLocaleHref \|\| undefined\}/);
+assert.match(baseLayout, /localStorage\.setItem\(languagePreferenceKey, requested\)/);
+assert.match(baseLayout, /localStorage\.getItem\(languagePreferenceKey\)/);
+assert.match(baseLayout, /approvedAlternate\?\.startsWith\('\/'\)/);
+assert.match(baseLayout, /!approvedAlternate\.startsWith\('\/\/'\)/);
+assert.match(baseLayout, /window\.location\.replace\(approvedAlternate\)/);
+assert.match(baseLayout, /Contenido disponible en inglés/);
+assert.match(baseLayout, /aria-label=\{link\.contentLocale === 'en'/);
+assert.match(baseLayout, /\{link\.label\}\{link\.contentLocale === 'en' && <span lang="en" aria-hidden="true">/);
+assert.match(baseLayout, /Cuenta \(disponible en inglés\)/);
+assert.doesNotMatch(baseLayout, /^\s+lang=\{link\.contentLocale === 'en' \? 'en'/m);
+
 assert.match(baseLayout, /alternateLocaleHref/);
 assert.match(baseLayout, /englishLocaleUrl/);
 assert.match(baseLayout, /spanishLocaleUrl/);

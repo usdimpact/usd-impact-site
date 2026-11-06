@@ -11,6 +11,7 @@ import { canonicalUrlForRequest } from '../lib/canonical-url.js';
 import {
   SITE_NAVIGATION,
   SPANISH_PUBLIC_NAVIGATION,
+  SPANISH_GROUPED_NAVIGATION,
   navigationLinkIsActive,
   siteShellCopyForLocale,
 } from '../lib/site-navigation.js';
@@ -31,6 +32,8 @@ const {
 } = Astro.props;
 const locale = requestedLocale === 'es' ? 'es' : 'en';
 const shellCopy = siteShellCopyForLocale(locale);
+const languageSwitchHref = alternateLocaleHref || (locale === 'en' ? '/es/' : '/');
+const languageSwitchTarget = locale === 'en' ? 'es' : 'en';
 const analyticsEnabled = localizationManifest.locales[locale]?.analyticsEnabled === true;
 const noindex = pageNoindex || isSearchUtilityPath(Astro.url.pathname);
 const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
@@ -103,7 +106,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     )}
     {locale === 'en' && <script is:inline src="/assets/session-entry.js" defer></script>}
   </head>
-  <body data-content-language={locale}>
+  <body data-content-language={locale} data-public-alternate-href={alternateLocaleHref || undefined}>
     <a class="skip-link" href="#main-content">{shellCopy.skipLink}</a>
     <header class="site-header">
       <div class="container header-inner">
@@ -158,27 +161,39 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
             </>
           ) : (
             <>
-              {SPANISH_PUBLIC_NAVIGATION.map((link) => (
-                <a
-                  class="nav-direct"
-                  href={link.href}
-                  aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}
-                >
-                  {link.label}
-                </a>
+              {SPANISH_GROUPED_NAVIGATION.map((group) => (
+                <details class="nav-group" data-nav-group>
+                  <summary class:list={["nav-summary", { "is-active": group.links.some((link) => navigationLinkIsActive(currentPath, link.href)) }]}>
+                    {group.label}
+                  </summary>
+                  <div class="nav-submenu">
+                    {group.links.map((link) => (
+                      <a
+                        href={link.href}
+                        aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}
+                        hreflang={link.contentLocale === 'en' ? 'en' : undefined}
+                        aria-label={link.contentLocale === 'en' ? `${link.label} (disponible en inglés)` : undefined}
+                        title={link.contentLocale === 'en' ? 'Contenido disponible en inglés' : undefined}
+                      >
+                        {link.label}{link.contentLocale === 'en' && <span lang="en" aria-hidden="true"> · EN</span>}
+                      </a>
+                    ))}
+                  </div>
+                </details>
               ))}
+              <a class="nav-direct" href="/account" hreflang="en" aria-label="Cuenta (disponible en inglés)" title="Cuenta disponible en inglés" aria-current={pageIsActive("/account/") ? "page" : undefined}>Cuenta <span lang="en" aria-hidden="true">· EN</span></a>
             </>
           )}
-          {alternateLocaleHref && (
-            <a
-              class="nav-direct"
-              href={alternateLocaleHref}
-              hreflang={shellCopy.localeSwitchLanguage}
-              lang={shellCopy.localeSwitchLanguage}
-            >
-              {shellCopy.localeSwitchLabel}
-            </a>
-          )}
+          <a
+            class="nav-direct"
+            href={languageSwitchHref}
+            data-site-language-choice={languageSwitchTarget}
+            hreflang={shellCopy.localeSwitchLanguage}
+            lang={shellCopy.localeSwitchLanguage}
+            title={!alternateLocaleHref ? 'Ir a la página principal en el otro idioma; esta página aún no tiene traducción' : undefined}
+          >
+            {shellCopy.localeSwitchLabel}
+          </a>
         </nav>
       </div>
     </header>
@@ -339,6 +354,28 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
       navigation?.querySelectorAll("a").forEach((link) => {
         link.addEventListener("click", () => setNavigationOpen(false));
       });
+
+      // Functional public language preference only. It must not affect
+      // authentication, transactional email language or paid-media rights.
+      const languagePreferenceKey = 'usd-impact-site-language';
+      const languageChoice = document.querySelector("[data-site-language-choice]");
+      languageChoice?.addEventListener("click", () => {
+        const requested = languageChoice.getAttribute("data-site-language-choice");
+        if (requested !== 'en' && requested !== 'es') return;
+        try { window.localStorage.setItem(languagePreferenceKey, requested); } catch { /* private browsing */ }
+      });
+      const currentDocumentLocale = document.body.dataset.contentLanguage;
+      const approvedAlternate = document.body.dataset.publicAlternateHref;
+      let storedLocale = null;
+      try { storedLocale = window.localStorage.getItem(languagePreferenceKey); } catch { /* private browsing */ }
+      if ((storedLocale === 'en' || storedLocale === 'es')
+          && storedLocale !== currentDocumentLocale
+          && approvedAlternate?.startsWith('/')
+          && !approvedAlternate.startsWith('//')) {
+        // Only the already-reviewed paired public pages may be redirected.
+        // Unknown/held /es routes are never synthesized.
+        window.location.replace(approvedAlternate);
+      }
 
       const firstMain = document.querySelector("main");
       if (firstMain instanceof HTMLElement) {

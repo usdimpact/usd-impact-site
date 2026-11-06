@@ -1,0 +1,97 @@
+name: USD Impact Claude - Manual Issue Review (owner approval)
+
+# Explicit human initiation only. No issue, PR, push or schedule triggers.
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Public GitHub issue number (not a PR). First run with preflight.'
+        required: true
+        type: string
+      mode:
+        description: 'Preflight is FREE. Paid model_review requires separate approval and configuration.'
+        required: true
+        default: preflight
+        type: choice
+        options:
+          - preflight
+          - model_review
+      expected_issue_id:
+        description: 'For model_review only: paste Issue database ID from earlier preflight.'
+        required: false
+        default: ''
+        type: string
+      expected_source_digest:
+        description: 'For model_review only: paste 64-character Source digest from preflight.'
+        required: false
+        default: ''
+        type: string
+      model_approval_confirmation:
+        description: 'For model_review only: explicit approved confirmation text (see guide).'
+        required: false
+        default: ''
+        type: string
+
+permissions: {}
+concurrency:
+  group: usd-impact-claude-manual-issue-review
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'usdimpact/usd-impact-site'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      ISSUE_NUMBER: ${{ inputs.issue_number }}
+      MODE: preflight
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Verify manual review contract offline
+        run: |
+          set -euo pipefail
+          node --check scripts/claude/manual-issue-review.mjs
+          node --test scripts/claude/manual-issue-review.test.mjs
+      - name: Read one public issue and create preflight summary (NO model API)
+        run: node scripts/claude/manual-issue-review.mjs
+
+  one-shot-model-review:
+    needs: preflight
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'usdimpact/usd-impact-site' && inputs.mode == 'model_review'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      id-token: write
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      ISSUE_NUMBER: ${{ inputs.issue_number }}
+      MODE: model_review
+      EXPECTED_ISSUE_ID: ${{ inputs.expected_issue_id }}
+      EXPECTED_SOURCE_DIGEST: ${{ inputs.expected_source_digest }}
+      MODEL_APPROVAL_CONFIRMATION: ${{ inputs.model_approval_confirmation }}
+      BILLING_READY: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_BILLING_READY }}
+      APPROVED_RUN_NUMBER: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_ONE_SHOT_RUN_NUMBER }}
+      FEDERATION_RULE_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Fresh issue read, strict owner/run gates, OIDC, ONE bounded Claude call
+        run: node scripts/claude/manual-issue-review.mjs

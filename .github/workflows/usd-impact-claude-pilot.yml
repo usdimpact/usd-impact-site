@@ -38,6 +38,7 @@ jobs:
     env:
       WIF_MODE: ${{ inputs.mode }}
       WIF_MODEL_CONFIRMATION: ${{ inputs.model_call_confirmation }}
+      WIF_PAID_READY: ${{ vars.USD_IMPACT_CLAUDE_ONE_SHOT_BILLING_READY }}
       WIF_RULE_ID: ${{ vars.USD_IMPACT_ANTHROPIC_RULE_ID }}
       WIF_ORGANIZATION_ID: ${{ vars.USD_IMPACT_ANTHROPIC_ORGANIZATION_ID }}
       WIF_SERVICE_ACCOUNT_ID: ${{ vars.USD_IMPACT_ANTHROPIC_SERVICE_ACCOUNT_ID }}
@@ -69,7 +70,8 @@ jobs:
             // This is a deliberately one-shot model gate. A rerun or any later run must fail closed.
             if (mode === 'queue_fixture' &&
                 (process.env.GITHUB_RUN_NUMBER !== '3' || process.env.GITHUB_RUN_ATTEMPT !== '1' ||
-                 process.env.WIF_MODEL_CONFIRMATION !== 'I_APPROVE_ONE_HAIKU_CALL')) {
+                 process.env.WIF_MODEL_CONFIRMATION !== 'I_APPROVE_ONE_HAIKU_CALL' ||
+                 process.env.WIF_PAID_READY !== 'yes')) {
               throw Error('Paid model fixture is not approved for this exact first attempt');
             }
             const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;

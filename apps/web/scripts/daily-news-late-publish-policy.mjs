@@ -11,6 +11,13 @@ const DAY = 86_400_000;
 const SOURCE_PATH = '.github/workflows/daily-news-late-carryforward.yml';
 const ALLOWED_EVENTS = new Set(['schedule', 'workflow_dispatch']);
 const MAX_SOURCES = 24;
+const REQUIRED_LATE_STEPS = Object.freeze([
+  'Check edition, original generator, and publication PRs',
+  'Build a dated source-verified candidate',
+  'Verify no protected main change',
+  'Mint PR author GitHub App token',
+  'Open one protected editorial PR; no auto-merge',
+]);
 
 function dateMs(value) {
   if (typeof value !== 'string' || !DATE.test(value)) return null;
@@ -67,7 +74,7 @@ function hasEligiblePullRequestChecks(checks, runs, sha) {
  * The owner must separately approve any executor of this candidate policy.
  */
 export function assessLatePublication({
-  enabled = false, now, currentMain, source, pr, compare, files, content,
+  enabled = false, now, currentMain, source, sourceJobs, pr, compare, files, content,
   archiveSources, checks, checkWorkflowRuns, reviews, preview,
 }) {
   const deny = (reason) => ({ eligible: false, reason });
@@ -85,6 +92,20 @@ export function assessLatePublication({
       || !Number.isSafeInteger(source.id) || source.id < 1
       || !String(source.created_at ?? '').startsWith(edition + 'T')) {
     return deny('not-original-successful-late-workflow');
+  }
+  // A successful workflow may have legitimately skipped publishing because
+  // today's article already existed. Success alone is not an output receipt.
+  if (!Array.isArray(sourceJobs) || sourceJobs.length !== 1
+      || sourceJobs[0]?.name !== 'prepare-one-late-candidate'
+      || sourceJobs[0].status !== 'completed' || sourceJobs[0].conclusion !== 'success'
+      || !Array.isArray(sourceJobs[0].steps) || sourceJobs[0].steps.length > 100) {
+    return deny('source-job-completion-not-proven');
+  }
+  for (const name of REQUIRED_LATE_STEPS) {
+    const matching = sourceJobs[0].steps.filter((step) => step?.name === name);
+    if (matching.length !== 1 || matching[0].conclusion !== 'success') {
+      return deny('source-publishing-steps-not-proven');
+    }
   }
   const branch = 'automation/daily-carryforward-' + edition + '-' + source.id;
   const file = 'apps/web/src/content/news/' + edition + '.md';

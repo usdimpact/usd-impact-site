@@ -16,6 +16,9 @@ const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
 const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{4}-press-fomc\.htm$/;
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
+// Month-specific BLS release calendars display a mutable page-level Last Modified Date.
+// Historical editions may legitimately cite different verified updates to the same URL.
+const BLS_MONTHLY_CALENDAR_PATH = /^\/schedule\/\d{4}\/(?:0?[1-9]|1[0-2])_sched(?:_list)?\.htm$/;
 // The CPS standing calendar lists future event dates but is not a dated news release.
 // Its page Last Modified date is distinct from the events it lists.
 const BLS_CPS_RELEASE_CALENDAR_PATH = '/cps/publications/release-calendar.htm';
@@ -71,6 +74,9 @@ export function sourceDateBasisForUrl(value) {
     return LIVING_FEDERAL_RESERVE_PATHS.some((pattern) => pattern.test(url.pathname))
       ? SOURCE_DATE_BASIS.LAST_UPDATED
       : SOURCE_DATE_BASIS.PUBLISHED;
+  }
+  if (hostname === 'bls.gov' && BLS_MONTHLY_CALENDAR_PATH.test(url.pathname.replace(/\/+$/, '').toLowerCase())) {
+    return SOURCE_DATE_BASIS.LAST_UPDATED;
   }
   if (hostname === 'bls.gov' && /^\/cpi\/?$/i.test(url.pathname)) {
     return SOURCE_DATE_BASIS.CURRENT_RELEASE;

@@ -303,4 +303,15 @@ const copy = analyticsAvailable ? baseCopy : {
     .privacy-consent-dialog-copy, .privacy-consent-category, .privacy-consent-dialog-actions { padding: 18px; }
     .privacy-consent-dialog-actions { align-items: stretch; flex-direction: column; }
   }
+
+  /* Short viewports (landscape phones, high browser zoom): keep the notice compact, keep all three
+     choices visible below the text, and let only the text scroll so nothing in the notice is covered. */
+  @media (max-height: 560px) {
+    .privacy-consent-banner { max-height: 55vh; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+    .privacy-consent-banner > div:first-child { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .privacy-consent-banner strong { font-size: 15px; }
+    .privacy-consent-banner p { margin-top: 4px; font-size: 13px; }
+    .privacy-consent-actions { flex: none; display: flex; flex-wrap: nowrap; gap: 6px; }
+    .privacy-consent-button { flex: 1 1 0; width: auto; min-height: 36px; padding: 4px 8px; font-size: 13px; line-height: 1.2; }
+  }
 </style>

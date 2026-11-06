@@ -123,6 +123,14 @@ assert.match(sync, /window\.addEventListener\('resize', syncBannerSpace\);/);
 assert.match(consent, /analyticsToggle\.checked = analyticsAllowed\(\);\n    syncBannerSpace\(\);\n  \};/, 'render must resync the reserved space');
 assert.doesNotMatch(consent, /focusin|scrollIntoView|scrollBy\(|scrollTo\(|preventDefault\(\)/, 'no focus or scroll hijacking');
 
+// Short viewports (landscape phones, 400% zoom): the notice stays compact, its three choices stay visible, only the text scrolls.
+const shortRule = consent.match(/@media \(max-height: 560px\) \{([\s\S]*?)\n  \}/)?.[1] || '';
+assert.match(shortRule, /\.privacy-consent-banner \{ max-height: 55vh; display: flex; flex-direction: column;/);
+assert.match(shortRule, /\.privacy-consent-banner > div:first-child \{ min-height: 0; overflow-y: auto;/);
+assert.match(shortRule, /\.privacy-consent-actions \{ flex: none; display: flex; flex-wrap: nowrap;/);
+assert.doesNotMatch(shortRule, /position:\s*sticky/, 'actions must not overlay the notice text');
+assert.ok(consent.lastIndexOf('@media (max-height: 560px)') > consent.lastIndexOf('@media (max-width: 520px)'), 'short-viewport rule must follow the narrow-width rule');
+
 const telemetryGuard = telemetry.indexOf('if (!analyticsAllowed()) return false;');
 const telemetryRequest = telemetry.indexOf('fetch(TELEMETRY_ENDPOINT');
 assert.ok(telemetryGuard >= 0 && telemetryRequest > telemetryGuard);

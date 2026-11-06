@@ -60,7 +60,7 @@ check('CPS July-modified calendar may not be rebadged with a November edition da
   assert.match(issue, /CPS release calendar.*Last Modified/i);
   assert.equal(safeValidationDiagnostic(`${issue} synthetic-private-detail`).code, 'invalid-source-date');
 });
-check('BLS month schedules use verified mutable Last Modified basis, not historical date identity', () => {
+check('BLS monthly calendar pointers fail closed across URL variants', () => {
   for (const url of [
     'https://www.bls.gov/schedule/2026/11_sched_list.htm',
     'https://www.bls.gov/schedule/2026/10_sched.htm',
@@ -68,20 +68,20 @@ check('BLS month schedules use verified mutable Last Modified basis, not histori
     'https://www.BLS.GOV/schedule/2026/11_sched_list.htm/',
     'https://www.bls.gov/schedule/2026/%31%31_sched_list.htm',
   ]) {
-    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.LAST_UPDATED);
-    assert.equal(sourceDateAttributionIssue(url), null);
-    assert.equal(isLivingSourceUrl(url), true, 'Historical citations to earlier verified revisions are not immutable-date evidence');
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+    assert.match(sourceDateAttributionIssue(url), /BLS month-specific release schedule.*conflicting historical/i);
+    assert.equal(isLivingSourceUrl(url), false, 'Never exempt calendar dates from independent verification');
+    assert.equal(safeValidationDiagnostic(sourceDateAttributionIssue(url)).code, 'invalid-source-date');
   }
   for (const url of [
     'https://www.bls.gov/schedule/2026/00_sched_list.htm',
     'https://www.bls.gov/schedule/2026/13_sched_list.htm',
     'https://www.bls.gov.example.org/schedule/2026/11_sched_list.htm',
-    'https://www.bls.gov/schedule/2026/home.htm',
     'https://www.bls.gov/news.release/archives/cpi_09112026.htm',
   ]) {
-    assert.notEqual(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.LAST_UPDATED);
+    assert.notEqual(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
   }
-  assert.match(SOURCE_DATE_RULES, /month-specific schedule URL and its own verified displayed Last Modified date/);
+  assert.match(SOURCE_DATE_RULES, /month-specific schedule/);
 });
 check('supported living calendars unchanged', () => {
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-october.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);

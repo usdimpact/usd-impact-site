@@ -285,6 +285,34 @@ rec("C post-Phase-A signed payment refuses pre-Auth fence and leaves Auth intact
     and ledger(hold)["phase"]=="auth_pending",
     f"fence={after_fence} confirm={after_ack}")
 
+# NEGATIVE CROSS-SERVICE WITNESS: the prior SQL fence was a separate
+# transaction. A signed paid event has now committed AFTER that fence; the
+# external Auth caller might still complete its HTTP DELETE before it learns
+# that merchant evidence changed. Simulate only with a disposable synthetic
+# auth.users row, NEVER with a connected Supabase project.
+su("DELETE FROM auth.users WHERE id=%s",(hold,))
+after_auth_race=confirm(hold,hold_lease)
+recovery=ledger(hold)
+privacy=su("""SELECT count(*) FROM public.privacy_requests
+  WHERE account_id=%s AND request_type='deletion'
+    AND status='in_progress' AND completed_at IS NULL""",(hold,))
+released=su("""SELECT count(*) FROM public.notification_outbox
+  WHERE message_id='account_deletion_completed'
+    AND business_object_id=%s AND status IN ('queued','sending','accepted','delivered')""",(str(hold),))
+rec("C NEGATIVE WITNESS: late signed payment after fence can precede Auth deletion",
+    after_auth_race[0]=="ERR" and after_auth_race[1].startswith("55000")
+    and su("SELECT count(*) FROM auth.users WHERE id=%s",(hold,))==0
+    and row(hold)["status"]=="deleted"
+    and recovery["phase"]=="auth_pending"
+    and recovery["recipient_email"] is not None
+    and privacy>=1 and released==0
+    and su("""SELECT count(*) FROM public.research_paid_binding_quarantine
+      WHERE claimed_account_id=%s AND resolved_at IS NULL""",(hold,))>=1,
+    f"auth_absent=1 phase={recovery['phase']} privacy_pending={privacy} sent={released} confirm={after_auth_race}")
+# Passing this test describes an UNSOLVED release-blocking incident, not a
+# safe order for Research accounts. Only provider cessation proof plus an
+# owner-approved financial recovery policy can support a release decision.
+
 # A signed charge can arrive after Auth is already retired and confirmed.
 # Final completion must still fail and leave the private recovery state open.
 last=synthetic_user()

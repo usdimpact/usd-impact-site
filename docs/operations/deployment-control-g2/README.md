@@ -11,7 +11,7 @@ The current Production project does not have `main` suppression or a release bra
 ## Files
 
 - `release-policy.mjs`: pure synthetic-only evaluator. Every output contains `mergeAuthorized:false`, `deploymentAuthorized:false`, `workflowDispatchAuthorized:false`, `productionSettingsAuthorized:false`.
-- `release-policy.test.mjs`: exactly **37 numbered negative cases** across Q-01--Q-10, plus four non-release control tests. Uses Node's built-in test runner; no external dependencies or network.
+- `release-policy.test.mjs`: exactly **37 numbered negative cases** across Q-01--Q-10, plus five non-release control tests. Uses Node's built-in test runner; no external dependencies or network.
 - `snapshot.template.json`: deliberately incomplete and invalid for any release. It returns HOLD.
 - This README: evidence limitations, test coverage and unresolved owner gates.
 
@@ -52,7 +52,7 @@ node docs/operations/deployment-control-g2/release-policy.mjs docs/operations/de
 | Q-10 | 3 | Wrong project, unverified separation, non-dry-run request |
 | **Total** | **37** | All numbered cases assert HOLD and all action authorizations false |
 
-Three additional model sanity checks exercise synthetic Daily/docs verdicts and DST cutoff; a fourth checks the CLI's mandatory fail-closed exit. Model results (`MODEL_RELEASE_CANDIDATE`, `MODEL_DOCS_NO_DEPLOY`) are **not** GO decisions.
+Three model sanity checks exercise synthetic Daily/docs verdicts and DST cutoff; a fourth checks the CLI's mandatory fail-closed exit, and a fifth verifies invalid clocks return HOLD. Model results (`MODEL_RELEASE_CANDIDATE`, `MODEL_DOCS_NO_DEPLOY`) are **not** GO decisions.
 
 ## Outstanding P1 risks / G2 limitations
 

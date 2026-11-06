@@ -120,6 +120,7 @@ const baseWorld = (overrides = {}) => {
     else if (href.endsWith('/rpc/confirm_deletion_auth_cleanup')) kind = 'CONFIRM';
     else if (href.endsWith('/rpc/finish_deletion_auth_cleanup')) kind = 'FINISH';
     else if (href.endsWith('/rpc/claim_deletion_auth_cleanup_batch')) kind = 'CLAIM';
+    else if (href.endsWith('/rpc/hold_deletion_auth_cleanup')) kind = 'HOLD';
     else throw Error('Unexpected network call: ' + href);
     // Auth/Admin and SQL operations must all time out well before the SQL
     // 15-minute lease, so a hung HTTP request does not run indefinitely.
@@ -138,6 +139,8 @@ const baseWorld = (overrides = {}) => {
     if (kind === 'CONFIRM') return json(200, receipt);
     if (kind === 'FINISH') return json(200, true);
     if (kind === 'CLAIM') return json(200, [row]);
+    // Default: SQL finds no financial reason, so the original error stands.
+    if (kind === 'HOLD') return json(200, null);
   };
   const emails = [];
   const enqueueImpl = async (args) => {
@@ -367,7 +370,7 @@ const baseWorld = (overrides = {}) => {
     () => resumeDraftAuthCleanup({ config, row, ...world }),
     (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
   );
-  check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
+  check(world.calls.join(',') === 'FENCE,HOLD' && world.emails.length === 0,
     'late paid/unverified billing fence blocks Auth API and completion before calls');
 }
 {
@@ -406,7 +409,7 @@ const baseWorld = (overrides = {}) => {
     () => resumeDraftAuthCleanup({ config, row, ...world }),
     (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
   );
-  check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
+  check(world.calls.join(',') === 'FENCE,HOLD' && world.emails.length === 0,
     'database transport timeout cannot reach irreversible Auth or email');
 }
 {
@@ -415,7 +418,7 @@ const baseWorld = (overrides = {}) => {
     () => resumeDraftAuthCleanup({ config, row, ...world }),
     (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
   );
-  check(world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM'
+  check(world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM,HOLD'
       && world.emails.length === 0,
     'expired/replaced lease cannot acknowledge Auth or release completion email');
 }
@@ -443,7 +446,7 @@ const baseWorld = (overrides = {}) => {
     (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
   );
   check(authRetiredAfterPaid
-      && world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM'
+      && world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM,HOLD'
       && world.emails.length === 0 && !world.calls.includes('FINISH'),
     'KNOWN RELEASE BLOCKER: paid event after fence permits Auth DELETE before SQL HOLD; no email or false completion');
 }

@@ -186,9 +186,45 @@ function validCompletion(value, accountId) {
     && Date.parse(value.deleted_at) >= Date.parse(value.deletion_requested_at);
 }
 
+const FINANCIAL_HOLD_CODES = Object.freeze({
+  auth_intact_cessation_unverified: 'TWO_PHASE_CESSATION_UNVERIFIED',
+  auth_intact_financial_evidence: 'TWO_PHASE_FINANCIAL_HOLD_AUTH_INTACT',
+  auth_outcome_unknown_financial_evidence: 'TWO_PHASE_FINANCIAL_HOLD_AUTH_UNKNOWN',
+  auth_retired_financial_evidence: 'TWO_PHASE_FINANCIAL_SPLIT_AUTH_RETIRED',
+});
+
+// After a refused fence/confirm/finish, ask SQL to classify and durably record
+// a financial hold. SQL re-evaluates the evidence itself; this caller can only
+// make the state stricter. Clean evidence (a transient failure) keeps the
+// original error and the normal lease retry. If classification itself fails,
+// the original error stands and the next attempt's fence re-checks.
+async function holdOnFinancialEvidence({ config, row, authRetiredObserved, error, fetchImpl }) {
+  let held;
+  try {
+    held = await rpc({
+      config, name: 'hold_deletion_auth_cleanup',
+      input: {
+        p_account_id: row.account_id, p_lease_id: row.lease_id,
+        p_auth_retired_observed: authRetiredObserved === true,
+      },
+      fetchImpl,
+    });
+  } catch {
+    throw error;
+  }
+  if (held === null) throw error;
+  const code = FINANCIAL_HOLD_CODES[held];
+  if (!code) throw new TwoPhaseReviewError('TWO_PHASE_FINANCIAL_HOLD_MALFORMED');
+  throw new TwoPhaseReviewError(code);
+}
+
 // Phases B+C: verified Auth retirement; DB confirms a fresh lease; durable
 // completion email; SQL verifies the outbox and scrubs the temporary email.
 // All failure windows leave an independently retryable database state.
+// Cross-service limit: the fence is a point-in-time SQL check and cannot lock
+// across the Auth Admin HTTP call. A signed charge committed between the fence
+// and DELETE is detected afterwards and becomes a durable, classified hold;
+// it cannot be prevented, and Auth cannot be restored by this code.
 export async function resumeDraftAuthCleanup({
   config, row, environment = process.env, fetchImpl = fetch,
   enqueueImpl = enqueueAccountDeletionCompletedEmail,
@@ -202,22 +238,38 @@ export async function resumeDraftAuthCleanup({
   // Fence before irreversible Auth and before email: pending signed payment
   // observations must fail closed. A database lock cannot span the subsequent
   // Auth HTTP call, so externally verified cessation remains a release gate.
-  const fenced = await rpc({
-    config: cfg, name: 'check_deletion_auth_cleanup_billing_fence',
-    input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
-    fetchImpl,
-  });
+  let fenced;
+  try {
+    fenced = await rpc({
+      config: cfg, name: 'check_deletion_auth_cleanup_billing_fence',
+      input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
+      fetchImpl,
+    });
+  } catch (error) {
+    await holdOnFinancialEvidence({
+      config: cfg, row, authRetiredObserved: false, error, fetchImpl,
+    });
+  }
   if (fenced !== true) {
     throw new TwoPhaseReviewError('TWO_PHASE_BILLING_FENCE_REFUSED');
   }
   if (row.phase === 'auth_pending') {
     await confirmedAuthRetirement({ config: cfg, accountId: row.account_id, fetchImpl });
   }
-  const receipt = await rpc({
-    config: cfg, name: 'confirm_deletion_auth_cleanup',
-    input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
-    fetchImpl,
-  });
+  // From here the worker has itself verified Auth retirement (or the row was
+  // already auth_confirmed), so any financial hold is a split, not "unknown".
+  let receipt;
+  try {
+    receipt = await rpc({
+      config: cfg, name: 'confirm_deletion_auth_cleanup',
+      input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
+      fetchImpl,
+    });
+  } catch (error) {
+    await holdOnFinancialEvidence({
+      config: cfg, row, authRetiredObserved: true, error, fetchImpl,
+    });
+  }
   if (!validCompletion(receipt, row.account_id)) {
     throw new TwoPhaseReviewError('TWO_PHASE_AUTH_CONFIRM_RECEIPT_INVALID');
   }
@@ -249,11 +301,18 @@ export async function resumeDraftAuthCleanup({
   if (queued.outbox.status !== 'deletion_staged') {
     throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_STAGED');
   }
-  const completed = await rpc({
-    config: cfg, name: 'finish_deletion_auth_cleanup',
-    input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
-    fetchImpl,
-  });
+  let completed;
+  try {
+    completed = await rpc({
+      config: cfg, name: 'finish_deletion_auth_cleanup',
+      input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
+      fetchImpl,
+    });
+  } catch (error) {
+    await holdOnFinancialEvidence({
+      config: cfg, row, authRetiredObserved: true, error, fetchImpl,
+    });
+  }
   if (completed !== true) {
     throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_ACK_INVALID');
   }

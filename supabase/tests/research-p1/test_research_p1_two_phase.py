@@ -83,6 +83,12 @@ def confirm(a,lease):
 def finish(a,lease):
     return svc("SELECT public.finish_deletion_auth_cleanup(%s,%s)",(a,lease))
 
+def fresh_clearance(a, ref):
+    # Owner-recorded, per-account provider cessation evidence observed AFTER
+    # database Phase A. Required before ANY Auth retirement step.
+    return own("""SELECT public.record_research_billing_clearance(
+        %s,'provider_api',%s,clock_timestamp(),'synthetic-owner')""",(a,ref))
+
 # The old service_role REST RPCs must be unavailable after the migration;
 # both helpers remain owner-internal to the SECURITY DEFINER Phase A transaction.
 for legacy_name in ("prepare_account_deletion_auth_removal", "finalize_account_deletion"):
@@ -279,6 +285,7 @@ hold_claim=claim(25)
 hold_claim_rows=hold_claim[1] if hold_claim[0]=="OK" else []
 hold_selected=next((z for z in hold_claim_rows if z["account_id"]==str(hold)),None)
 hold_lease=uuid.UUID(hold_selected["lease_id"]) if hold_selected else uuid.uuid4()
+assert fresh_clearance(hold,'syn-post-phase-a-0001')[0]=="OK"
 before_late=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
 rec("C billing fence permits owner-cleared Phase A before late merchant evidence",
     hold_selected is not None and before_late==("OK",True),before_late)
@@ -377,6 +384,7 @@ last_rows=last_claim[1] if last_claim[0]=="OK" else []
 last_selected=next((z for z in last_rows if z["account_id"]==str(last)),None)
 last_lease=uuid.UUID(last_selected["lease_id"]) if last_selected else uuid.uuid4()
 assert last_selected is not None, last_rows
+assert fresh_clearance(last,'syn-post-phase-a-0002')[0]=="OK"
 assert svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(last,last_lease))==("OK",True)
 su("DELETE FROM auth.users WHERE id=%s",(last,))
 assert confirm(last,last_lease)[0]=="OK"

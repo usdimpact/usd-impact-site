@@ -1899,9 +1899,33 @@ create table if not exists research_lifecycle_private.deletion_auth_cleanup (
   lease_id uuid,
   attempt_count integer not null default 0 check (attempt_count >= 0),
   last_error_code text,
+  -- Set each time the pre-Auth financial fence PASSES. Once set, an Auth
+  -- DELETE may have reached the provider even if the worker never saw a
+  -- response, so a later hold must be classified as "Auth outcome unknown".
+  financial_fence_passed_at timestamptz,
+  -- Durable financial hold: once recorded, automatic cleanup stops until an
+  -- owner records provider-verified cessation evidence observed AFTER it.
+  financial_hold_at timestamptz,
+  financial_hold_class text,
+  -- Monotonic incident facts. financial_hold_at moves forward on every new
+  -- hold (the claim filter needs the LATEST hold), so the first incident time
+  -- and any verified Auth retirement are kept separately and never cleared.
+  financial_hold_first_at timestamptz,
+  auth_retired_observed_at timestamptz,
   constraint deletion_auth_cleanup_email_state check (
     (phase='email_enqueued' and recipient_email is null)
     or (phase<>'email_enqueued' and recipient_email is not null)
+  ),
+  constraint deletion_auth_cleanup_financial_hold_shape check (
+    (financial_hold_at is null) = (financial_hold_class is null)
+    and (financial_hold_at is null) = (financial_hold_first_at is null)
+    and (financial_hold_first_at is null or financial_hold_first_at <= financial_hold_at)
+    and (financial_hold_class is null or financial_hold_class in (
+      'auth_intact_cessation_unverified',
+      'auth_intact_financial_evidence',
+      'auth_outcome_unknown_financial_evidence',
+      'auth_retired_financial_evidence'
+    ))
   )
 );
 alter table research_lifecycle_private.deletion_auth_cleanup enable row level security;
@@ -1911,6 +1935,68 @@ revoke all on table research_lifecycle_private.deletion_auth_cleanup
 create index if not exists deletion_auth_cleanup_due_idx
   on research_lifecycle_private.deletion_auth_cleanup(next_attempt_at,started_at)
   where phase in ('auth_pending','auth_confirmed');
+
+-- Append-only financial-hold incident history: one row per recorded hold,
+-- with the class, evidence reasons and phase at that moment. A later, less
+-- certain observation can never rewrite an earlier verified incident.
+create table if not exists research_lifecycle_private.deletion_auth_financial_hold_events (
+  id bigint generated always as identity primary key,
+  account_id uuid not null references public.profiles(account_id) on delete restrict,
+  hold_class text not null,
+  computed_class text not null,
+  evidence_reasons text not null,
+  phase text not null,
+  auth_retired_observed boolean not null,
+  recorded_at timestamptz not null default pg_catalog.clock_timestamp()
+);
+alter table research_lifecycle_private.deletion_auth_financial_hold_events enable row level security;
+alter table research_lifecycle_private.deletion_auth_financial_hold_events force row level security;
+revoke all on table research_lifecycle_private.deletion_auth_financial_hold_events
+  from public, anon, authenticated, service_role;
+create index if not exists deletion_auth_financial_hold_events_account_idx
+  on research_lifecycle_private.deletion_auth_financial_hold_events(account_id, recorded_at);
+drop trigger if exists deletion_auth_financial_hold_events_append_only
+  on research_lifecycle_private.deletion_auth_financial_hold_events;
+create trigger deletion_auth_financial_hold_events_append_only
+  before update or delete on research_lifecycle_private.deletion_auth_financial_hold_events
+  for each row execute function research_lifecycle_private.reject_append_only_change();
+drop trigger if exists deletion_auth_financial_hold_events_no_truncate
+  on research_lifecycle_private.deletion_auth_financial_hold_events;
+create trigger deletion_auth_financial_hold_events_no_truncate
+  before truncate on research_lifecycle_private.deletion_auth_financial_hold_events
+  for each statement execute function research_lifecycle_private.reject_append_only_change();
+
+-- Auth-retirement evidence (Auth-absent financial split correction).
+-- No database lock can span the later Auth Admin HTTP call, so the absence of
+-- a local hold reason is NOT evidence that the provider stopped charging: a
+-- webhook can be delayed, a retry can be scheduled, or a legacy checkout can
+-- exist without a local footprint. Before ANY Auth retirement step, require a
+-- per-account owner-recorded provider clearance that was verified:
+--   * after database Phase A started (it reflects post-finalization state),
+--   * within the last 24 hours (a stale attestation cannot cover new retries),
+--   * after any durable financial hold on this cleanup row,
+-- in addition to the existing local billing hold reasons.
+create or replace function research_lifecycle_private.auth_retirement_hold_reasons(
+  p_account_id uuid, p_started_at timestamptz, p_financial_hold_at timestamptz
+)
+returns text[] language plpgsql stable security definer set search_path='' as $arh$
+declare
+  v_reasons text[] := research_lifecycle_private.billing_hold_reasons(p_account_id);
+begin
+  if p_started_at is null or not exists (
+    select 1 from public.research_billing_clearances c
+     where c.account_id=p_account_id
+       and c.verified_at >= p_started_at
+       and c.verified_at >= pg_catalog.clock_timestamp() - interval '24 hours'
+       and (p_financial_hold_at is null or c.verified_at > p_financial_hold_at)
+  ) then
+    v_reasons := pg_catalog.array_append(v_reasons, 'provider_cessation_unverified');
+  end if;
+  return v_reasons;
+end;
+$arh$;
+revoke all on function research_lifecycle_private.auth_retirement_hold_reasons(uuid,timestamptz,timestamptz)
+  from public,anon,authenticated,service_role;
 
 -- Protect the post-Auth race: the SQL finalizer and verified paid-event
 -- quarantine now acquire the same account profile lock. The signed merchant
@@ -2088,6 +2174,19 @@ begin
     select q.account_id from research_lifecycle_private.deletion_auth_cleanup q
     where q.phase in ('auth_pending','auth_confirmed')
       and q.next_attempt_at <= v_now
+      -- A durable financial hold is never retried automatically. Only an
+      -- owner-recorded provider clearance verified AFTER the hold re-admits it.
+      and (q.financial_hold_at is null or exists (
+        select 1 from public.research_billing_clearances c
+         where c.account_id=q.account_id and c.verified_at > q.financial_hold_at
+      ))
+      -- An open post-finalization incident is released only by the owner-only
+      -- resolve_research_deletion_billing_incident; a fresh clearance or a
+      -- quarantine edit alone never re-admits the row.
+      and not exists (
+        select 1 from research_lifecycle_private.deletion_billing_incidents i
+         where i.account_id=q.account_id and i.status='open'
+      )
     order by q.next_attempt_at,q.started_at,q.account_id
     for update skip locked
     limit p_limit
@@ -2143,12 +2242,131 @@ begin
     raise exception using errcode='55000',
       message='post-finalization Research financial evidence requires reconciliation';
   end if;
+  if pg_catalog.cardinality(
+      research_lifecycle_private.auth_retirement_hold_reasons(
+        p_account_id, v_row.started_at, v_row.financial_hold_at)
+    ) > 0 then
+    raise exception using errcode='55000',
+      message='Auth retirement requires fresh per-account provider cessation evidence';
+  end if;
+  -- From here an Auth DELETE may be sent. Record that durably BEFORE the HTTP
+  -- call so an ambiguous timeout can never be mistaken for "Auth intact".
+  update research_lifecycle_private.deletion_auth_cleanup q
+     set financial_fence_passed_at=pg_catalog.clock_timestamp()
+   where q.account_id=p_account_id;
   return true;
 end;
 $fence$;
 revoke all on function public.check_deletion_auth_cleanup_billing_fence(uuid,uuid)
   from public,anon,authenticated,service_role;
 grant execute on function public.check_deletion_auth_cleanup_billing_fence(uuid,uuid)
+  to service_role;
+
+-- Severity order of financial hold classes (higher = more severe). Unknown
+-- or NULL ranks 0, so any real class supersedes it.
+create or replace function research_lifecycle_private.financial_hold_rank(p_class text)
+returns integer language sql immutable set search_path='' as $rank$
+  select case p_class
+    when 'auth_intact_cessation_unverified' then 1
+    when 'auth_intact_financial_evidence' then 2
+    when 'auth_outcome_unknown_financial_evidence' then 3
+    when 'auth_retired_financial_evidence' then 4
+    else 0 end;
+$rank$;
+revoke all on function research_lifecycle_private.financial_hold_rank(text)
+  from public,anon,authenticated,service_role;
+
+-- Durable classification after a refused fence/confirmation/completion. The
+-- refusing RPCs raise (and roll back), so the worker calls this separately.
+-- It re-evaluates the evidence itself and can only ADD a hold: a caller cannot
+-- clear, downgrade or fabricate one. A transient error with clean evidence
+-- returns NULL and leaves the normal lease retry. p_auth_retired_observed is
+-- the worker's own verified Auth GET result (it may only make the class
+-- stricter: "retired" is never inferred from it being absent).
+create or replace function public.hold_deletion_auth_cleanup(
+  p_account_id uuid, p_lease_id uuid, p_auth_retired_observed boolean default false
+)
+returns text language plpgsql security definer set search_path='' as $hold$
+declare
+  v_profile public.profiles;
+  v_row research_lifecycle_private.deletion_auth_cleanup;
+  v_reasons text[];
+  v_class text;
+  v_computed text;
+  v_retired boolean;
+  -- One timestamp per hold: separate clock_timestamp() calls in one UPDATE
+  -- can differ, which would violate financial_hold_first_at <= financial_hold_at.
+  v_now timestamptz;
+begin
+  select p.* into v_profile from public.profiles p
+   where p.account_id=p_account_id for update;
+  if not found then
+    raise exception using errcode='P0002', message='account profile not found';
+  end if;
+  select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
+   where q.account_id=p_account_id for update;
+  if not found then
+    raise exception using errcode='P0002', message='Auth cleanup record missing';
+  end if;
+  -- The lease id is retained until another claim; an expired-but-unreclaimed
+  -- lease may still record a hold because a hold only restricts.
+  if p_lease_id is null or v_row.lease_id is distinct from p_lease_id then
+    raise exception using errcode='42501', message='Auth cleanup hold lease invalid';
+  end if;
+  -- Taken after both row locks are held, so the hold time is when it took effect.
+  v_now := pg_catalog.clock_timestamp();
+  if v_row.phase not in ('auth_pending','auth_confirmed') then
+    return null;
+  end if;
+  v_reasons := research_lifecycle_private.auth_retirement_hold_reasons(
+    p_account_id, v_row.started_at, v_row.financial_hold_at);
+  if pg_catalog.cardinality(v_reasons) = 0 then
+    return null;
+  end if;
+  -- A verified Auth retirement is a durable fact: once observed (by this
+  -- worker's Auth GET, or by the auth_confirmed phase) it is never forgotten,
+  -- even when a later caller cannot see it (e.g. a re-admitted row whose
+  -- fence refuses before any Auth call, where the worker passes false).
+  v_retired := v_row.auth_retired_observed_at is not null
+    or v_row.phase='auth_confirmed' or coalesce(p_auth_retired_observed,false);
+  v_computed := case
+    when v_retired then 'auth_retired_financial_evidence'
+    when v_row.financial_fence_passed_at is not null
+      then 'auth_outcome_unknown_financial_evidence'
+    when v_reasons = array['provider_cessation_unverified']
+      then 'auth_intact_cessation_unverified'
+    else 'auth_intact_financial_evidence'
+  end;
+  -- Monotonic severity: later uncertainty can never downgrade an incident.
+  v_class := v_computed;
+  if research_lifecycle_private.financial_hold_rank(v_row.financial_hold_class)
+     > research_lifecycle_private.financial_hold_rank(v_computed) then
+    v_class := v_row.financial_hold_class;
+  end if;
+  update research_lifecycle_private.deletion_auth_cleanup q
+     set financial_hold_at=v_now,
+         financial_hold_first_at=coalesce(q.financial_hold_first_at, v_now),
+         financial_hold_class=v_class,
+         auth_retired_observed_at=case when v_retired
+           then coalesce(q.auth_retired_observed_at, v_now)
+           else q.auth_retired_observed_at end,
+         -- last_error_code is left to the incident custody marker
+         -- (RESEARCH_POST_PHASE_A_FINANCIAL_INCIDENT); the evidence reasons
+         -- for this hold are kept in the append-only history row below.
+         lease_id=null,
+         next_attempt_at=v_now
+   where q.account_id=p_account_id;
+  insert into research_lifecycle_private.deletion_auth_financial_hold_events
+    (account_id, hold_class, computed_class, evidence_reasons, phase, auth_retired_observed, recorded_at)
+  values (p_account_id, v_class, v_computed,
+          pg_catalog.left(pg_catalog.array_to_string(v_reasons, ','), 200),
+          v_row.phase, v_retired, v_now);
+  return v_class;
+end;
+$hold$;
+revoke all on function public.hold_deletion_auth_cleanup(uuid,uuid,boolean)
+  from public,anon,authenticated,service_role;
+grant execute on function public.hold_deletion_auth_cleanup(uuid,uuid,boolean)
   to service_role;
 
 -- The caller attests Auth Admin DELETE success (or verified absence). Only

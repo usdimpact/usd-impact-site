@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { inspectIssue, parseIssueNumber, requireExactApproval, validateReview,
-  readIssue, previewSummary, modelSummary, runOneModelCall, REPOSITORY, REPOSITORY_ID,
+  readIssue, previewSummary, modelSummary, runOneModelCall, parseModelResponse,
+  safeModelDiagnostics, REPOSITORY, REPOSITORY_ID,
 } from './manual-issue-review.mjs';
 const repo = { id: REPOSITORY_ID, full_name: REPOSITORY, private: false };
 const raw = { number: 3333, id: 6103772877, repository_url: `https://api.github.com/repos/${REPOSITORY}`,
@@ -132,4 +133,113 @@ test('wrong federation config aborts before token exchange',async()=>{
     await assert.rejects(runOneModelCall(issue,{...env,FEDERATION_RULE_ID:'wrong'}),/FEDERATION_CONFIG_HOLD/);
     assert.equal(calls,0);
   }finally{globalThis.fetch=old;}
+});
+
+
+const conciseReview = {
+  recommendation: 'REVIEW_ONLY',
+  summary: 'Synthetic checklist appears safe to inspect.',
+  risks: ['Manual accessibility verification is still needed.'],
+  next_step: 'Owner reviews the checklist offline.',
+};
+function mockMessage(text, changes = {}) {
+  return { type: 'message', role: 'assistant', stop_reason: 'end_turn',
+    content: [{ type: 'text', text }], usage: { input_tokens: 100, output_tokens: 59 }, ...changes };
+}
+
+test('structured parser accepts a complete advisory', () => {
+  const r = parseModelResponse(mockMessage(JSON.stringify(conciseReview)));
+  assert.equal(r.review.recommendation, 'REVIEW_ONLY');
+  assert.equal(r.usage.output_tokens, 59);
+  assert.equal(Object.isFrozen(r.review), true);
+});
+
+test('parser rejects truncation, refusals and other stop reasons', () => {
+  for (const [reason, code] of [['max_tokens', 'CLAUDE_MODEL_TRUNCATED_HOLD'],
+    ['refusal', 'CLAUDE_MODEL_REFUSAL_HOLD'], ['tool_use', 'CLAUDE_MODEL_STOP_REASON_HOLD']]) {
+    failOf(() => parseModelResponse(mockMessage(JSON.stringify(conciseReview),
+      { stop_reason: reason })), code);
+  }
+});
+
+test('parser rejects malformed JSON, extra content and invalid schema', () => {
+  for (const value of ['not JSON', '{ "recommendation": "REVIEW_ONLY"']) {
+    failOf(() => parseModelResponse(mockMessage(value)), 'CLAUDE_MODEL_JSON_SHAPE_HOLD');
+  }
+  const fence = String.fromCharCode(96).repeat(3);
+  failOf(() => parseModelResponse(mockMessage(fence + 'json\n' + JSON.stringify(conciseReview) + '\n' + fence)),
+    'CLAUDE_MODEL_JSON_SHAPE_HOLD');
+  for (const content of [[], [{ type: 'tool_use', name: 'unsafe' }],
+    [{ type: 'text', text: '{}' }, { type: 'text', text: '{}' }],
+    [{ type: 'text', text: 'x'.repeat(2501) }]]) {
+    failOf(() => parseModelResponse(mockMessage('x', { content })), 'CLAUDE_MODEL_CONTENT_HOLD');
+  }
+  failOf(() => parseModelResponse(mockMessage('{}', { role: 'user' })), 'CLAUDE_MODEL_ENVELOPE_HOLD');
+  failOf(() => parseModelResponse(mockMessage(JSON.stringify(conciseReview),
+    { usage: { input_tokens: 100, output_tokens: 257 } })), 'CLAUDE_USAGE_HOLD');
+  failOf(() => parseModelResponse(mockMessage(JSON.stringify({ ...conciseReview, approved: true }))),
+    'MODEL_OUTPUT_SCHEMA_HOLD');
+});
+
+test('safe response metadata never exposes content or untrusted text', () => {
+  const x = mockMessage('SENSITIVE_UNTRUSTED_TEXT', { stop_reason: 'max_tokens' });
+  const meta = safeModelDiagnostics(x);
+  assert.equal(meta, 'CLAUDE_RESPONSE_METADATA stop=max_tokens blocks=1 text_blocks=1 input_tokens=100 output_tokens=59');
+  assert.ok(!meta.includes('SENSITIVE_UNTRUSTED_TEXT'));
+  assert.equal(safeModelDiagnostics({ ...x, stop_reason: 'BAD\nSHAPE',
+    usage: { input_tokens: 'injection', output_tokens: 9999999999 } }),
+    'CLAUDE_RESPONSE_METADATA stop=other blocks=1 text_blocks=1 input_tokens=unknown output_tokens=unknown');
+});
+
+test('one bounded mocked model call sends the supported JSON schema and no tools', async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    iss: 'https://token.actions.githubusercontent.com', aud: 'https://api.anthropic.com',
+    sub: 'repo:usdimpact/usd-impact-site:ref:refs/heads/main',
+    repository_owner: 'usdimpact', repository_owner_id: '275107298',
+    repository: REPOSITORY, repository_id: String(REPOSITORY_ID),
+    ref: 'refs/heads/main', event_name: 'workflow_dispatch',
+    workflow_ref: REPOSITORY + '/.github/workflows/usd-impact-claude-issue-review.yml@refs/heads/main',
+    iat: now - 10, exp: now + 120,
+  };
+  const jwt = 'e30.' + Buffer.from(JSON.stringify(claims)).toString('base64url') + '.fake-signature';
+  const cfg = { ...env,
+    FEDERATION_RULE_ID: 'fdrl_0155aihurC9hFwhp4qeVBv6m',
+    ANTHROPIC_ORGANIZATION_ID: 'dc187cb9-51e9-4059-a01f-1d2f5ea0b2b2',
+    ANTHROPIC_SERVICE_ACCOUNT_ID: 'svac_01XaAxLMutnfzNuK5KCNwayu',
+    ACTIONS_ID_TOKEN_REQUEST_URL: 'https://pipelines.actions.githubusercontent.com/mock',
+    ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'synthetic-runner-only',
+  };
+  const old = globalThis.fetch, oldLog = console.log, calls = [], notes = [];
+  globalThis.fetch = async (url, opts = {}) => {
+    calls.push({ url: String(url), opts });
+    if (calls.length === 1) return { ok: true, text: async () => JSON.stringify({ value: jwt }) };
+    if (calls.length === 2) return { ok: true, json: async () => ({
+      access_token: 'sk-ant-oat01-synthetic-never-live', token_type: 'Bearer', expires_in: 3600,
+    }) };
+    if (calls.length === 3) return { ok: true, json: async () => mockMessage(JSON.stringify(conciseReview)) };
+    throw Error('UNAUTHORIZED_EXTRA_NETWORK_CALL');
+  };
+  console.log = note => notes.push(String(note));
+  try {
+    const r = await runOneModelCall(issue, cfg);
+    assert.equal(r.review.recommendation, 'REVIEW_ONLY');
+    assert.equal(calls.length, 3);
+    assert.equal(new URL(calls[0].url).hostname, 'pipelines.actions.githubusercontent.com');
+    assert.equal(calls[1].url, 'https://api.anthropic.com/v1/oauth/token');
+    assert.equal(calls[2].url, 'https://api.anthropic.com/v1/messages');
+    const request = JSON.parse(calls[2].opts.body);
+    assert.equal(request.model, 'claude-haiku-5-5');
+    assert.equal(request.max_tokens, 256);
+    assert.equal(request.thinking.type, 'disabled');
+    assert.equal(request.output_config.effort, 'low');
+    assert.equal(request.output_config.format.type, 'json_schema');
+    const schema = request.output_config.format.schema;
+    assert.equal(schema.additionalProperties, false);
+    assert.deepEqual(schema.required, ['recommendation', 'summary', 'risks', 'next_step']);
+    assert.deepEqual(schema.properties.recommendation.enum, ['REVIEW_ONLY', 'HOLD']);
+    assert.ok(!Object.hasOwn(request, 'tools'));
+    assert.ok(notes.every(x => !x.includes('sk-ant-oat01-') && !x.includes('synthetic-runner')));
+    assert.ok(notes.some(x => x.startsWith('CLAUDE_RESPONSE_METADATA stop=end_turn')));
+  } finally { globalThis.fetch = old; console.log = oldLog; }
 });

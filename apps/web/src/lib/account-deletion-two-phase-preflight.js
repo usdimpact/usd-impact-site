@@ -64,7 +64,8 @@ export async function handleTwoPhasePreflight(
       ok: false, code: 'TWO_PHASE_PREFLIGHT_CONFIGURATION_HOLD',
     });
   }
-  if (!cfg.enabled || cfg.production || cfg.projectRef !== CANONICAL_DEV_REF) {
+  if (!cfg.enabled || cfg.production || cfg.projectRef !== CANONICAL_DEV_REF
+      || cfg.supabase?.url !== 'https://ycstrcvshdluovtuasjc.supabase.co') {
     return send(response, 503, {
       ok: false, code: 'TWO_PHASE_PREFLIGHT_CONFIGURATION_HOLD',
     });

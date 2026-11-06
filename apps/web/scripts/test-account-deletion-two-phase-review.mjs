@@ -46,7 +46,15 @@ function check(value, label) { assert.ok(value, label); passed += 1; }
     () => prepareDraftDatabaseFinalization({ config, accountId: 'not-a-uuid', fetchImpl }),
     (error) => error.code === 'TWO_PHASE_ACCOUNT_INVALID',
   );
-  check(calls === 0, 'Production/malformed account rejected before network');
+  await assert.rejects(
+    () => claimDraftAuthCleanup({
+      config: { ...config, supabase: {
+        ...config.supabase, url: 'https://ycstrcvshdluovtuasjc.attacker.invalid',
+      } }, fetchImpl,
+    }),
+    (error) => error.code === 'TWO_PHASE_DRAFT_DEVELOPMENT_ONLY',
+  );
+  check(calls === 0, 'Production/malformed or spoofed Development host rejected before network');
 }
 {
   const calls = [];
@@ -94,8 +102,18 @@ const baseWorld = (overrides = {}) => {
   const fetchImpl = async (url, init) => {
     const href = String(url);
     let kind;
-    if (href.endsWith('should_soft_delete=true')) kind = 'AUTH_DELETE';
-    else if (href.includes('/auth/v1/admin/users/')) kind = 'AUTH_GET';
+    if (href.includes('/auth/v1/admin/users/')) {
+      if (init.method === 'DELETE') {
+        assert.equal(href, `${origin}/auth/v1/admin/users/${account}`,
+          'Auth deletion must use the canonical URL without a query workaround');
+        assert.deepEqual(JSON.parse(init.body), { should_soft_delete: true },
+          'GoTrue must receive the soft-delete flag in the JSON request body');
+        kind = 'AUTH_DELETE';
+      } else {
+        assert.equal(init.method, 'GET');
+        kind = 'AUTH_GET';
+      }
+    }
     else if (href.endsWith('/rpc/check_deletion_auth_cleanup_billing_fence')) kind = 'FENCE';
     else if (href.endsWith('/rpc/list_due_account_deletions_fair')) kind = 'DUE';
     else if (href.endsWith('/rpc/finalize_deletion_and_queue_auth_cleanup')) kind = 'PREPARE';

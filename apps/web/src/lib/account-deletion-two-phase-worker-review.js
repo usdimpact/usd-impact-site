@@ -74,7 +74,8 @@ export async function handleDraftTwoPhaseWorker(
   } catch {
     return send(response, 503, { ok: false, code: 'TWO_PHASE_REVIEW_CONFIG_HOLD' });
   }
-  if (!config.enabled || config.production || config.projectRef !== DEVELOPMENT_REF) {
+  if (!config.enabled || config.production || config.projectRef !== DEVELOPMENT_REF
+      || config.supabase?.url !== 'https://ycstrcvshdluovtuasjc.supabase.co') {
     return send(response, 503, { ok: false, code: 'TWO_PHASE_REVIEW_CONFIG_HOLD' });
   }
 

@@ -95,6 +95,9 @@ try {
   r = await api({ env: { ...environment, SUPABASE_URL: 'https://example.com' } });
   assert.equal(r.statusCode, 503, 'unrecognized Supabase binding rejected');
 
+  r = await api({ env: { ...environment, SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.attacker.invalid' } });
+  assert.equal(r.statusCode, 503, 'lookalike Development hostname cannot preflight');
+
   r = await api({ env: { ...environment, EMAIL_READINESS_LEDGER_ENABLED: 'false' } });
   assert.equal(r.statusCode, 503, 'email outbox readiness required');
 

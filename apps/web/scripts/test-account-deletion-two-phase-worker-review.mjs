@@ -100,6 +100,7 @@ for (const bad of [
   { EMAIL_READINESS_LEDGER_ENABLED: 'false' },
   { SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co' },
   { SUPABASE_URL: 'https://example.invalid' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.attacker.invalid' },
 ]) {
   r = await caseRun({ env: { ...cfg, ...bad } });
   assert.equal(r.statusCode, 503, 'config not safe');

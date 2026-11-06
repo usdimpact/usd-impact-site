@@ -21,6 +21,7 @@ function requireReviewConfig(config) {
   })();
   if (config?.enabled !== true || config?.production !== false
     || ref !== DEVELOPMENT_REF || config?.projectRef !== DEVELOPMENT_REF
+    || config?.supabase?.url !== 'https://ycstrcvshdluovtuasjc.supabase.co'
     || typeof config?.supabase?.secretKey !== 'string'
     || config.supabase.secretKey.length < 16) {
     throw new TwoPhaseReviewError('TWO_PHASE_DRAFT_DEVELOPMENT_ONLY');
@@ -97,8 +98,10 @@ export async function claimDraftAuthCleanup({
 
 async function confirmedAuthRetirement({ config, accountId, fetchImpl }) {
   const url = config.supabase.url + '/auth/v1/admin/users/' + encodeURIComponent(accountId);
-  const removed = await fetchImpl(url + '?should_soft_delete=true', {
+  const removed = await fetchImpl(url, {
     method: 'DELETE', headers: headers(config),
+    // GoTrue Admin reads this option from JSON body, not the URL query.
+    body: JSON.stringify({ should_soft_delete: true }),
   });
   if (!removed?.ok && removed?.status !== 404) {
     throw new TwoPhaseReviewError('TWO_PHASE_AUTH_DELETE_UNAVAILABLE');

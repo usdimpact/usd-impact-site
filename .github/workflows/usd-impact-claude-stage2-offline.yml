@@ -1,0 +1,32 @@
+name: USD Impact Claude Stage 2 offline contract QA (manual only; no model)
+
+# Draft-only stage: all inputs are built-in synthetic fixtures. No API, WIF, or task execution.
+on:
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: usd-impact-claude-stage2-offline
+  cancel-in-progress: false
+
+jobs:
+  offline-contract:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'usdimpact/usd-impact-site'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Evaluate synthetic contract and rejection matrix offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/claude/stage2-contract.mjs
+          node --test scripts/claude/stage2-contract.test.mjs
+          node scripts/claude/stage2-contract.mjs

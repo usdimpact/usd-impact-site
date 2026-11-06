@@ -86,6 +86,8 @@ jobs:
           PUBLICATION_NEEDED: ${{ steps.preflight.outputs.needed }}
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+          DAILY_PR_APP_CLIENT_ID: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          DAILY_PR_APP_PRIVATE_KEY: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
         run: |
           if [ "$PUBLICATION_NEEDED" != "true" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
@@ -96,9 +98,26 @@ jobs:
           if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "::notice::NEWSFEED_ENDPOINT or NEWSFEED_BEARER_TOKEN is not configured; no edition was generated."
+          elif [ -z "$DAILY_PR_APP_CLIENT_ID" ] || [ -z "$DAILY_PR_APP_PRIVATE_KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Daily PR-author GitHub App is not provisioned; no paid generation was started."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Validate App installation and scoped token permissions before any paid
+      # source generation. A present but invalid/misinstalled private key must
+      # never permit spending merely to fail on PR creation after generation.
+      # This token is not passed to source generation or Git commands.
+      - name: Verify PR-author App installation before paid news generation
+        id: daily_pr_author_preflight
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         if: steps.config.outputs.configured == 'true'
@@ -277,12 +296,34 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         run: node scripts/validate-publication-content.mjs --preflight
 
+      # This installation token is minted only after source generation/validation,
+      # avoiding 1-hour expiration during the bounded background generation lease.
+      # Omitted owner/repositories inputs scope the token to this repository only.
+      # The action revokes it at job exit. App must have Contents: read,
+      # Pull requests: write; no merge, Actions, issues or admin permissions.
+      - name: Mint short-lived Daily PR-author GitHub App token
+        id: daily_pr_author_token
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+
       - name: Open and validate publication pull request
         id: publish_pr
         if: steps.config.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          DAILY_PR_APP_TOKEN: ${{ steps.daily_pr_author_token.outputs.token }}
         run: |
+          # Do not silently fall back to GITHUB_TOKEN for PR creation: a
+          # GitHub Actions-authored PR suppresses the required PR check events.
+          if [ -z "$DAILY_PR_APP_TOKEN" ]; then
+            echo "::error::No scoped App PR-author token; automatic PR creation held."
+            exit 1
+          fi
           if [ -z "$(git status --porcelain src/content/news)" ]; then
             echo "No news changes to publish."
             exit 0
@@ -313,10 +354,10 @@ jobs:
             printf '%s\n\n%s\n\n%s\n' \
               '## Automated Daily USD Impact publication' \
               "This pull request contains the source-backed **${edition_date}** edition with status \`published\`." \
-              'The workflow validates this exact commit with Web quality, then stops for protected human editorial review and merge. A failed validation or build leaves the pull request open and does not change production.' \
+              'The generator validates this exact commit with Web quality and submits its PR to a separately gated automatic publisher. Any failing source, calendar, security, Preview or timing gate leaves the PR open for protected owner review; a failed validation or build never changes Production.' \
               > "$RUNNER_TEMP/daily-news-pr.md"
 
-            pr_url="$(gh pr create \
+            pr_url="$(GH_TOKEN="$DAILY_PR_APP_TOKEN" gh pr create \
               --base main \
               --head "$branch" \
               --title "Publish Daily USD Impact — ${edition_date}" \
@@ -355,8 +396,78 @@ jobs:
             echo "Web quality run $run_id concluded '${run_conclusion:-unknown}'; expected success."
             exit 1
           fi
-          echo 'Required PR-event checks, editorial facts/calendar review, Preview and exact-version release approval remain separate gates.'
-          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected editorial review and merge: $pr_url"
+          echo 'Required exact-head security checks, original-source validation and Preview remain separate from generator success; the bounded auto-publisher may merge eligible morning editions only after them.'
+          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for bounded automatic publication or protected owner review: $pr_url"
+
+
+      # GITHUB_TOKEN-dispatched upstream runs can suppress a downstream workflow_run
+      # event. Explicit workflow_dispatch is GitHub's supported exception; the
+      # receiver must re-fetch and validate this immutable source run itself.
+      - name: Explicitly dispatch trusted bounded publisher after source verification
+        if: ${{ success() && github.event_name == 'workflow_dispatch' && steps.config.outputs.configured == 'true' && steps.publish_pr.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          SOURCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          expected_branch="automation/daily-usd-impact-$(date -u +%F)-$GITHUB_RUN_ID"
+          pr_count="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base main \
+            --head "$expected_branch" --json number --jq 'length')"
+          if [ "$pr_count" != "1" ]; then
+            echo "::error::No unique original Daily publication PR; not dispatching publisher."
+            exit 1
+          fi
+          # Only the GitHub token-owned backstop generator can request a
+          # privileged publisher. Do not extend this path to manual generators.
+          if [ "$GITHUB_ACTOR" != "github-actions[bot]" ] \
+            || [ "$SOURCE_TRIGGERING_ACTOR" != "github-actions[bot]" ] \
+            || [ "$SOURCE_RUN_ATTEMPT" != "1" ]; then
+            echo "::error::Generator must be a first-attempt bot-triggered source; no rerun handoff."
+            exit 1
+          fi
+          # GitHub's run-name is derived from the requested source_run_id, so an
+          # unrelated bot dispatch within the same minute cannot count as ours.
+          expected_title="Daily USD Impact bounded auto-publication source $GITHUB_RUN_ID"
+          requested_at="$(date -u +%s)"
+          if ! gh workflow run daily-news-auto-publish.yml --repo "$GITHUB_REPOSITORY" \
+            --ref main -f "source_run_id=$GITHUB_RUN_ID"; then
+            echo "::error::Publisher dispatch acknowledgement not verified; never retry automatically."
+            exit 1
+          fi
+          # An accepted dispatch command is not proof that the receiver exists.
+          # Poll only for a fresh bot-originated run, without dispatch retry.
+          receipt=""
+          for poll in $(seq 1 12); do
+            payload="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news-auto-publish.yml/runs?event=workflow_dispatch&created=$(date -u +%F)&per_page=100")"
+            if ! jq -e '.total_count <= 100 and .total_count == (.workflow_runs | length)' <<< "$payload" >/dev/null; then
+              echo "::error::Ambiguous or truncated publisher run evidence; hold."
+              exit 1
+            fi
+            matches="$(jq -c --arg expected_title "$expected_title" --argjson timestamp "$requested_at" \
+              '[.workflow_runs[] | select(
+                .event == "workflow_dispatch" and .head_branch == "main"
+                and .actor.login == "github-actions[bot]"
+                and .display_title == $expected_title
+                and ((.created_at | fromdateiso8601) >= ($timestamp - 15))
+              )]' <<< "$payload")"
+            count="$(jq 'length' <<< "$matches")"
+            if [ "$count" -gt 1 ]; then
+              echo "::error::Multiple new publisher runs; hold for provenance review."
+              exit 1
+            fi
+            if [ "$count" -eq 1 ]; then
+              receipt="$(jq -r '.[0].html_url' <<< "$matches")"
+              break
+            fi
+            sleep 5
+          done
+          if [ -z "$receipt" ]; then
+            echo "::error::Publisher run receipt not observed; no retry authorized."
+            exit 1
+          fi
+          echo "Publisher workflow_dispatch observed: $receipt"
+          echo "Source run $GITHUB_RUN_ID remains subject to exact success, cutoff, CI and editorial gates."
 
       - name: Report Daily failure gate
         if: failure() && (steps.preflight.outcome == 'failure' || steps.config.outputs.configured == 'true')

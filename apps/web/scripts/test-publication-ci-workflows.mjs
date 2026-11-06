@@ -111,10 +111,16 @@ for (const [name, source, opening] of [
     assert.ok(body.includes('.headSha == \\"$head_sha\\"'));
     assert.match(body, /if \[ "\$run_conclusion" != "success" \]; then[\s\S]*exit 1/);
   });
-  check(`${name}: protected human release gates remain separate`, () => {
+  check(`${name}: protected release gates remain separate`, () => {
     assert.doesNotMatch(source, /gh pr merge|--admin|gh run rerun|gh api .*\/approve/);
-    assert.match(source, /human.*review.*merge/);
-    assert.match(source, /Required PR-event checks, editorial facts\/calendar review, Preview and exact-version release approval remain separate gates/);
+    if (name === 'Daily') {
+      assert.match(source, /separately gated automatic publisher/);
+      assert.match(source, /failing source, calendar, security, Preview or timing gate leaves the PR open for protected owner review/);
+      assert.match(source, /Required exact-head security checks, original-source validation and Preview remain separate from generator success/);
+    } else {
+      assert.match(source, /human.*review.*merge/);
+      assert.match(source, /Required PR-event checks, editorial facts\/calendar review, Preview and exact-version release approval remain separate gates/);
+    }
   });
 }
 check('schedules and generation retry budgets remain unchanged', () => {

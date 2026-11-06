@@ -47,6 +47,33 @@ function validId(value) {
   return typeof value === 'string' && UUID.test(value);
 }
 
+// This prototype has separate configuration objects for Auth/SQL and the
+// shared completion-email helper. Never allow a mixed Development/Production
+// environment to reach Auth DELETE before discovering an outbox mismatch.
+// Mock enqueue implementations remain available for offline negative tests.
+function requireMatchingEmailEnvironment(config, environment, enqueueImpl) {
+  if (enqueueImpl !== enqueueAccountDeletionCompletedEmail) return;
+  const deployment = String(environment?.VERCEL_ENV || '').trim().toLowerCase();
+  if (!['preview', 'development'].includes(deployment)
+      || environment?.SUPABASE_URL !== config.supabase.url
+      || environment?.SUPABASE_SECRET_KEY !== config.supabase.secretKey) {
+    throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_CONFIG_MISMATCH');
+  }
+}
+
+function requireOutboxRequestTarget(url, options, config) {
+  let parsed;
+  try { parsed = new URL(url); }
+  catch { throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_DURABLE'); }
+  const method = String(options?.method || 'GET').toUpperCase();
+  if (parsed.origin !== config.supabase.url
+      || parsed.pathname !== '/rest/v1/notification_outbox'
+      || parsed.username || parsed.password
+      || !['GET', 'POST'].includes(method)) {
+    throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_DURABLE');
+  }
+}
+
 async function boundedRequest({ url, options, fetchImpl, failureCode }) {
   try {
     return await fetchImpl(url, {
@@ -167,6 +194,7 @@ export async function resumeDraftAuthCleanup({
   enqueueImpl = enqueueAccountDeletionCompletedEmail,
 }) {
   const cfg = requireReviewConfig(config);
+  requireMatchingEmailEnvironment(cfg, environment, enqueueImpl);
   if (!validId(row?.account_id) || !validId(row?.lease_id)
       || !['auth_pending', 'auth_confirmed'].includes(row.phase)) {
     throw new TwoPhaseReviewError('TWO_PHASE_CLAIM_RECEIPT_INVALID');
@@ -195,9 +223,12 @@ export async function resumeDraftAuthCleanup({
   }
   // The shared email helper performs both POST and GET. Bound each operation
   // before invoking the shared helper; unknown outcomes remain retryable.
-  const boundedEmailFetch = (url, options = {}) => boundedRequest({
-    url, options, fetchImpl, failureCode: 'TWO_PHASE_EMAIL_NOT_DURABLE',
-  });
+  const boundedEmailFetch = (url, options = {}) => {
+    requireOutboxRequestTarget(url, options, cfg);
+    return boundedRequest({
+      url, options, fetchImpl, failureCode: 'TWO_PHASE_EMAIL_NOT_DURABLE',
+    });
+  };
   let queued;
   try {
     queued = await enqueueImpl({

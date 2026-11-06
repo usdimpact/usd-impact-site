@@ -147,6 +147,69 @@ const baseWorld = (overrides = {}) => {
   return { calls, emails, fetchImpl, enqueueImpl };
 };
 {
+  // The real shared helper reads environment separately from Auth/SQL.
+  // Reject mismatched production/Development URL and secret BEFORE any IO.
+  const examples = [
+    { VERCEL_ENV: 'production', EMAIL_READINESS_PRODUCTION_APPROVED: 'true',
+      SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+      SUPABASE_SECRET_KEY: 'sb_secret_' + 'p'.repeat(32) },
+    { VERCEL_ENV: 'preview',
+      SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.attacker.invalid',
+      SUPABASE_SECRET_KEY: config.supabase.secretKey },
+    { VERCEL_ENV: 'preview', SUPABASE_URL: origin,
+      SUPABASE_SECRET_KEY: 'sb_secret_' + 'q'.repeat(32) },
+  ];
+  let contacted = 0;
+  for (const environment of examples) {
+    await assert.rejects(
+      () => resumeDraftAuthCleanup({
+        config, row, environment,
+        fetchImpl: () => { contacted += 1; throw Error('not contacted'); },
+      }),
+      (error) => error.code === 'TWO_PHASE_EMAIL_CONFIG_MISMATCH',
+    );
+  }
+  check(contacted === 0,
+    'real completion-email helper rejects mixed project/credential binding before Auth or SQL');
+}
+{
+  const world = baseWorld();
+  let outsideCalls = 0;
+  const fetchImpl = (url, init) => {
+    if (String(url).includes('attacker.invalid')) { outsideCalls += 1; throw Error('off project'); }
+    return world.fetchImpl(url, init);
+  };
+  const enqueueImpl = ({ fetchImpl: emailFetch }) =>
+    emailFetch('https://ycstrcvshdluovtuasjc.attacker.invalid/rest/v1/notification_outbox',
+      { method: 'POST' });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, fetchImpl, enqueueImpl }),
+    (error) => error.code === 'TWO_PHASE_EMAIL_NOT_DURABLE',
+  );
+  check(outsideCalls === 0 && !world.calls.includes('FINISH'),
+    'bounded completion-email fetch cannot send privileged request off-project');
+}
+{
+  const world = baseWorld();
+  let patchCalls = 0;
+  const fetchImpl = (url, init) => {
+    if (String(url).includes('/rest/v1/notification_outbox')) {
+      patchCalls += 1;
+      throw Error('no unreviewed PATCH');
+    }
+    return world.fetchImpl(url, init);
+  };
+  const enqueueImpl = ({ fetchImpl: emailFetch }) =>
+    emailFetch(origin + '/rest/v1/notification_outbox', { method: 'PATCH' });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, fetchImpl, enqueueImpl }),
+    (error) => error.code === 'TWO_PHASE_EMAIL_NOT_DURABLE',
+  );
+  check(patchCalls === 0 && !world.calls.includes('FINISH'),
+    'completion-email enqueue cannot PATCH shared outbox');
+}
+
+{
   const world = baseWorld({ AUTH_DELETE: () => json(503, {}) });
   await assert.rejects(
     () => resumeDraftAuthCleanup({ config, row, ...world }),

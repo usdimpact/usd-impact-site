@@ -284,7 +284,7 @@ try {
     '  if (!match || !Array.isArray(json)) process.exit(2);',
     '  value = json[0]?.[match[1]] ?? (match[2] || "null");',
     '}',
-    'process.stdout.write(String(value) + "\n");',
+    'process.stdout.write(String(value) + "\\n");',
     '',
   ].join('\n'), { mode: 0o755 });
 
@@ -367,8 +367,10 @@ try {
       result.status, scenario.exitCode,
       scenario.name + ': ' + result.stdout + '\n' + result.stderr,
     );
-    const report = await readFile(join(mockDir, 'daily-health-report.md'), 'utf8');
-    if (scenario.report) assert.match(report, scenario.report, scenario.name);
+    if (scenario.report) {
+      const report = await readFile(join(mockDir, 'daily-health-report.md'), 'utf8');
+      assert.match(report, scenario.report, scenario.name);
+    }
     if (scenario.stdout) assert.match(result.stdout, scenario.stdout, scenario.name);
     if (scenario.output) {
       const output = await readFile(outputFile, 'utf8');

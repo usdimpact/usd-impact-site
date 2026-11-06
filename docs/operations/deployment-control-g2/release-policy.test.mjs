@@ -143,3 +143,13 @@ test('CLI intentionally fails closed even for malformed template', () => {
   assert.equal(output.mergeAuthorized,false);
   assert.equal(output.deploymentAuthorized,false);
 });
+
+test('non-finite or out-of-range clock fails closed without throwing', () => {
+  for (const now of [NaN, Infinity, -Infinity, 8.64e15 + 1]) {
+    const out = evaluate(base('daily'), now);
+    assert.equal(out.status, 'HOLD');
+    assert.ok(out.reasons.includes('INVALID_CLOCK'));
+    assert.equal(out.mergeAuthorized, false);
+    assert.equal(out.deploymentAuthorized, false);
+  }
+});

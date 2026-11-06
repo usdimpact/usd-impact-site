@@ -107,3 +107,41 @@ test('manual-only workflow has read-only permissions and no paid provider creden
   assert.doesNotMatch(workflow, /^  (push|pull_request|schedule|issue_comment|workflow_run):/m);
   assert.doesNotMatch(workflow, /(id-token:\s*write|actions:\s*write|contents:\s*write|secrets\.|vars\.|anthropic\.com|gh\s+workflow|gh\s+api|curl\s)/i);
 });
+
+test('fixture ID is bound to its exact operation and scope, never just a regex', () => {
+  const forged = [
+    { ...SYNTHETIC_FIXTURES[1], operation: good.operation, scope: good.scope },
+    { ...good, task_id: 'S2-X99' },
+    { ...good, task_id: 'S2-B01' },
+    { ...good, task_id: 'S2-A02' },
+  ];
+  for (const task of forged) {
+    const result = classifySyntheticTask(task);
+    assert.equal(result.recommendation, 'HOLD');
+    assert.equal(result.reason_code, 'INVALID_ENVELOPE');
+  }
+});
+
+test('throwing untrusted model proposal always returns HOLD instead of throwing', () => {
+  const throwing = new Proxy(validProposal, {
+    getPrototypeOf() { throw Error('throwing proxy'); },
+  });
+  const throwsOnFields = new Proxy(validProposal, {
+    ownKeys() { throw Error('throwing property enumeration'); },
+  });
+  for (const p of [throwing, throwsOnFields]) {
+    assert.doesNotThrow(() => evaluateUntrustedProposal(good, p));
+    assert.equal(evaluateUntrustedProposal(good, p).recommendation, 'HOLD');
+  }
+});
+
+test('hidden and symbol extra fields are forbidden for both tasks and proposals', () => {
+  for (const input of [good, validProposal]) {
+    for (const extras of ['hidden', Symbol('hidden')]) {
+      const object = { ...input };
+      Object.defineProperty(object, extras, { value: 'APPROVED', enumerable: false });
+      if (input === good) assert.equal(classifySyntheticTask(object).recommendation, 'HOLD');
+      else assert.equal(evaluateUntrustedProposal(good, object).recommendation, 'HOLD');
+    }
+  }
+});

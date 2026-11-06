@@ -26,12 +26,16 @@ function plainRecord(value) {
 }
 
 function exactDataFields(value, expected) {
-  if (!plainRecord(value) || Object.keys(value).length !== expected.length) return false;
+  if (!plainRecord(value)) return false;
+  // Reflect.ownKeys also sees symbols and nonenumerable properties. Both are forbidden.
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== expected.length ||
+      !keys.every(key => typeof key === 'string' && expected.includes(key))) return false;
   for (const key of expected) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (!descriptor || !Object.hasOwn(descriptor, 'value')) return false;
+    if (!descriptor || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) return false;
   }
-  return Object.keys(value).every(key => expected.includes(key));
+  return true;
 }
 
 function decision(taskId, recommendation, reasonCode) {
@@ -54,6 +58,11 @@ export function validateSyntheticTask(task) {
     throw Error('INVALID_ENVELOPE');
   }
   if (task.scope !== OPERATIONS[task.operation].scope) throw Error('SCOPE_MISMATCH');
+  // An operation name is not evidence that an arbitrary task ID is an approved fixture.
+  const fixture = SYNTHETIC_FIXTURES.find(value => value.task_id === task.task_id);
+  if (!fixture || task.operation !== fixture.operation || task.scope !== fixture.scope) {
+    throw Error('FIXTURE_IDENTITY_MISMATCH');
+  }
   return Object.freeze({ ...task });
 }
 
@@ -69,10 +78,14 @@ export function classifySyntheticTask(task) {
 export function evaluateUntrustedProposal(task, proposal) {
   const policy = classifySyntheticTask(task);
   if (policy.recommendation === 'HOLD') return policy;
-  if (!exactDataFields(proposal, PROPOSAL_KEYS) || proposal.schema_version !== SCHEMA_VERSION ||
-      proposal.task_id !== policy.task_id || proposal.recommendation !== 'REVIEW_ONLY') {
-    return decision(policy.task_id, 'HOLD', 'UNTRUSTED_PROPOSAL_REJECTED');
-  }
+  // A hostile JavaScript object or Proxy may throw during inspection: still fail closed.
+  let matches = false;
+  try {
+    matches = exactDataFields(proposal, PROPOSAL_KEYS) &&
+      proposal.schema_version === SCHEMA_VERSION &&
+      proposal.task_id === policy.task_id && proposal.recommendation === 'REVIEW_ONLY';
+  } catch { /* Untrusted input cannot interrupt the HOLD decision. */ }
+  if (!matches) return decision(policy.task_id, 'HOLD', 'UNTRUSTED_PROPOSAL_REJECTED');
   return decision(policy.task_id, 'REVIEW_ONLY', 'ADVISORY_MATCH_ONLY');
 }
 

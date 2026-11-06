@@ -16,7 +16,7 @@ Exact fields (no others):
 {"schema_version":1,"task_id":"S2-A01","origin":"synthetic_fixture","operation":"isolated_draft_qa","scope":"offline_read_only"}
 ```
 
-`schema_version` must be integer `1`. `task_id` must match `S2-[A-Z][0-9]{2}`. `origin` must be `synthetic_fixture`. `operation` and `scope` are a fixed compatible pair. Unrecognized operations, mismatched scopes, malformed objects, accessors, extra fields, narratives, URLs, customer information and asserted approvals are rejected. The stage does **not** accept actual issue, email, spreadsheet, chat or customer task content.
+`schema_version` must be integer `1`. `task_id` must match `S2-[A-Z][0-9]{2}` **and correspond to one of the five exact fixture IDs with its canonical operation/scope**. Arbitrary valid-looking IDs and task-ID/operation swaps fail closed. `origin` must be `synthetic_fixture`. `operation` and `scope` are a fixed compatible pair. Unrecognized operations, mismatched scopes, malformed objects, accessors, extra fields, narratives, URLs, customer information and asserted approvals are rejected. The stage does **not** accept actual issue, email, spreadsheet, chat or customer task content.
 
 | Operation | Required scope | Deterministic recommendation |
 | --- | --- | --- |
@@ -42,7 +42,7 @@ node --test scripts/claude/stage2-contract.test.mjs
 node scripts/claude/stage2-contract.mjs
 ```
 
-The negative matrix covers wrong fields, forged owner approval, injection in task identifiers, prototype/accessor inputs, customer data, unlicensed publication, Research Production merge, external sends, Daily publishing, proposal escalation, offline network guard and manual-only workflow permissions. The source is in `scripts/claude/` and has no third-party dependencies.
+Twelve offline test groups cover wrong fields, fabricated or swapped fixture identities, throwing hostile objects/proposals, symbol/nonenumerable extra fields, forged owner approval, injection in task identifiers, prototype/accessor inputs, customer data, unlicensed publication, Research Production merge, external sends, Daily publishing, proposal escalation, offline network guard and manual-only workflow permissions. The source is in `scripts/claude/` and has no third-party dependencies.
 
 ## Requirements before any next stage
 
@@ -53,3 +53,7 @@ The negative matrix covers wrong fields, forged owner approval, injection in tas
 5. Preserve the active Research P1, Score rights, private F2 Stage B, Issue #950, Daily publication, media/IP, consumer-access and merchant/checkout safeguards. No self-approval or implicit release from a green CI result.
 
 Canonical execution evidence for completed Stage 1: [GitHub run #42231300069](https://github.com/usdimpact/usd-impact-site/actions/runs/42231300069), merged PR #1174 at `85ce0ecd429fe7806c6ab9da632c258dcef17146`, and Vercel `dpl_HG8pnY2jfPFZjdeW7pEs4nVnsBFo` READY. After cleanup the repository variable `USD_IMPACT_CLAUDE_ONE_SHOT_BILLING_READY` was independently verified saved as `no`. This historical success does **not** grant Stage 2 deployment or new API authorization.
+
+## Adversarial review checkpoint (2026-11-06)
+
+The original Draft head `bb662b89` passed its nine original tests but an independent local adversarial check reproduced two uncovered failures: a held task ID could be paired with the synthetic Draft QA operation to obtain an advisory `REVIEW_ONLY` classification, and a throwing untrusted proposal object could escape as an exception instead of returning `HOLD`. The exact source was matched against GitHub blob SHA `6e558ed65606b7c50c7cea290642a9986df09791` before reproduction. The revision binds IDs to canonical fixture values, catches all proposal-inspection failures, and rejects symbols/nonenumerable extras. Added three negative test groups; Node 22 local `node --test` now passes **12/12**. Existing workflow and Stage 1 pilot are unchanged. This engineering adversarial review is not an independent third-party audit and does not grant Production/merge/model authorization.

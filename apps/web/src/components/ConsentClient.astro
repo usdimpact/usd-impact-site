@@ -303,4 +303,34 @@ const copy = analyticsAvailable ? baseCopy : {
     .privacy-consent-dialog-copy, .privacy-consent-category, .privacy-consent-dialog-actions { padding: 18px; }
     .privacy-consent-dialog-actions { align-items: stretch; flex-direction: column; }
   }
+
+  /* Short viewports (landscape phones, high browser zoom): keep the notice compact, keep all three
+     choices visible below the text, and let only the text scroll so nothing in the notice is covered. */
+  @media (max-height: 560px) {
+    .privacy-consent-banner { max-height: 55vh; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+    .privacy-consent-banner > div:first-child { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .privacy-consent-banner strong { font-size: 15px; }
+    .privacy-consent-banner p { margin-top: 4px; font-size: 13px; }
+    .privacy-consent-actions { flex: none; display: flex; flex-wrap: nowrap; gap: 6px; }
+    .privacy-consent-button { flex: 1 1 0; width: auto; min-height: 36px; padding: 4px 8px; font-size: 13px; line-height: 1.2; }
+  }
+
+  /* Where the notice text scrolls, its own box would clip a link outline drawn outside the link, so draw the
+     focus indicator inside the link instead (same colour as the consent buttons). Layout is unaffected. */
+  @media (max-height: 560px) {
+    .privacy-consent-banner > div:first-child a:focus-visible { outline: 2px solid #f3cc68; outline-offset: -2px; }
+  }
+
+  /* Very short viewports (about 400% browser zoom on laptop screens): heading plus one complete line of
+     notice text, the privacy link kept on one line, and single-row choices, so the notice stays readable
+     while leaving enough room above it for tall focused page elements. */
+  @media (max-height: 300px) {
+    .privacy-consent-banner { max-height: none; bottom: 4px; gap: 2px; padding: 3px 8px; }
+    .privacy-consent-banner > div:first-child { max-height: max(33px, calc(100vh - 142px)); scroll-padding-top: 16px; }
+    .privacy-consent-banner > div:first-child strong { position: sticky; top: 0; display: block; background: #071525; font-size: 13px; line-height: 1.2; }
+    .privacy-consent-banner p { margin-top: 1px; font-size: 12px; line-height: 1.35; }
+    .privacy-consent-banner p a { white-space: nowrap; }
+    .privacy-consent-actions { flex-wrap: nowrap; gap: 4px; }
+    .privacy-consent-button { flex: 1 1 0; width: auto; min-height: 24px; padding: 1px 4px; font-size: 11px; line-height: 1.1; }
+  }
 </style>

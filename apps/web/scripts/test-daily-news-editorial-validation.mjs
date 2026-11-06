@@ -45,7 +45,7 @@ function bundle(overrides = {}) {
     sources: [
       source('bls-current', '2026-08-06'),
       source('treasury-current', '2026-08-05', currentTreasuryUrl),
-      source('bls-calendar', '2026-06-10', 'https://www.bls.gov/schedule/2026/08_sched_list.htm'),
+      source('bls-calendar', '2026-06-10', 'https://www.bls.gov/news.release/archives/synthetic-calendar-06102026.htm'),
     ],
     highlights: [
       {
@@ -133,6 +133,15 @@ function treasuryBuybackBundle(overrides = {}) {
 }
 
 assert.doesNotThrow(() => validateEditorialBundle(bundle()));
+assert.throws(
+  () => validateEditorialBundle(bundle({ sources: [
+    source('bls-current', '2026-08-06'),
+    source('treasury-current', '2026-08-05', currentTreasuryUrl),
+    source('bls-calendar', '2026-06-10', 'https://www.bls.gov/schedule/2026/08_sched_list.htm'),
+  ] })),
+  /BLS month-specific release schedule index/,
+  'Mutable BLS monthly schedule must never pass from a prior publication-date assertion',
+);
 
 assert.doesNotThrow(
   () => validateEditorialBundle(yieldDiscussionBundle()),

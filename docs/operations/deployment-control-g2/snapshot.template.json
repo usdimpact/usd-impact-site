@@ -1,0 +1,16 @@
+{
+  "mode": "dry_run",
+  "provenance": "synthetic_fixture",
+  "intent": "daily",
+  "evidence": {"complete": false, "observedAt": "NOT_VERIFIED"},
+  "repository": {"fullName": "usdimpact/usd-impact-site", "mainAutoDeployDisabled": false},
+  "vercel": {"projectId": "prj_ZoLLM35ksI6wk17PcfS2xYknaVl7", "rollbackKnown": false},
+  "history": {"complete": false, "commits": [], "netPaths": []},
+  "checks": {"complete": false, "runs": []},
+  "dispatch": null,
+  "daily": null,
+  "approval": null,
+  "lock": null,
+  "dedupe": null,
+  "isolation": null
+}

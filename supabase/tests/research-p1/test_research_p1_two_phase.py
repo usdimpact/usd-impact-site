@@ -77,6 +77,18 @@ def claim(size=1,connection=None):
     return svc("""SELECT coalesce(jsonb_agg(to_jsonb(q)), '[]'::jsonb)
       FROM public.claim_deletion_auth_cleanup_batch(%s) q""",(size,),connection)
 
+# Disposable-only helper: exercise the old 25-row queue fixture via 25
+# independent one-row SQL claims. Production worker remains strictly 1/cycle.
+def claim_up_to(n):
+    items=[]
+    for _ in range(n):
+        result=claim(1)
+        if result[0]!="OK": return result
+        if not result[1]: break
+        assert len(result[1])==1, result
+        items.extend(result[1])
+    return ("OK",items)
+
 def confirm(a,lease):
     return svc("SELECT public.confirm_deletion_auth_cleanup(%s,%s)",(a,lease))
 
@@ -138,7 +150,7 @@ for role in ("service_role","anon","authenticated"):
     hidden=exec_role(role,"SELECT count(*) FROM research_lifecycle_private.deletion_billing_incidents")
     rec(f"G {role} cannot read private financial incident ledger",
         hidden[0]=="ERR" and hidden[1].startswith("42501"),hidden)
-for n in (0,26):
+for n in (0,2,25,26):
     r=claim(n)
     rec(f"G invalid batch size {n} denied",r[0]=="ERR" and r[1].startswith("22023"),r)
     r=svc("SELECT public.finalize_deletion_and_queue_auth_cleanup(NULL)")
@@ -291,7 +303,7 @@ rec("C owner external-clearance model permits atomic DB finalization",
     owner[0]=="OK" and success[0]=="OK" and success[1]["phase"]=="auth_pending",success)
 # New two-phase billing fence must allow the already cleared database
 # deletion queue only before a later signed merchant conflict is recorded.
-hold_claim=claim(25)
+hold_claim=claim_up_to(25)
 hold_claim_rows=hold_claim[1] if hold_claim[0]=="OK" else []
 hold_selected=next((z for z in hold_claim_rows if z["account_id"]==str(hold)),None)
 hold_lease=uuid.UUID(hold_selected["lease_id"]) if hold_selected else uuid.uuid4()
@@ -416,7 +428,7 @@ last=synthetic_user()
 request(last)
 make_due_keep_auth(last)
 assert phase_a(last)[0]=="OK"
-last_claim=claim(25)
+last_claim=claim_up_to(25)
 last_rows=last_claim[1] if last_claim[0]=="OK" else []
 last_selected=next((z for z in last_rows if z["account_id"]==str(last)),None)
 last_lease=uuid.UUID(last_selected["lease_id"]) if last_selected else uuid.uuid4()

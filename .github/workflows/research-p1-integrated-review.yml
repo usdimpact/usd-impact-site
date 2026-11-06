@@ -11,7 +11,13 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
+      - 'docs/operations/research-p1-two-phase/f3-development-schema-parity-audit.md'
+      - 'docs/operations/research-p1-two-phase/f3-development-catalog-readonly.sql'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
+      - 'apps/web/src/lib/research-preview-route.js'
+      - 'apps/web/scripts/test-research-preview-route.mjs'
+      - 'apps/web/scripts/test-account-deletion-interim-mode.mjs'
+      - 'docs/operations/research-p1-two-phase/interim-deletion-review-queue.sql'
       - 'apps/web/src/lib/lemon-squeezy-research-membership-adapter.js'
       - 'apps/web/scripts/test-lemon-squeezy-research-membership-adapter.mjs'
       - 'apps/web/src/lib/research-membership-webhook-handler.js'
@@ -85,6 +91,7 @@ jobs:
         run: |
           python3 -m pip install --break-system-packages "psycopg[binary]==3.2.10"
           python3 supabase/tests/research-p1/owner_model_replay.py "$GITHUB_WORKSPACE"
+          python3 supabase/tests/research-p1/test_f3_catalog_query_pack.py
           python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py

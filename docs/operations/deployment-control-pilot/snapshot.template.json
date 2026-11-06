@@ -1,0 +1,36 @@
+{
+  "action": "stage",
+  "github": {
+    "repo": "usdimpact/usd-impact-site",
+    "pr": 1199,
+    "state": "NOT_VERIFIED",
+    "draft": true,
+    "merged": false,
+    "baseBranch": "main",
+    "headBranch": "agent/issue-1198-guide-run7-reconciliation-20261106",
+    "headSha": "RECHECK_AND_REPLACE",
+    "baseSha": "RECHECK_AND_REPLACE",
+    "mainSha": "RECHECK_AND_REPLACE",
+    "changedFiles": [],
+    "checks": []
+  },
+  "vercel": {
+    "projectId": "prj_ZoLLM35ksI6wk17PcfS2xYknaVl7",
+    "productionBranch": "main",
+    "inspectedSha": "RECHECK_AND_REPLACE",
+    "deploymentCount": "NOT_VERIFIED",
+    "configBlobSha": "RECHECK_AND_REPLACE",
+    "deploymentEnabled": {}
+  },
+  "controls": {
+    "noVercelChanges": false,
+    "noGitHubMutations": false,
+    "noClaudeDispatch": false,
+    "releaseHoldsRetained": false
+  },
+  "evidence": {
+    "githubObservedAt": "NOT_VERIFIED",
+    "vercelObservedAt": "NOT_VERIFIED",
+    "configObservedAt": "NOT_VERIFIED"
+  }
+}

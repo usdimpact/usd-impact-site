@@ -54,8 +54,8 @@ function validateReference(workflowFile, resource, ref) {
   assert.match(ref, /^[0-9a-f]{40}$/, `${workflowFile} must pin ${action} to an immutable 40-char SHA`);
   assert.equal(ref, expectedActionRefs.get(action), `${workflowFile} must use the reviewed ${action} SHA`);
   if (action === 'actions/create-github-app-token') {
-    assert.equal(workflowFile, 'daily-news.yml',
-      'App token action is restricted to the original Daily PR generator workflow');
+    assert.ok(workflowFile === 'daily-news.yml' || workflowFile === 'daily-news-late-carryforward.yml',
+      'App token action is restricted to reviewed Daily PR-authoring workflows only');
   }
   return action;
 }

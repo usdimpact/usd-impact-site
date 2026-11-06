@@ -345,7 +345,10 @@ jobs:
           fi
 
       - name: Close recovered daily health issue
-        if: steps.health.outcome == 'success' && steps.health.outputs.state == 'healthy' && github.event_name == 'schedule'
+        # A natural schedule plus checked receipts can propose recovery, but issue closure
+        # requires a separately approved owner-controlled repository variable.
+        # Default unset => no automatic closure of an unresolved incident.
+        if: steps.health.outcome == 'success' && steps.health.outputs.state == 'healthy' && github.event_name == 'schedule' && vars.DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_TITLE: P1 — Daily USD Impact automation requires attention

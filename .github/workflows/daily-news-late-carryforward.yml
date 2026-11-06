@@ -1,0 +1,165 @@
+name: Daily USD Impact late evidence carry-forward
+
+on:
+  schedule:
+    # Native catch-up; does not call paid generation and never auto-merges.
+    - cron: '47 15 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: daily-usd-impact-late-carryforward
+  cancel-in-progress: false
+
+jobs:
+  prepare-one-late-candidate:
+    if: github.repository == 'usdimpact/usd-impact-site' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: true
+
+      - name: Check edition, original generator, and publication PRs
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          today="$(date -u +%F)"
+          echo "edition=$today" >> "$GITHUB_OUTPUT"
+          if [ "$(date -u +%u)" -gt 5 ] || [ "$(TZ=America/New_York date +%F)" != "$today" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Outside same-date weekday window."
+            exit 0
+          fi
+          if [ "$(TZ=America/New_York date +%H%M)" -lt 0830 ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Before U.S. morning data window; not a late recovery."
+            exit 0
+          fi
+
+          test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .default_branch)" = "main"
+          file="apps/web/src/content/news/$today.md"
+          headers="$(gh api --include --silent "repos/$GITHUB_REPOSITORY/contents/$file?ref=main" 2>/dev/null)" || true
+          status="$(awk '/^HTTP\// {code=$2} END {gsub(/\r/, "", code);print code}' <<< "$headers")"
+          if [ "$status" = "200" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dated edition already published on main."
+            exit 0
+          fi
+          if [ "$status" != "404" ]; then
+            echo "::error::Publication lookup uncertain; fail closed."
+            exit 1
+          fi
+
+          # Any matching same-date PR in any state blocks duplicate preparation.
+          page=1
+          while [ "$page" -le 20 ]; do
+            pulls="$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=all&base=main&per_page=100&page=$page")"
+            matched="$(jq --arg day "$today" '[.[] | select(
+                (.head.ref | contains($day)) or (.title | contains($day))
+              )] | length' <<< "$pulls")"
+            if [ "$matched" -gt 0 ]; then
+              echo "needed=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::Existing dated publication PR; editorial state preserved."
+              exit 0
+            fi
+            size="$(jq length <<< "$pulls")"
+            [ "$size" -lt 100 ] && break
+            page="$((page + 1))"
+          done
+          if [ "$page" -gt 20 ]; then
+            echo "::error::Incomplete PR evidence; fail closed."
+            exit 1
+          fi
+
+          runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news.yml/runs?created=$today&per_page=100")"
+          jq -e '.total_count == (.workflow_runs | length) and .total_count <= 100' <<< "$runs" >/dev/null
+          active="$(jq '[.workflow_runs[] | select(.status != "completed")] | length' <<< "$runs")"
+          if [ "$active" -ne 0 ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::A generator run is active; no competing PR."
+            exit 0
+          fi
+          # A previous failed or indeterminate late attempt may have pushed a
+          # branch without an observable PR. Never automatically replay it.
+          prior="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news-late-carryforward.yml/runs?created=$today&per_page=100")"
+          jq -e '.total_count == (.workflow_runs | length) and .total_count <= 100' <<< "$prior" >/dev/null
+          prior_failed="$(jq --argjson current "$GITHUB_RUN_ID" '[.workflow_runs[] |
+            select(.id != $current and .status == "completed" and .conclusion != "success")] | length' <<< "$prior")"
+          if [ "$prior_failed" -gt 0 ]; then
+            echo "::error::Previous late attempt failed; hold without retry or duplicate PR."
+            exit 1
+          fi
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        if: steps.preflight.outputs.needed == 'true'
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies (no model API)
+        if: steps.preflight.outputs.needed == 'true'
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Build a dated source-verified candidate
+        if: steps.preflight.outputs.needed == 'true'
+        working-directory: apps/web
+        env:
+          EDITION: ${{ steps.preflight.outputs.edition }}
+        run: |
+          set -euo pipefail
+          node scripts/test-daily-carry-forward.mjs
+          node scripts/create-daily-carry-forward.mjs "$EDITION"
+          npm run validate:news
+          npm run validate:content
+
+      - name: Verify no protected main change
+        if: steps.preflight.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EDITION: ${{ steps.preflight.outputs.edition }}
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          test "$current" = "$GITHUB_SHA" || { echo "::error::Main moved; hold."; exit 1; }
+          test -f "apps/web/src/content/news/$EDITION.md"
+          test "$(git ls-files --others --exclude-standard | wc -l)" -eq 1
+
+      - name: Mint PR author GitHub App token
+        id: author
+        if: steps.preflight.outputs.needed == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+
+      - name: Open one protected editorial PR; no auto-merge
+        if: steps.preflight.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.author.outputs.token }}
+          EDITION: ${{ steps.preflight.outputs.edition }}
+        run: |
+          set -euo pipefail
+          branch="automation/daily-carryforward-$EDITION-$GITHUB_RUN_ID"
+          git config user.name "usd-impact-daily-fallback[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -- "apps/web/src/content/news/$EDITION.md"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          git commit -m "content(daily): prepare $EDITION dated official carry-forward"
+          git push origin "$branch"
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "Publish Daily USD Impact — $EDITION (late verified carry-forward)" \
+            --body "Automatically prepared after the U.S. morning release window; NOT an original same-day government release or natural Daily generator proof. Sources are separately dated immutable official documents from a previously verified Daily, at most 14 days old. No paid model request or invented market move. Require native pull_request checks, editor acceptance, normal protected merge, exact-SHA READY Vercel Production and independent four-URL verification before PUBLISHED_MANUAL_LATE. Do not close #840. This workflow never merges or approves."

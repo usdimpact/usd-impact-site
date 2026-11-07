@@ -33,7 +33,7 @@ function base(intent = 'daily') {
         name, sha: checked, status: 'completed', conclusion: 'success' })) },
     dispatch: intent === 'docs_only' ? null : {
       event: 'workflow_dispatch', sender: 'github-actions[bot]',
-      issuerWorkflow: POLICY.publisherWorkflow, receiptSha: main,
+      issuerWorkflow: intent === 'daily' ? POLICY.publisherWorkflow : POLICY.ownerWorkflow, receiptSha: main,
       attempt: 1, acknowledged: true, runId: 123, observedAt: iso(NOW-40000) },
     daily: intent === 'daily' ? {
       date:'2026-11-06', editionPath:newsPath, sourceRepo:POLICY.repository,
@@ -43,7 +43,7 @@ function base(intent = 'daily') {
     approval: intent === 'docs_only' || intent === 'daily' ? null : {
       kind:intent, sha:main, signed:true, observedAt:iso(NOW-40000),
       expiresAt:iso(NOW+300000), bypassRequested:false },
-    lock: {state:'clear', atomicVerified:true, baseSha:live,
+    lock: {state:'clear', atomicVerified:true, baseSha:live, candidateSha:main,
       observedAt:iso(NOW-40000), expiresAt:iso(NOW+300000) },
     dedupe: {leaseAcquired:true, activeDuplicate:false,
       releasedSha:live, idempotencyKey:main },
@@ -63,7 +63,7 @@ const cases = [
   ['Q-02.03 no explicit post-merge dispatch', 'daily', x => {x.dispatch=null}, 'DISPATCH_NOT_AUTHENTICATED'],
   ['Q-02.04 human instead of bot dispatch', 'daily', x => {x.dispatch.sender='owner'}, 'DISPATCH_NOT_AUTHENTICATED'],
   // Q-03: untrusted dispatch, replay and publisher receipt fail closed.
-  ['Q-03.01 forged issuer workflow', 'daily', x => {x.dispatch.issuerWorkflow='other.yml'}, 'DISPATCH_NOT_AUTHENTICATED'],
+  ['Q-03.01 forged issuer workflow', 'daily', x => {x.dispatch.issuerWorkflow='other.yml'}, 'WRONG_DISPATCH_AUTHORITY'],
   ['Q-03.02 replayed controller dispatch', 'daily', x => {x.dispatch.attempt=2}, 'DISPATCH_NOT_AUTHENTICATED'],
   ['Q-03.03 publisher not proven successful', 'daily', x => {x.daily.publisherSucceeded=false}, 'DAILY_PUBLISHER_NOT_VERIFIED'],
   // Q-04: exact main tree, all commits and net diff must be classified.
@@ -151,5 +151,46 @@ test('non-finite or out-of-range clock fails closed without throwing', () => {
     assert.ok(out.reasons.includes('INVALID_CLOCK'));
     assert.equal(out.mergeAuthorized, false);
     assert.equal(out.deploymentAuthorized, false);
+  }
+});
+
+
+test('adversarial owner release refuses Daily publisher workflow identity', () => {
+  const input=base('owner_release');
+  input.dispatch.issuerWorkflow=POLICY.publisherWorkflow;
+  const x=evaluate(input,NOW);
+  assert.equal(x.status,'HOLD');
+  assert.ok(x.reasons.includes('WRONG_DISPATCH_AUTHORITY'));
+  assert.equal(x.mergeAuthorized,false);
+  assert.equal(x.deploymentAuthorized,false);
+});
+
+test('adversarial emergency release refuses Daily publisher workflow identity', () => {
+  const input=base('emergency');
+  input.dispatch.issuerWorkflow=POLICY.publisherWorkflow;
+  const x=evaluate(input,NOW);
+  assert.equal(x.status,'HOLD');
+  assert.ok(x.reasons.includes('WRONG_DISPATCH_AUTHORITY'));
+  assert.equal(x.mergeAuthorized,false);
+  assert.equal(x.deploymentAuthorized,false);
+});
+
+test('adversarial lock cannot be reused for an unrelated candidate', () => {
+  const input=base('daily');
+  input.lock.candidateSha='e'.repeat(40);
+  const x=evaluate(input,NOW);
+  assert.equal(x.status,'HOLD');
+  assert.ok(x.reasons.includes('LOCK_NOT_BOUND_TO_CANDIDATE'));
+  assert.equal(x.mergeAuthorized,false);
+  assert.equal(x.deploymentAuthorized,false);
+});
+
+test('synthetic owner and emergency fixtures remain model-only', () => {
+  for(const intent of ['owner_release','emergency']) {
+    const x=evaluate(base(intent),NOW);
+    assert.equal(x.status,'MODEL_RELEASE_CANDIDATE',intent+': '+JSON.stringify(x));
+    assert.equal(x.modelOnly,true);
+    assert.equal(x.mergeAuthorized,false);
+    assert.equal(x.deploymentAuthorized,false);
   }
 });

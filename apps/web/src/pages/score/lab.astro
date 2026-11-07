@@ -140,7 +140,7 @@ for fila in csv.DictReader(StringIO(texto_csv)):
     z = (puntos[-1] - mean(puntos)) / stdev(puntos)
     z = max(-3.5, min(3.5, z))
     resultado += float(fila["peso"]) * z
-print(f"Ejemplo simulado: {resultado:+.4f}")</code></pre>
+print("Ejemplo simulado: %+.4f" % resultado)</code></pre>
         <p><a href="https://docs.python.org/3/library/statistics.html#statistics.stdev" target="_blank" rel="noreferrer">Referencia oficial: desviación estándar muestral en Python</a>. Cambia el CSV si moviste los controles.</p>
       </details>
     </section>

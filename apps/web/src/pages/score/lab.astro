@@ -1,0 +1,280 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  SYNTHETIC_DRIVERS, SYNTHETIC_HISTORY, SYNTHETIC_MIN, SYNTHETIC_MAX,
+  SYNTHETIC_STEP, SYNTHETIC_FIXTURE_ID, evaluateSyntheticLab, syntheticCsv,
+} from '../../lib/score-synthetic-lab.js';
+const initial = evaluateSyntheticLab();
+const initialCsv = syntheticCsv();
+const fixedHistory = SYNTHETIC_HISTORY.join(', ');
+---
+<BaseLayout
+  title="Laboratorio de Score simulado | USD Impact"
+  description="Reconstruye un ejemplo de Score con ocho factores y seis semanas ficticias. No es el Score real ni contiene datos de mercados."
+  locale="es"
+  noindex={true}
+>
+  <section class="hero lab-hero">
+    <div class="container">
+      <div class="eyebrow">Laboratorio educativo · {SYNTHETIC_FIXTURE_ID}</div>
+      <h1>Reconstruye el cálculo, no el mercado.</h1>
+      <p class="lead">Mueve ocho valores completamente inventados, observa la normalización y comprueba cada contribución. Después reproduce el ejemplo en Excel o Google Sheets.</p>
+      <div class="button-row">
+        <a class="button primary" href="#simulador">Probar la simulación</a>
+        <a class="button secondary" href="#reconstruir">Reproducir paso a paso</a>
+        <a class="button secondary" href="/score/">Ver el estado del Score histórico</a>
+      </div>
+    </div>
+  </section>
+
+  <main id="main-content" class="container score-lab-page" lang="es">
+    <section class="lab-notice card" aria-labelledby="lab-notice-title" data-lab-status="fictional-only">
+      <div class="eyebrow">SIMULACIÓN · NO ES INFORMACIÓN DE MERCADO</div>
+      <h2 id="lab-notice-title">Datos 100 % ficticios. No representa el Score real.</h2>
+      <p>Los ocho nombres describen los <strong>factores conceptuales</strong> de la fórmula histórica, pero todas las cifras son puntos didácticos sin unidades. Ninguna cifra es un precio, tasa, media histórica, desviación real, dato de proveedor ni nueva edición de USD Impact Score.</p>
+      <p>La publicación del Score original sigue suspendida por revisión de derechos. Este ejercicio no usa Yahoo, FRED, CME, ICE, S&amp;P DJI, Cboe, archivos históricos ni datos de mercados.</p>
+    </section>
+
+    <section id="simulador" aria-labelledby="lab-sim-title" class="lab-section" data-sim-lab>
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Paso 1 · Cambia una semana inventada</div>
+          <h2 id="lab-sim-title">Simulador de ocho factores</h2>
+        </div>
+        <button class="button" id="lab-reset" type="button">Restablecer ejemplo</button>
+      </div>
+      <p>Todos los factores empiezan con <strong>cinco semanas ficticias</strong>: <code>{fixedHistory}</code>. Mueve solo la sexta semana (<code>W6</code>). La media y el desvío muestral se calculan con <strong>las seis semanas</strong>, incluida W6. La escala es idéntica para los ocho factores y no representa niveles de activos.</p>
+
+      <div class="lab-summary card" role="status" aria-live="polite" aria-atomic="true">
+        <div>
+          <div class="eyebrow">Resultado ficticio</div>
+          <div class="lab-score" data-sim-score>{initial.score.toFixed(4)}</div>
+        </div>
+        <div>
+          <div class="eyebrow">Etiqueta de ejemplo</div>
+          <p class="lab-regime" data-sim-regime>{initial.regime}</p>
+          <p class="lab-small">No predice el dólar ni reproduce la lectura oficial.</p>
+        </div>
+      </div>
+
+      <div class="lab-table-wrap" role="region" aria-label="Tabla de factores y contribuciones ficticios, desplazable" tabindex="0">
+        <table class="lab-table">
+          <caption>Unidades totalmente inventadas. W1–W5 = {fixedHistory}. No hay precios ni tasas reales.</caption>
+          <thead><tr>
+            <th scope="col">Factor conceptual</th>
+            <th scope="col">Peso</th>
+            <th scope="col">Sexta semana (W6)</th>
+            <th scope="col">Media μ</th>
+            <th scope="col">Desvío s</th>
+            <th scope="col">z limitado ±3.5</th>
+            <th scope="col">Contribución</th>
+          </tr></thead>
+          <tbody>
+            {initial.rows.map((row) => (
+              <tr data-sim-row={row.id}>
+                <th scope="row">{row.label}<small class="lab-factor-id">{row.id} · ficticio</small></th>
+                <td class="lab-number">{row.weight > 0 ? '+' : ''}{row.weight.toFixed(3)}</td>
+                <td>
+                  <label class="visually-hidden" for={'lab-' + row.id}>Semana ficticia W6 de {row.label}</label>
+                  <input id={'lab-' + row.id} type="range"
+                    min={SYNTHETIC_MIN} max={SYNTHETIC_MAX} step={SYNTHETIC_STEP}
+                    value={row.x} data-sim-input={row.id} />
+                  <output for={'lab-' + row.id} data-sim-x>{row.x}</output>
+                </td>
+                <td class="lab-number" data-sim-mean>{row.mean.toFixed(2)}</td>
+                <td class="lab-number" data-sim-std>{row.std.toFixed(2)}</td>
+                <td class="lab-number" data-sim-z>{row.z.toFixed(4)}</td>
+                <td class="lab-number" data-sim-contribution>{row.contribution.toFixed(4)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="lab-small">En móviles, desplaza la tabla horizontalmente. Los valores del simulador se calculan en el navegador y no se transmiten a un servidor.</p>
+      <noscript><p class="lab-noscript">Sin JavaScript se muestra el ejemplo inicial. Puedes copiar el CSV para reconstruirlo.</p></noscript>
+    </section>
+
+    <section id="reconstruir" class="lab-section" aria-labelledby="lab-steps-title">
+      <div class="eyebrow">Paso 2 · Reconstrucción por cuenta propia</div>
+      <h2 id="lab-steps-title">Reproduce exactamente la simulación en una hoja de cálculo</h2>
+      <ol class="lab-steps">
+        <li><strong>Copia el CSV ficticio</strong> y pégalo desde A1 en Excel o <a href="https://sheets.google.com/" target="_blank" rel="noreferrer">Google Sheets</a>. Si es necesario, separa las columnas usando coma.</li>
+        <li><strong>Media de las seis semanas, I2:</strong> <code>=AVERAGE(C2:H2)</code>. Copia la fórmula hasta I9.</li>
+        <li><strong>Desviación muestral, J2:</strong> <code>=STDEV.S(C2:H2)</code>. Utiliza <code>ddof=1</code>; copia hasta J9.</li>
+        <li><strong>z-score y clipping, K2:</strong> <code>=MAX(-3.5,MIN(3.5,(H2-I2)/J2))</code>. Copia hasta K9.</li>
+        <li><strong>Contribución, L2:</strong> <code>=B2*K2</code>. Copia hasta L9. El signo de cada peso ya está incluido.</li>
+        <li><strong>Suma de ocho contribuciones, L10:</strong> <code>=SUM(L2:L9)</code>. Debe coincidir con el resultado ficticio mostrado arriba, salvo el redondeo.</li>
+      </ol>
+      <p>Si tu Excel usa coma decimal, adapta <code>3.5</code> a <code>3,5</code> y separa los argumentos de función con <code>;</code>. Mantén toda la precisión de <code>z</code> para sumar: redondea solo la presentación.</p>
+
+      <div class="lab-export card">
+        <div class="lab-export-head">
+          <div><div class="eyebrow">CSV sin datos de mercado</div><h3>Seis semanas 100 % inventadas</h3></div>
+          <button class="button" id="lab-copy" type="button">Copiar CSV ficticio</button>
+        </div>
+        <label class="lab-small" for="lab-csv">Puedes seleccionar y copiar manualmente si el navegador bloquea el portapapeles.</label>
+        <textarea id="lab-csv" rows="10" readonly spellcheck="false">{initialCsv}</textarea>
+        <p id="lab-copy-status" class="lab-small" role="status" aria-live="polite">El CSV se actualiza al mover los controles. No se guarda en una base de datos.</p>
+      </div>
+
+      <details class="lab-details card">
+        <summary>Verificación con Python sin instalar paquetes</summary>
+        <p>Pega el CSV inventado en la variable <code>texto_csv</code> y ejecuta:</p>
+        <pre><code>import csv
+from io import StringIO
+from statistics import mean, stdev
+
+texto_csv = """factor_ficticio,peso,W1,W2,W3,W4,W5,W6
+DXY,0.125,900,900,1000,1100,1100,1120
+WTI,-0.125,900,900,1000,1100,1100,1040
+SPX,-0.125,900,900,1000,1100,1100,960
+VIX,0.125,900,900,1000,1100,1100,1170
+BTC,-0.125,900,900,1000,1100,1100,1060
+GOLD,-0.125,900,900,1000,1100,1100,940
+UST_2Y,0.125,900,900,1000,1100,1100,1080
+UST_10Y,0.125,900,900,1000,1100,1100,1030"""
+
+resultado = 0.0
+for fila in csv.DictReader(StringIO(texto_csv)):
+    puntos = [float(fila["W" + str(i)]) for i in range(1, 7)]
+    z = (puntos[-1] - mean(puntos)) / stdev(puntos)
+    z = max(-3.5, min(3.5, z))
+    resultado += float(fila["peso"]) * z
+print(f"Ejemplo simulado: {resultado:+.4f}")</code></pre>
+        <p><a href="https://docs.python.org/3/library/statistics.html#statistics.stdev" target="_blank" rel="noreferrer">Referencia oficial: desviación estándar muestral en Python</a>. Cambia el CSV si moviste los controles.</p>
+      </details>
+    </section>
+
+    <section class="lab-section" aria-labelledby="lab-method-title">
+      <div class="eyebrow">Paso 3 · Límites de la réplica</div>
+      <h2 id="lab-method-title">Qué puedes reconstruir y qué no</h2>
+      <div class="grid">
+        <article class="card"><h3>Sí: las matemáticas</h3><p>Los ocho factores conceptuales, pesos firmados de ±0.125, media y desviación muestral, normalización y clipping ±3.5, suma y bandas descriptivas.</p></article>
+        <article class="card"><h3>No: el Score real</h3><p>La muestra histórica desde 2015, la selección del último dato del viernes (<code>W-FRI</code>), reglas de frescura, revisiones y medias/desvíos históricos reales. Seis semanas inventadas no equivalen a Producción.</p></article>
+      </div>
+      <p>Una reproducción real independiente requeriría obtener legalmente las ocho series exactas y sus versiones, aplicar el calendario, reglas de datos faltantes y toda la muestra disponible hasta la fecha de cálculo, y comprobar las licencias de procesamiento, retención y divulgación. Cambiar etiquetas a una salida real no concede derechos para publicarla.</p>
+      <p>Consulta la <a href="/score/methodology/">metodología histórica completa</a> y el <a href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py" target="_blank" rel="noreferrer">código original de USD Impact Score v2</a>. Estos enlaces explican el método, no conceden licencias de mercados.</p>
+    </section>
+
+    <section class="lab-section" aria-labelledby="lab-resources-title">
+      <div class="eyebrow">Enlaces para aprender · no se descargan datos</div>
+      <h2 id="lab-resources-title">Fuentes y documentación</h2>
+      <div class="grid">
+        <article class="card"><h3>Método reproducible</h3><p><a href="/score/methodology/">Metodología v2</a> · <a href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py" target="_blank" rel="noreferrer">Código público de cálculo</a> · <a href="https://docs.python.org/3/library/statistics.html" target="_blank" rel="noreferrer">Estadísticas en Python</a>.</p></article>
+        <article class="card"><h3>Fuentes oficiales de un modelo distinto</h3><p><a href="https://www.federalreserve.gov/releases/h10/" target="_blank" rel="noreferrer">Reserva Federal H.10</a> · <a href="https://www.eia.gov/petroleum/supply/weekly/" target="_blank" rel="noreferrer">EIA petróleo semanal</a> · <a href="https://home.treasury.gov/treasury-daily-interest-rate-xml-feed" target="_blank" rel="noreferrer">Tesoro tasas/XML</a>.</p><p class="lab-small">No sustituyen los factores del Score v2 ni autorizan una publicación automática.</p></article>
+        <article class="card"><h3>Derechos de uso a verificar</h3><p><a href="https://www.spglobal.com/spdji/en/about-us/data-index-licensing/" target="_blank" rel="noreferrer">S&amp;P DJI</a> · <a href="https://www.cmegroup.com/market-data/license-data/information-policies.html" target="_blank" rel="noreferrer">CME</a> · <a href="https://fred.stlouisfed.org/legal/terms/" target="_blank" rel="noreferrer">FRED</a> · <a href="https://www.eia.gov/about/copyrights_reuse.php" target="_blank" rel="noreferrer">EIA reutilización</a>.</p><p class="lab-small">La disponibilidad pública no implica autorización para uso comercial o derivados.</p></article>
+      </div>
+    </section>
+
+    <section class="lab-compliance card" aria-label="Nota legal">
+      <strong>Solo para educación.</strong> Todos los valores y resultados son ficticios. No son precios, tasas, pronósticos, señales de inversión, recomendaciones ni una actualización de USD Impact Score. La publicación original continúa suspendida por derechos de fuentes.
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  import { SYNTHETIC_DRIVERS, evaluateSyntheticLab, syntheticCsv } from '../../lib/score-synthetic-lab.js';
+  const lab = document.querySelector('[data-sim-lab]');
+  const result = document.querySelector('[data-sim-score]');
+  const regime = document.querySelector('[data-sim-regime]');
+  const csv = document.getElementById('lab-csv');
+  const copy = document.getElementById('lab-copy');
+  const reset = document.getElementById('lab-reset');
+  const copyStatus = document.getElementById('lab-copy-status');
+
+  if (lab instanceof HTMLElement && result instanceof HTMLElement && regime instanceof HTMLElement
+      && csv instanceof HTMLTextAreaElement) {
+    const inputs = SYNTHETIC_DRIVERS.map(d => lab.querySelector('[data-sim-input="' + d.id + '"]'));
+    if (inputs.every(input => input instanceof HTMLInputElement)) {
+      const paint = () => {
+        try {
+          const values = inputs.map(input => Number(input.value));
+          const data = evaluateSyntheticLab(values);
+          result.textContent = data.score.toFixed(4);
+          regime.textContent = data.regime;
+          for (const row of data.rows) {
+            const tr = lab.querySelector('[data-sim-row="' + row.id + '"]');
+            if (!(tr instanceof HTMLTableRowElement)) continue;
+            const fields = {
+              '[data-sim-x]': String(row.x),
+              '[data-sim-mean]': row.mean.toFixed(2),
+              '[data-sim-std]': row.std.toFixed(2),
+              '[data-sim-z]': row.z.toFixed(4),
+              '[data-sim-contribution]': row.contribution.toFixed(4),
+            };
+            for (const [selector, value] of Object.entries(fields)) {
+              const cell = tr.querySelector(selector);
+              if (cell instanceof HTMLElement) cell.textContent = value;
+            }
+          }
+          csv.value = syntheticCsv(values);
+        } catch {
+          result.textContent = '—';
+          regime.textContent = 'Ejemplo inválido. Restablece los valores.';
+          if (copy instanceof HTMLButtonElement) copy.disabled = true;
+          return;
+        }
+        if (copy instanceof HTMLButtonElement) copy.disabled = false;
+      };
+      for (const input of inputs) input.addEventListener('input', paint);
+      if (reset instanceof HTMLButtonElement) reset.addEventListener('click', () => {
+        inputs.forEach((input, i) => { input.value = String(SYNTHETIC_DRIVERS[i].exampleX); });
+        paint();
+        if (copyStatus instanceof HTMLElement) copyStatus.textContent = 'Ejemplo ficticio restablecido.';
+      });
+      if (copy instanceof HTMLButtonElement) copy.addEventListener('click', async () => {
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error('Portapapeles no disponible');
+          await navigator.clipboard.writeText(csv.value);
+          if (copyStatus instanceof HTMLElement) copyStatus.textContent = 'CSV ficticio copiado. Pégalo en A1.';
+        } catch {
+          csv.focus();
+          csv.select();
+          if (copyStatus instanceof HTMLElement) copyStatus.textContent = 'Texto seleccionado: usa Copiar en tu dispositivo.';
+        }
+      });
+    }
+  }
+</script>
+
+<style>
+  .lab-hero { padding: 60px 0; }
+  .score-lab-page { padding-top: 28px; padding-bottom: 72px; }
+  .lab-notice { border-left: 5px solid var(--gold); }
+  .lab-notice h2 { margin: 8px 0 10px; }
+  .lab-section { margin: 54px 0 0; }
+  .lab-section h2 { margin: 6px 0 16px; }
+  .lab-section .section-heading h2 { margin-top: 10px; }
+  .lab-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: center; margin: 24px 0; background: #f5f7fb; }
+  .lab-score { font-size: clamp(2.3rem, 6vw, 4.5rem); line-height: 1.2; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .lab-regime { font-size: 1.2rem; font-weight: 750; margin: 6px 0 3px; }
+  .lab-small { font-size: .875rem; color: var(--slate); }
+  .lab-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid #d8dce2; border-radius: 12px; background: var(--white); }
+  .lab-table { border-collapse: collapse; width: 100%; min-width: 850px; }
+  .lab-table caption { padding: 14px 16px; color: var(--slate); font-size: .85rem; text-align: left; }
+  .lab-table th, .lab-table td { border-bottom: 1px solid #e4e8ee; padding: 13px; vertical-align: middle; text-align: left; }
+  .lab-table thead th { background: #eaeef3; color: var(--navy); font-weight: 750; white-space: nowrap; }
+  .lab-table tbody th { min-width: 185px; line-height: 1.4; color: var(--navy); }
+  .lab-factor-id { display: block; color: var(--slate); font-weight: 500; font-size: .8rem; }
+  .lab-number, .lab-table output { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lab-table input[type='range'] { accent-color: var(--navy); display: block; width: 170px; min-height: 35px; }
+  .lab-table output { font-weight: 800; }
+  .lab-steps { padding-left: 1.5rem; }
+  .lab-steps li { padding-left: .5rem; margin-bottom: 13px; }
+  .lab-steps code, .lab-section code { overflow-wrap: anywhere; }
+  .lab-export { margin-top: 28px; }
+  .lab-export-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
+  .lab-export h3 { margin: 5px 0 13px; }
+  .lab-export textarea { display: block; width: 100%; margin-top: 10px; padding: 14px; font: .82rem/1.45 ui-monospace, Consolas, monospace; border: 1px solid #9faaba; border-radius: 8px; background: #fff; color: var(--graphite); resize: vertical; }
+  .lab-details { margin-top: 24px; }
+  .lab-details summary { cursor: pointer; font-weight: 800; color: var(--navy); padding: 7px 0; }
+  .lab-details pre { max-width: 100%; overflow: auto; padding: 17px; border-radius: 9px; background: #0b1f33; color: #edf2f8; font-size: .82rem; line-height: 1.55; }
+  .lab-compliance { margin-top: 55px; border-left: 5px solid #98a4b7; }
+  .lab-noscript { background: #fffaeb; padding: 12px; }
+  @media (max-width: 740px) {
+    .lab-summary { grid-template-columns: 1fr; }
+    .lab-section { margin-top: 38px; }
+    .lab-table-wrap { margin-left: -8px; margin-right: -8px; }
+    .lab-hero { padding: 48px 0; }
+  }
+</style>

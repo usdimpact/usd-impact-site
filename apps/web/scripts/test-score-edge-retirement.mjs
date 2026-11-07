@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const account = fs.readFileSync(new URL('../api/account.js', import.meta.url), 'utf8');
 const vercel = JSON.parse(fs.readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
 const scorePage = fs.readFileSync(new URL('../src/pages/score.astro', import.meta.url), 'utf8');
+const methodologyPage = fs.readFileSync(new URL('../src/pages/score/methodology.astro', import.meta.url), 'utf8');
 const memberHandler = fs.readFileSync(new URL('../src/lib/score-member-handler.js', import.meta.url), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -32,6 +33,12 @@ assert.doesNotMatch(memberHandler, /scoreSessionCookie|readScoreSessionCookie|re
 
 // Score freshness is editorial and fail-closed; this is not a provider publication gate.
 assert.match(scorePage, /data-score-publishing-state="rights-hold"/);
+assert.match(methodologyPage, /data-score-methodology-state="historical-rights-hold"/);
+assert.match(methodologyPage, /<time datetime="2026-10-23">October 23, 2026<\/time>/);
+assert.match(methodologyPage, /new weekly Score publication is paused/i);
+assert.match(methodologyPage, /not current market measurements/);
+assert.doesNotMatch(methodologyPage, /exactly as it is calculated today|>Production status</);
+
 assert.match(scorePage, /New weekly Score editions are paused/);
 assert.match(scorePage, /<time datetime="2026-10-23">October 23, 2026<\/time>/);
 assert.match(scorePage, /verified as of November 7, 2026/);

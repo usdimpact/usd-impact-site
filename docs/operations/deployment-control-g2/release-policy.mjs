@@ -11,6 +11,8 @@ export const POLICY = Object.freeze({
   projectId: 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7',
   releaseBranch: 'refs/heads/release/production',
   publisherWorkflow: '.github/workflows/daily-news-auto-publish.yml',
+  // TEST DESIGN ONLY: this owner authorization workflow does not exist and is not approved.
+  ownerWorkflow: '.github/workflows/g2-synthetic-owner-release.yml',
   requiredChecks: Object.freeze([
     'validate-and-build',
     'Dependency review',
@@ -170,6 +172,7 @@ export function evaluate(snapshot, now = Date.now()) {
   if (!isObj(lock) || lock.baseSha !== vercel?.releaseSha
       || !validTime(lock.observedAt, now) || Date.parse(lock.expiresAt || '') <= now
       || !Number.isFinite(Date.parse(lock.expiresAt || ''))) r.push('LOCK_STALE');
+  if (!isObj(lock) || lock.candidateSha !== repo?.mainSha) r.push('LOCK_NOT_BOUND_TO_CANDIDATE');
   if (!isObj(dedupe) || dedupe.leaseAcquired !== true || dedupe.activeDuplicate !== false
       || dedupe.releasedSha === repo?.mainSha || dedupe.idempotencyKey !== repo?.mainSha) {
     r.push('DEDUPLICATION_NOT_PROVEN');
@@ -179,9 +182,12 @@ export function evaluate(snapshot, now = Date.now()) {
   if (intent === 'docs_only') {
     if (dispatch !== null || daily !== null) r.push('DOCS_DISPATCH_PRESENT');
   } else {
+    // A trusted Daily publisher must never carry owner/emergency release authority.
+    // Both workflows are modeled identities, NOT authentic cryptographic evidence.
+    const expectedIssuer = intent === 'daily' ? POLICY.publisherWorkflow : POLICY.ownerWorkflow;
+    if (isObj(dispatch) && dispatch.issuerWorkflow !== expectedIssuer) r.push('WRONG_DISPATCH_AUTHORITY');
     if (!isObj(dispatch) || dispatch.event !== 'workflow_dispatch'
         || dispatch.sender !== 'github-actions[bot]'
-        || dispatch.issuerWorkflow !== POLICY.publisherWorkflow
         || dispatch.receiptSha !== repo?.mainSha || dispatch.attempt !== 1
         || dispatch.acknowledged !== true || !Number.isSafeInteger(dispatch.runId)
         || dispatch.runId <= 0 || !validTime(dispatch.observedAt, now)) r.push('DISPATCH_NOT_AUTHENTICATED');

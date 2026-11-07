@@ -30,6 +30,15 @@ assert.match(memberHandler, /resolveSessionWithRefresh/);
 assert.match(memberHandler, /readAccountAccessState/);
 assert.doesNotMatch(memberHandler, /scoreSessionCookie|readScoreSessionCookie|redeemScoreHandoff|createScoreMembershipProviders/);
 
+// Score freshness is editorial and fail-closed; this is not a provider publication gate.
+assert.match(scorePage, /data-score-publishing-state="rights-hold"/);
+assert.match(scorePage, /New weekly Score editions are paused/);
+assert.match(scorePage, /<time datetime="2026-10-23">October 23, 2026<\/time>/);
+assert.match(scorePage, /verified as of November 7, 2026/);
+assert.match(scorePage, /Daily USD Impact and independent Macro Weekly articles are separate publications/);
+assert.match(scorePage, /href="\/reports\/"/);
+assert.doesNotMatch(scorePage, /View the latest score|>Live dashboard<|updated by the USD Impact data pipeline/);
+
 assert.match(scorePage, /href="\/score\/member\/en\/"/);
 assert.match(scorePage, /href="\/score\/member\/archive\/en\/"/);
 assert.doesNotMatch(scorePage, /requestScoreHandoff|score-handoff-form|name="ticket"|\/api\/score-redeem/);

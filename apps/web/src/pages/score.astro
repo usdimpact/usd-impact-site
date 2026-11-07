@@ -15,16 +15,16 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
 const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 ---
 <BaseLayout
-  title="Weekly USD Impact Score | Dollar Regime Dashboard"
-  description="The weekly USD Impact Score dashboard: a cross-asset reading of the current dollar regime, updated by the USD Impact data pipeline."
+  title="USD Impact Score | Historical Dollar Regime Dashboard"
+  description="USD Impact Score historical readings and methodology. New weekly Score editions are paused pending source-data rights and publication review."
 >
   <section class="hero score-hero">
     <div class="container">
       <div class="eyebrow">Weekly USD Impact Score</div>
-      <h1>The dollar regime, measured weekly.</h1>
-      <p class="lead">A systematic cross-asset reading produced by the USD Impact data pipeline. Use it as educational context alongside the Daily USD Impact edition and the broader framework.</p>
+      <h1>How USD Impact Score measured dollar conditions.</h1>
+      <p class="lead">The original eight-driver educational Score remains available here as historical context. New weekly Score publication is paused pending a data-source rights review.</p>
       <div class="button-row">
-        <a class="button primary" href="#score-dashboard">View the latest score</a>
+        <a class="button primary" href="#score-status">See publication status</a>
         <a class="button secondary" href="/score/methodology/">Read the full methodology</a>
         <a class="button secondary" href={vintageAuditUrl} target="_blank" rel="noreferrer">Audit historical revisions</a>
         <a class="button secondary" href="/score/member/en/">Open member dashboard securely</a>
@@ -33,6 +33,14 @@ const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_compar
   </section>
 
   <main id="main-content" class="container">
+    <section id="score-status" class="score-publication-notice card" aria-labelledby="score-publication-heading" data-score-publishing-state="rights-hold">
+      <div class="eyebrow">Publication status</div>
+      <h2 id="score-publication-heading">New weekly Score editions are paused</h2>
+      <p>New Score updates remain on hold while provider-data permissions and historical distribution are reviewed. The last independently verified Score data week was <time datetime="2026-10-23">October 23, 2026</time> (verified as of November 7, 2026).</p>
+      <p>Previously published Score readings and archives are historical, not current market measurements. Daily USD Impact and independent Macro Weekly articles are separate publications; they do not represent newly calculated Score editions.</p>
+      <a class="button report-link" href="/reports/">Read separately published reports</a>
+    </section>
+
     <section class="score-intro grid">
       <article class="card">
         <div class="eyebrow">What it measures</div>
@@ -68,8 +76,8 @@ const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_compar
     <section id="score-dashboard" class="score-dashboard-section">
       <div class="section-heading">
         <div>
-          <div class="eyebrow">Live dashboard</div>
-          <h2>Latest USD Impact Score</h2>
+          <div class="eyebrow">Historical dashboard</div>
+          <h2>Most recently verified Score (historical)</h2>
         </div>
         <a class="button" href="/score/member/en/">Open verified member dashboard</a>
       </div>
@@ -79,8 +87,8 @@ const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_compar
     {latestWeeklyReport && (
       <section class="reports-promo card">
         <div>
-          <div class="eyebrow">News + score</div>
-          <h2>Read the Weekly USD Impact Brief</h2>
+          <div class="eyebrow">Historical Score-linked weekly report</div>
+          <h2>Read the earlier Weekly USD Impact Brief</h2>
           <p>{latestWeeklyReport.data.summary}</p>
         </div>
         <a class="button report-link" href={latestWeeklyReport.data.slug}>Open the Weekly Brief</a>
@@ -109,6 +117,9 @@ const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_compar
 
 
 <style>
+  .score-publication-notice { margin-top: 28px; border-left: 5px solid var(--gold); }
+  .score-publication-notice h2 { margin: 6px 0 10px; }
+  .score-publication-notice p { max-width: 860px; }
   .score-methodology-callout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

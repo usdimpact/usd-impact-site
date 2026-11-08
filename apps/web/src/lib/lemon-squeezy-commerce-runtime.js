@@ -20,7 +20,11 @@ import {
   COMMERCE_READINESS_STATES,
   resolveCommerceReadiness,
 } from './commerce-provider.js';
-import { deliverPurchaseAccessReadyEmail } from './purchase-access-ready-email.js';
+import {
+  enqueuePurchaseAccessReadyEmail,
+  dispatchPurchaseAccessReadyEmail,
+} from './purchase-access-ready-email.js';
+import { lifecycleEmailLedgerEnabled } from './launch-email-dispatch.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
@@ -949,6 +953,145 @@ function webhookIdentity(payload) {
   });
 }
 
+// Each stage is bounded independently. A mocked fetch that ignores AbortSignal
+// is still interrupted by the deadline race; real network requests are aborted.
+const PURCHASE_EMAIL_STAGE_BUDGET_MS = 2000;
+const DETERMINISTIC_PURCHASE_EMAIL_ERRORS = new Set([
+  'PURCHASE_ACCESS_READY_INVALID_RECIPIENT',
+  'PURCHASE_ACCESS_READY_IDENTITY_MISMATCH',
+  'PURCHASE_ACCESS_READY_STATE_MISMATCH',
+  'INVALID_PURCHASE_ACCESS_READY_EVENT',
+  'INVALID_PURCHASE_ACCESS_READY_STATE_VERSION',
+  'INVALID_DISPATCH_INTENT',
+  'LAUNCH_EMAIL_LEDGER_CONFIGURATION_ERROR',
+  'PRODUCTION_LEDGER_NOT_APPROVED',
+  'UNEXPECTED_SUPABASE_PROJECT',
+]);
+const SAFE_PURCHASE_EMAIL_ERROR_CODES = new Set([
+  ...DETERMINISTIC_PURCHASE_EMAIL_ERRORS,
+  'PURCHASE_ACCESS_READY_RECORD_MISSING',
+  'PURCHASE_ACCESS_READY_TIMEOUT',
+  'LAUNCH_EMAIL_LEDGER_REQUEST_FAILED',
+  'OUTBOX_ROW_MISSING',
+  'OUTBOX_STATE_CONFLICT',
+  'PRODUCTION_DISPATCH_NOT_APPROVED',
+  'RESEND_API_KEY_INVALID',
+  'RESEND_SENDER_INVALID',
+  'RESEND_ROUTING_SCOPE_INVALID',
+  'RESEND_REQUEST_AMBIGUOUS',
+  'RESEND_ACCEPTANCE_AMBIGUOUS',
+  'INVALID_PURCHASE_ACCESS_READY_ENQUEUE_STATE',
+]);
+
+function safePurchaseEmailErrorCode(error) {
+  const code = typeof error?.code === 'string' ? error.code : '';
+  return SAFE_PURCHASE_EMAIL_ERROR_CODES.has(code) ? code : 'PURCHASE_ACCESS_READY_UNCLASSIFIED';
+}
+
+async function boundedPurchaseEmailStage(operation, fetchImpl) {
+  const controller = new AbortController();
+  let timeoutId;
+  const deadline = new Promise((_resolve, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new LemonSqueezyCommerceRuntimeError(
+        'Purchase-access notification stage exceeded the bounded time budget.',
+        'PURCHASE_ACCESS_READY_TIMEOUT',
+        503,
+      ));
+    }, PURCHASE_EMAIL_STAGE_BUDGET_MS);
+  });
+  const transport = typeof fetchImpl === 'function' ? fetchImpl : fetch;
+  const scopedFetch = (url, options = {}) => transport(url, {
+    ...options,
+    signal: controller.signal,
+  });
+  try {
+    return await Promise.race([operation(scopedFetch), deadline]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function handlePurchaseEmailBeforeOutboxFailure(error, stage) {
+  // Deterministic invalid recipient/binding/approval HOLD cannot be repaired
+  // by Lemon Squeezy retrying the financial webhook.
+  if (DETERMINISTIC_PURCHASE_EMAIL_ERRORS.has(error?.code)) {
+    console.error('Purchase access-ready notification held.', {
+      stage,
+      code: safePurchaseEmailErrorCode(error),
+    });
+    return;
+  }
+
+  // A transient or ambiguous lookup/insert is not durable notification intent.
+  // Return a retryable 503 so the provider can re-deliver the *signed* event.
+  // The already-completed purchase RPC remains idempotent on replay.
+  console.error('Purchase access-ready intent requires retry.', {
+    stage,
+    code: safePurchaseEmailErrorCode(error),
+  });
+  throw new LemonSqueezyCommerceRuntimeError(
+    'Purchase completed but notification intent not yet durably recorded.',
+    'PURCHASE_ACCESS_READY_INTENT_RETRY_REQUIRED',
+    503,
+  );
+}
+
+async function attemptNonBlockingPurchaseAccessReadyEmail({
+  config, purchaseIntent, completionResult, occurredAt, fetchImpl, now,
+}) {
+  // When the ledger is held, do not read, validate or send notification data.
+  if (!lifecycleEmailLedgerEnabled()) return;
+
+  let accessResult;
+  try {
+    accessResult = await boundedPurchaseEmailStage(
+      (scopedFetch) => readCommerceAccessReadyResult({
+        config, purchaseIntent, completionResult, occurredAt,
+        fetchImpl: scopedFetch,
+      }),
+      fetchImpl,
+    );
+  } catch (error) {
+    handlePurchaseEmailBeforeOutboxFailure(error, 'lookup');
+    return;
+  }
+
+  let enqueueResult;
+  try {
+    enqueueResult = await boundedPurchaseEmailStage(
+      (scopedFetch) => enqueuePurchaseAccessReadyEmail({
+        accessResult,
+        ledgerFetchImpl: scopedFetch,
+      }),
+      fetchImpl,
+    );
+  } catch (error) {
+    handlePurchaseEmailBeforeOutboxFailure(error, 'enqueue');
+    return;
+  }
+
+  // Dispatch always comes after durable outbox identity. A timeout, bounced
+  // provider or Production email HOLD cannot undo the paid entitlement.
+  try {
+    await boundedPurchaseEmailStage(
+      (scopedFetch) => dispatchPurchaseAccessReadyEmail({
+        enqueueResult,
+        ledgerFetchImpl: scopedFetch,
+        providerFetchImpl: scopedFetch,
+        nowMs: new Date(now).getTime(),
+      }),
+      fetchImpl,
+    );
+  } catch (error) {
+    console.error('Purchase access-ready provider delivery unavailable.', {
+      stage: 'dispatch',
+      code: safePurchaseEmailErrorCode(error),
+    });
+  }
+}
+
 export async function processLemonSqueezyWebhook({
   config,
   rawBody,
@@ -1028,18 +1171,13 @@ export async function processLemonSqueezyWebhook({
         fetchImpl,
         now,
       });
-      const accessResult = await readCommerceAccessReadyResult({
+      await attemptNonBlockingPurchaseAccessReadyEmail({
         config,
         purchaseIntent,
         completionResult: result,
         occurredAt: event.occurredAt || new Date(now).toISOString(),
         fetchImpl,
-      });
-      await deliverPurchaseAccessReadyEmail({
-        accessResult,
-        ledgerFetchImpl: fetchImpl,
-        providerFetchImpl: fetchImpl,
-        nowMs: new Date(now).getTime(),
+        now,
       });
     } else if (identity.eventName === 'order_refunded') {
       if (commercial.status === 'paid') {

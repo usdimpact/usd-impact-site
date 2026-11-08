@@ -89,10 +89,10 @@ test('lab noindex, visible simulation warning, client-only and step-by-step link
   assert.match(lab, /STDEV\.S/);
   assert.match(lab, /=SUM\(L2:L9\)/);
   assert.match(lab, /href="\/score\/methodology\/"/);
-  assert.match(lab, /github\.com\/usdimpact\/usd-impact-pipeline\/blob\/main\/usd_impact_score_v2\.py/);
-  assert.match(lab, /federalreserve\.gov/);
-  assert.match(lab, /home\.treasury\.gov/);
-  assert.match(lab, /eia\.gov/);
+  assert.ok(lab.includes('href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py"'));
+  assert.ok(lab.includes('href="https://www.federalreserve.gov/releases/h10/"'));
+  assert.ok(lab.includes('href="https://home.treasury.gov/treasury-daily-interest-rate-xml-feed"'));
+  assert.ok(lab.includes('href="https://www.eia.gov/petroleum/supply/weekly/"'));
   assert.match(scorePage, /href="\/score\/lab\/"/);
   for (const source of [lab,helper]) {
     assert.doesNotMatch(source, /fetch\s*\(|XMLHttpRequest|localStorage|sessionStorage|WebSocket|EventSource|\bpostMessage\s*\(/i);

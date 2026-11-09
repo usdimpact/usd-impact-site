@@ -49,6 +49,7 @@ const errors = [];
 const originalLog = console.log;
 const originalError = console.error;
 const originalReportToken = process.env.TELEMETRY_REPORT_TOKEN;
+const originalNewsfeedToken = process.env.NEWSFEED_BEARER_TOKEN;
 const originalVercelEnvironment = process.env.VERCEL_ENV;
 console.log = (value) => logged.push(value);
 console.error = (value) => errors.push(value);
@@ -291,6 +292,39 @@ try {
   assert.deepEqual(checkoutSummary.attribution.sources, [{ label: 'launch_email', value: 8 }]);
 
   process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+  process.env.NEWSFEED_BEARER_TOKEN = 'legacy-newsfeed-token-for-tests';
+
+  // Non-Production reporting must fail before bearer-token or storage work.
+  let unauthorizedAggregateReads = 0;
+  setTelemetryAggregateReaderForTests(async () => {
+    unauthorizedAggregateReads += 1;
+    throw new Error('Non-Production reporting must not reach Redis.');
+  });
+  for (const environment of ['preview', 'development', '', undefined]) {
+    if (environment === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = environment;
+    for (const action of ['report', 'checklist-report', 'checkout-funnel-report']) {
+      const denied = await request(null, 'GET', {
+        url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+        headers: { authorization: 'Bearer report-token-for-tests' },
+      });
+      assert.equal(denied.status, 404, `${environment ?? 'unset'} must block ${action}`);
+      assert.equal(denied.json.error, 'Not found.');
+    }
+  }
+  assert.equal(unauthorizedAggregateReads, 0, 'Non-Production report path read aggregates');
+  process.env.VERCEL_ENV = 'production';
+
+  // A legacy Newsfeed bearer token must never act as telemetry-report privilege.
+  delete process.env.TELEMETRY_REPORT_TOKEN;
+  const legacyOnly = await request(null, 'GET', {
+    url: '/api/telemetry?action=report&end=2026-07-30&days=2',
+    headers: { authorization: 'Bearer legacy-newsfeed-token-for-tests' },
+  });
+  assert.equal(legacyOnly.status, 503, 'Dedicated telemetry report token is required');
+  assert.equal(unauthorizedAggregateReads, 0, 'Legacy token fallback read aggregates');
+  process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+
   setTelemetryAggregateReaderForTests(async (dates) => {
     assert.deepEqual(dates, ['2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30']);
     return aggregateFixture;
@@ -350,6 +384,8 @@ try {
   console.error = originalError;
   if (originalReportToken === undefined) delete process.env.TELEMETRY_REPORT_TOKEN;
   else process.env.TELEMETRY_REPORT_TOKEN = originalReportToken;
+  if (originalNewsfeedToken === undefined) delete process.env.NEWSFEED_BEARER_TOKEN;
+  else process.env.NEWSFEED_BEARER_TOKEN = originalNewsfeedToken;
   if (originalVercelEnvironment === undefined) delete process.env.VERCEL_ENV;
   else process.env.VERCEL_ENV = originalVercelEnvironment;
   resetTelemetryStateForTests();

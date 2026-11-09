@@ -188,3 +188,30 @@ export function classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSh
       && ['blocked', 'unknown'].includes(freshPr.mergeable_state)) return 'pending';
   return 'pre-merge-pr-not-clean';
 }
+
+
+// Real GitHub reads and a cutoff are dependency-injected. The trusted runner
+// supplies them; offline test receipts exercise the actual loop without IO.
+export async function waitForProtectedPrChecks({
+  mainSha, prNumber, headSha, readMain, readPr, checkCutoff, pause, report,
+  maxPolls = 60, retryDelayMs = 10000,
+}) {
+  if (!Number.isInteger(maxPolls) || maxPolls < 1 || maxPolls > 60
+      || !Number.isInteger(retryDelayMs) || retryDelayMs < 0 || retryDelayMs > 10000) {
+    throw new Error('invalid-protected-pr-readiness-bounds');
+  }
+  for (let poll = 0; poll < maxPolls; poll++) {
+    checkCutoff();
+    const actualMain = readMain();
+    const pr = readPr(prNumber);
+    const decision = classifyPreMergeReadiness(actualMain, mainSha, pr, headSha);
+    if (decision === 'ready') return poll + 1;
+    if (decision !== 'pending') throw new Error(decision);
+    if (poll === 0 || (poll + 1) % 12 === 0) {
+      report('Waiting for native protected PR checks: PR #' + prNumber
+        + ', mergeable_state=' + pr.mergeable_state + ', poll ' + (poll + 1));
+    }
+    if (poll + 1 < maxPolls) await pause(retryDelayMs);
+  }
+  throw new Error('pre-merge-pr-check-readiness-timeout');
+}

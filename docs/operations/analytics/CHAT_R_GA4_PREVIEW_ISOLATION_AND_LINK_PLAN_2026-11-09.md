@@ -127,3 +127,24 @@ The confirmed Preview share is 3/22 GA4 sessions (13.6%) and 16/95 GA4 page view
 6. **Safe release governance:** G3 direct `main` no-deployment merge remains BLOCK; do not merge #1217, dispatch workflows, deploy, change Vercel settings, disable access protection, or approve an untested rollback. Any future exact-head release must have a separately recorded owner GO and Production regression/rollback evidence.
 
 **Current disposition:** Gate A reporting link **COMPLETE**; Gate B Draft code + 6/6 author CI **COMPLETE**; independent release acceptance, environment configuration, and historical Preview treatment **NOT COMPLETE**. **Gate C / Issue #1201 REMAIN HOLD**. No further engineering branch is needed until the owners resolve these explicit acceptance questions.
+
+---
+
+## 9. Approved GA4 environment-target correction — 2026-11-09
+
+**Owner authorization:** On 2026-11-09 the owner explicitly approved continuation after review of the remaining isolated-release steps. Chat R made **one narrowly scoped Vercel project setting correction** to prevent the Production GA4 measurement ID from being supplied to future Preview builds. **No application release authorization was inferred.**
+
+**Exact change:** In existing project `usd-impact-site` (`prj_ZoLLM35ksI6wk17PcfS2xYknaVl7`), edit the existing encrypted variable `PUBLIC_GA4_MEASUREMENT_ID` (Vercel ID `WyFODAqW0Xmnr8Ms`) from targets `['production','preview']` to `['production']`. No value, type, key, branch, credentials or unrelated environment variable was changed. The variable's value was never requested, decrypted or displayed.
+
+**Readback:** A fresh `filter_project_envs(decrypt:false)` call verified **exactly one** GA4 variable with `target:['production']`, `type:'encrypted'`, same Vercel variable ID. Existing Production deployment `dpl_B1nqWGMYXmpqevtykQ1KUf1XytVR` remained `READY` on `main@b845f841ce9f9d4b915b9c4a04a8548a3604c311`; no new deployment at #1217 head `699627f8b3648d3c9895d21d905f6976da6cc48c`. #1217 remained OPEN/DRAFT/UNMERGED; issue #1201 remained OPEN. GSC Wizard still linked the preexisting GA4 property `554833655` to `sc-domain:usd-impact.com`.
+
+**Effective scope:** The environment-target correction removes that Production ID from the **configured Preview environment for newly built deployments**. Existing Preview artifacts can retain old compiled IDs. The Vercel Production deployment is not rebuilt by a target edit. The additional #1217 source guard and telemetry ingress guard are still **Draft-only / NOT LIVE**.
+
+**Remaining validation and release holds:**
+1. Verify the real Vercel Production build target exposes `VERCEL_ENV=production`; official docs describe this as build-time available, but the current connector did not expose the project's automatic system environment exposure flag. Do not merge a change that could silently suppress Production GA4 when unverified.
+2. Obtain independent privacy and infrastructure review of #1217's exact six-file change and its 6/6 **author** CI; confirm Source/Preview-only behavior, first-party telemetry and connected consent restrictions.
+3. Require new Preview behavior evidence from a separately authorized safe artifact/deployment; the existing `agent/*` branch is intentionally not Vercel-deployed. Do not bypass SSO, dispatch workflows or generate a Preview as a side effect of this audit.
+4. Non-destructively resolve older Preview artifact exposure; documented 386 Preview records are **not** 386 proven GA4 leaks.
+5. Preserve G3 prohibition on direct merge-to-main deployment, separate actual release/rollback GO, and all other project NO-GO holds.
+
+**Disposition:** Gate A association COMPLETE; GA4 environment target narrowed to Production-only and **verified**; Gate B Draft code + synthetic QA COMPLETE; **Gate C merge/release remains HOLD**. This addendum supersedes earlier statements that the GA4 variable still targets both environments.

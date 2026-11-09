@@ -7,6 +7,7 @@ import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
   dispatchSourceRunId, isAuthenticatedBotDispatch,
+  classifyPreMergeReadiness, waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -65,6 +66,18 @@ async function previewReady(headSha) {
     await sleep(10000);
   }
   hold('preview-deployment-not-verified');
+}
+
+// Wait only for native protected GitHub PR checks to settle. Never modify the
+// original source/PR identity, required checks, main branch or cutoff.
+async function awaitProtectedMergeReadiness(mainSha, prNumber, headSha) {
+  const MAX_POLLS = 60;
+  return waitForProtectedPrChecks({
+    mainSha, prNumber, headSha, readMain: currentMain,
+    readPr: (number) => api('pulls/' + number),
+    checkCutoff: ensureMorning, pause: sleep, report: notice,
+    maxPolls: MAX_POLLS, retryDelayMs: 10000,
+  });
 }
 
 async function verifyLive(editionDate) {
@@ -198,13 +211,16 @@ async function run() {
   await previewReady(headSha);
   ensureMorning();
 
-  const freshMainSha = currentMain();
-  const freshPr = api('pulls/' + prNumber);
-  if (freshMainSha !== mainSha || freshPr.head.sha !== headSha
-      || freshPr.base.sha !== mainSha || freshPr.state !== 'open'
-      || freshPr.draft || freshPr.mergeable !== true
-      || freshPr.mergeable_state !== 'clean') hold('pre-merge-main-or-pr-changed');
+  await awaitProtectedMergeReadiness(mainSha, prNumber, headSha);
+  ensureMorning();
   requireExactChecks(requiredCheckSnapshot(headSha), headSha);
+  // Do not rely on the earlier clean snapshot if checks finished while the
+  // protected base/head moved. This does not bypass GitHub's atomic rules.
+  ensureMorning();
+  const finalMainSha = currentMain();
+  const finalPr = api('pulls/' + prNumber);
+  const finalDecision = classifyPreMergeReadiness(finalMainSha, mainSha, finalPr, headSha);
+  if (finalDecision !== 'ready') hold('final-pr-readiness-' + finalDecision);
   const result = JSON.parse(gh(['api', '-X', 'PUT',
     'repos/' + REPOSITORY + '/pulls/' + prNumber + '/merge',
     '-f', 'sha=' + headSha, '-f', 'merge_method=squash',

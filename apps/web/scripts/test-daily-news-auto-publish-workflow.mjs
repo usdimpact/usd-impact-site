@@ -7,7 +7,8 @@ import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId, isAuthenticatedBotDispatch,
+  dispatchSourceRunId, isAuthenticatedBotDispatch, classifyPreMergeReadiness,
+  waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
 
 const auto = readFileSync(new URL('../../../.github/workflows/daily-news-auto-publish.yml', import.meta.url), 'utf8');
@@ -71,6 +72,117 @@ assert.throws(() => selectExactDailyPr([{ ...pr, draft: true }], run, base), /no
 assert.throws(() => selectExactDailyPr([{ ...pr, base: { ref: 'main', sha } }], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr([pr, pr], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr(Array(100).fill(pr), run, base), /incomplete/);
+// Native required checks can start after separately dispatched jobs pass.
+// A bounded wait is permitted; conflicts, drift and bypasses are not.
+const cleanPr = { ...pr, mergeable: true, mergeable_state: 'clean' };
+assert.equal(classifyPreMergeReadiness(base, base, cleanPr, sha), 'ready');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'blocked' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: null, mergeable_state: 'unknown' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha),
+  'pre-merge-main-or-pr-changed', 'main drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, head: { ...cleanPr.head, sha: base } }, sha),
+  'pre-merge-main-or-pr-changed', 'head drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, base: { ...cleanPr.base, sha } }, sha),
+  'pre-merge-main-or-pr-changed', 'base drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, draft: true }, sha), 'pre-merge-main-or-pr-changed');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, state: 'closed' }, sha), 'pre-merge-main-or-pr-changed');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: false, mergeable_state: 'blocked' }, sha),
+  'pre-merge-pr-not-clean', 'a known conflict must never wait/merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'dirty' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'behind' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base, null, sha), 'pre-merge-main-or-pr-changed');
+assert.match(runtime, /async function awaitProtectedMergeReadiness\(mainSha, prNumber, headSha\)/);
+assert.match(runtime, /const MAX_POLLS = 60/);
+assert.match(runtime, /return waitForProtectedPrChecks\(\{/);
+assert.match(runtime, /checkCutoff: ensureMorning/);
+assert.match(runtime, /pause: sleep/);
+assert.match(runtime, /maxPolls: MAX_POLLS/);
+assert.match(runtime, /retryDelayMs: 10000/);
+assert.match(runtime, /await awaitProtectedMergeReadiness\(mainSha, prNumber, headSha\);\s*ensureMorning\(\);/);
+assert.doesNotMatch(runtime, /gh pr merge --admin|merge_method=force/);
+
+
+const waitFixture = {
+  mainSha: base, prNumber: pr.number, headSha: sha,
+  readMain: () => base, readPr: () => cleanPr,
+  checkCutoff: () => {}, pause: async () => {}, report: () => {},
+  maxPolls: 3, retryDelayMs: 1,
+};
+assert.equal(await waitForProtectedPrChecks(waitFixture), 1);
+{
+  let n = 0, deadlines = 0, slept = 0;
+  const count = await waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: n++ === 0 ? 'blocked' : 'clean' }),
+    checkCutoff: () => { deadlines++; },
+    pause: async (ms) => { assert.equal(ms, 1); slept++; },
+  });
+  assert.equal(count, 2);
+  assert.equal(deadlines, 2);
+  assert.equal(slept, 1);
+}
+{
+  let seen = 0, slept = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'blocked' }),
+    checkCutoff: () => { seen++; },
+    pause: async () => { slept++; },
+  }), /pre-merge-pr-check-readiness-timeout/);
+  assert.equal(seen, 3);
+  assert.equal(slept, 2);
+}
+{
+  let seen = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'blocked' }),
+    checkCutoff: () => { if (++seen === 2) throw Error('after-first-us-release-cutoff'); },
+  }), /after-first-us-release-cutoff/);
+  assert.equal(seen, 2);
+}
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, readMain: () => sha,
+}), /pre-merge-main-or-pr-changed/);
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, readPr: () => ({ ...cleanPr, mergeable: false, mergeable_state: 'blocked' }),
+}), /pre-merge-pr-not-clean/);
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, readPr: () => { throw Error('github-api-failure'); },
+}), /github-api-failure/);
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, maxPolls: 61,
+}), /invalid-protected-pr-readiness-bounds/);
+
+assert.match(runtime, /const finalMainSha = currentMain\(\);/);
+assert.match(runtime, /const finalPr = api\('pulls\/' \+ prNumber\);/);
+assert.match(runtime, /const finalDecision = classifyPreMergeReadiness\(finalMainSha, mainSha, finalPr, headSha\);/);
+assert.match(runtime, /if \(finalDecision !== 'ready'\) hold\('final-pr-readiness-' \+ finalDecision\);/);
+const afterExactChecks = runtime.lastIndexOf('requireExactChecks(requiredCheckSnapshot(headSha), headSha);');
+const afterFinalCheck = runtime.indexOf('const finalDecision = classifyPreMergeReadiness(');
+const mergeCall = runtime.indexOf("'repos/' + REPOSITORY + '/pulls/' + prNumber + '/merge'");
+assert.ok(afterExactChecks >= 0 && afterFinalCheck > afterExactChecks && mergeCall > afterFinalCheck,
+  'the immutable main/PR must be revalidated after final exact-head checks and before any merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'blocked' }, sha), 'pending',
+  'a PR that became blocked after the prior clean read must not pass final guard');
+assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha), 'pre-merge-main-or-pr-changed',
+  'a base change after prior checks must not pass final guard');
+console.log('Daily pre-merge last-read protection: ordering and two negatives PASS.');
+
+console.log('Daily bounded protected PR wait: eight offline cases PASS.');
+
 const comparison = {
   status: 'ahead', ahead_by: 1, behind_by: 0,
   files: [{ filename: 'apps/web/src/content/news/2026-11-04.md', status: 'added' }],

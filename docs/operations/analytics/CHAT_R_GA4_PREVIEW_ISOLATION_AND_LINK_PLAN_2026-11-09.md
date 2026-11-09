@@ -85,3 +85,45 @@ The current offline tests include `test-ga4-consent-revocation.mjs`, `test-ga4-n
 - Fundraising: https://docs.google.com/spreadsheets/d/1CQBMA-7hqN9qsy2Xt9yBGjlo08EuLluG2DEDnKVItKk/edit
 
 **Disposition:** Gate A **COMPLETE and independently verified by GSC Wizard API**; GA4 reporting active with **confirmed 3 Preview sessions / 16 Preview page views** in the historic 28-day window. Gate B design-only Draft prepared; implementation and Gate C remain **HOLD**. No Production, provider, consent, tracking, merchant or Vercel settings were modified by Chat R.
+
+---
+
+## 8. Post-implementation independent handoff — 2026-11-09
+
+This section supersedes older draft-only **status** statements above where they predate the separate implementation PR. It does not amend or waive any release hold.
+
+### Latest exact-head evidence
+
+- [Implementation PR #1217](https://github.com/usdimpact/usd-impact-site/pull/1217) remains **OPEN / DRAFT / UNMERGED**, with six files changed, base `b845f841ce9f9d4b915b9c4a04a8548a3604c311`, exact head `699627f8b3648d3c9895d21d905f6976da6cc48c`.
+- Six **author-run GitHub workflows** succeeded at that exact head: CodeQL, Web Quality, GA4 compiled Astro native-cookie browser QA, GA4 native-cookie QA, Dependency review, and Supabase Production migration intake guard (no database access). The compiled workflow separately built a synthetic Production target and a synthetic Preview target with an intentionally mis-scoped test GA4 ID, and its Preview browser checks passed. This is test evidence, **not independent real-Vercel release acceptance**.
+- Vercel reports **zero deployment records** for the #1217 head. Production remains **READY** on `b845f841` at deployment `dpl_B1nqWGMYXmpqevtykQ1KUf1XytVR`. The live Production GA4 source is still the old unmodified code.
+- Encrypted `PUBLIC_GA4_MEASUREMENT_ID` metadata still lists targets `production` **and** `preview`. No environment modification was performed. GSC Wizard's existing `properties/554833655` link to `sc-domain:usd-impact.com` remains active.
+- No GitHub PR review submissions or issue #1201 comments were found as of this read-only check, so **owner/privacy/infrastructure acceptance is NOT evidenced**.
+- Project setting metadata reports SSO Protection **enabled** with `deploymentType=all_except_custom_domains`, Password Protection **disabled**. This is a project setting, not an access verification for every historical URL.
+
+### Historical deployment inventory (read-only, non-destructive)
+
+Vercel Preview deployment history for **2026-11-01 through 2026-11-09 UTC** returned **386 distinct deployment records** across the paginated query: **265 READY, 121 ERROR**. The records' Git target is `preview` / deployment `target:null`. These are **possible old-build candidates, not 386 proven GA4-contaminated deployments**. No HTML was downloaded from protected Previews and no deployment was deleted.
+
+Three **specifically verified** GA4 hostname rows in Oct 12–Nov 8 map to READY Vercel review-branch deployments:
+
+| GA4 observed hostname | Vercel deployment ID | Branch (historical) | Observed GA4 sessions / page views |
+| --- | --- | --- | --- |
+| `usd-impact-site-9tujyujhs-usd-impact.vercel.app` | `dpl_FG2CgGjBcwqbmVFsaqRSugikEYiJ` | `review/wave5-start-here-five-min-20261105` | 1 / 5 |
+| `usd-impact-site-git-review-ui39-public-en-es-351836-usd-impact.vercel.app` (alias) | `dpl_8MBjN4Dk8jyk6VB787GPL8q5pfdX` | `review/ui39-public-en-es-shell-20261101` | 1 / 1 |
+| `usd-impact-site-rdcyopusn-usd-impact.vercel.app` | `dpl_Ge3iH9Rv4aWcyDNSGAfW25MuisLY` | `review/wave5-start-here-five-min-20261105` | 1 / 10 |
+
+The confirmed Preview share is 3/22 GA4 sessions (13.6%) and 16/95 GA4 page views (16.8%) for the period. These observations establish GA4 Preview measurement contamination, **not consent failure, unauthorized access, or 386 affected artifacts**.
+
+**Non-destructive follow-up:** Using existing protected administrative review, inventory historical artifact IDs/accessible custom aliases, access policy, expiry/retention, whether the GA4 DOM bridge was compiled, and any additional GA4 hostname rows. Do not bypass protection, access user data, delete or rebuild deployments, or change DNS. Existing historical artifacts are not fixed by changing an environment-variable target because Vercel env changes apply only to new deployments; see [official documentation](https://vercel.com/docs/environment-variables).
+
+### Mandatory acceptance questions before any merge, target change or Production release
+
+1. **Actual Vercel system variable:** Official [Vercel documentation](https://vercel.com/docs/environment-variables/system-environment-variables) states `VERCEL_ENV` exists at build and runtime when automatic system-variable exposure is enabled. The connected project-details tool did **not** expose this setting. **Verify it is actually available to this Production build before any merge**. If not, the fail-closed new code would suppress GA4 on Production. Do not print variable values or modify settings during this review. Synthetic CI `VERCEL_ENV=production` alone is insufficient.
+2. **Independent nonauthor review:** An existing owner/privacy/infrastructure reviewer needs to accept the exact six-file diff, English/Spanish consent presentation, Production parity, telemetry policy change, and all 10 test claims; no owner review was evidenced.
+3. **Preview telemetry persistence:** The proposed application guard returns 202 non-durable for all non-Production POST events. This does not itself prove that historic Preview Redis counts were separate, nor does it address protected aggregate read APIs. Verify any read path and resource scope separately without secret retrieval/customer data.
+4. **Historical treatment:** Decide separately which historical Preview artifacts remain protected, need future expiry, or should be left untouched. Do not destructively delete them on this authorization.
+5. **New deployment configuration:** Once a separate release GO exists and correct build targeting is verified, authorize removal of `preview` from the *existing* `PUBLIC_GA4_MEASUREMENT_ID` target, preserving `production`. Do not invent an alternate Production GA4 ID or add a test property under this task.
+6. **Safe release governance:** G3 direct `main` no-deployment merge remains BLOCK; do not merge #1217, dispatch workflows, deploy, change Vercel settings, disable access protection, or approve an untested rollback. Any future exact-head release must have a separately recorded owner GO and Production regression/rollback evidence.
+
+**Current disposition:** Gate A reporting link **COMPLETE**; Gate B Draft code + 6/6 author CI **COMPLETE**; independent release acceptance, environment configuration, and historical Preview treatment **NOT COMPLETE**. **Gate C / Issue #1201 REMAIN HOLD**. No further engineering branch is needed until the owners resolve these explicit acceptance questions.

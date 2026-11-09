@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/ga4-compiled-astro-qa.yml'
       - 'apps/web/scripts/test-ga4-compiled-astro-browser.py'
+      - 'apps/web/scripts/test-ga4-preview-compiled-output.mjs'
+      - 'apps/web/scripts/test-ga4-preview-compiled-browser.py'
       - 'apps/web/src/components/GoogleAnalyticsClient.astro'
       - 'apps/web/src/components/ConsentClient.astro'
       - 'apps/web/src/layouts/BaseLayout.astro'
@@ -79,3 +81,4 @@ jobs:
           set -euo pipefail
           npx --no-install astro build
           node scripts/test-ga4-preview-compiled-output.mjs
+          "$RUNNER_TEMP/ga4-compiled-venv/bin/python" scripts/test-ga4-preview-compiled-browser.py

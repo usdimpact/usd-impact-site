@@ -69,6 +69,22 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-ga4-compiled-astro-browser.py
+      - name: Reject missing Vercel build target with a synthetic GA4 ID
+        working-directory: apps/web
+        env:
+          # This is a deliberate negative test; never uses a real GA4 ID.
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          VERCEL: '1'
+          VERCEL_ENV: ''
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          if npx --no-install astro build > "$RUNNER_TEMP/ga4-missing-target.log" 2>&1; then
+            echo 'FAIL: unresolved Vercel target silently built with configured GA4 ID' >&2
+            exit 1
+          fi
+          grep -F 'GA4_BUILD_ENV_UNRESOLVED' "$RUNNER_TEMP/ga4-missing-target.log" >/dev/null
+
       - name: Verify Preview compiled output never embeds a GA4 ID
         working-directory: apps/web
         env:

@@ -6,7 +6,7 @@ import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId, isAuthenticatedBotDispatch,
+  dispatchSourceRunId, isAuthenticatedBotDispatch, classifyPreMergeReadiness,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -65,6 +65,26 @@ async function previewReady(headSha) {
     await sleep(10000);
   }
   hold('preview-deployment-not-verified');
+}
+
+// Wait only for native protected GitHub PR checks to settle. Never modify the
+// original source/PR identity, required checks, main branch or cutoff.
+async function awaitProtectedMergeReadiness(mainSha, prNumber, headSha) {
+  const MAX_POLLS = 60; // at most ten minutes of sleeps, below 25-minute job lease
+  for (let poll = 0; poll < MAX_POLLS; poll++) {
+    ensureMorning();
+    const freshMainSha = currentMain();
+    const freshPr = api('pulls/' + prNumber);
+    const decision = classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSha);
+    if (decision === 'ready') return;
+    if (decision !== 'pending') hold(decision);
+    if (poll === 0 || (poll + 1) % 12 === 0) {
+      notice('Waiting for native protected PR checks: PR #' + prNumber
+        + ', mergeable_state=' + freshPr.mergeable_state + ', poll ' + (poll + 1));
+    }
+    if (poll + 1 < MAX_POLLS) await sleep(10000);
+  }
+  hold('pre-merge-pr-check-readiness-timeout');
 }
 
 async function verifyLive(editionDate) {
@@ -198,12 +218,8 @@ async function run() {
   await previewReady(headSha);
   ensureMorning();
 
-  const freshMainSha = currentMain();
-  const freshPr = api('pulls/' + prNumber);
-  if (freshMainSha !== mainSha || freshPr.head.sha !== headSha
-      || freshPr.base.sha !== mainSha || freshPr.state !== 'open'
-      || freshPr.draft || freshPr.mergeable !== true
-      || freshPr.mergeable_state !== 'clean') hold('pre-merge-main-or-pr-changed');
+  await awaitProtectedMergeReadiness(mainSha, prNumber, headSha);
+  ensureMorning();
   requireExactChecks(requiredCheckSnapshot(headSha), headSha);
   const result = JSON.parse(gh(['api', '-X', 'PUT',
     'repos/' + REPOSITORY + '/pulls/' + prNumber + '/merge',

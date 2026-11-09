@@ -224,6 +224,17 @@ function collectOpenAiText(openAiResponse) {
   return parts.join('').trim();
 }
 
+// Counts only. Never put raw publisher URLs, source IDs, draft prose or tokens
+// into an authenticated failure response or public CI issue.
+function draftSourceCount(response) {
+  try {
+    const parsed = JSON.parse(collectOpenAiText(response));
+    return Array.isArray(parsed?.sources) ? parsed.sources.length : null;
+  } catch {
+    return null;
+  }
+}
+
 function collectGroundedUrls(openAiResponse) {
   const urls = new Set();
   const add = (value) => {
@@ -611,6 +622,16 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
 
   console.error(`Daily news bundle requires bounded repair: ${initial.reason}`);
   const feasibility = assessBoundedRepairFeasibility(openAiResponse, date);
+  let candidate = openAiResponse;
+  const initialDraftSourceCount = draftSourceCount(openAiResponse);
+  // Observability only: these counts do NOT mean a source is eligible or
+  // independently verified. The existing full source/editorial gate is unchanged.
+  const sourceCountDiagnostics = () => ({
+    initialDraftSourceCount,
+    latestDraftSourceCount: draftSourceCount(candidate),
+    groundedMetadataUrlCount: feasibility.groundedCount,
+    originalRetainedLedgerUrlCount: feasibility.retainedCount,
+  });
   if (!feasibility.canRepair) {
     // Do not pay for a repair unless the stored completed response carries at
     // least three exact reusable grounded URLs. Fail closed and let the existing
@@ -623,6 +644,7 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
       groundedSourceCount: feasibility.groundedCount,
       usableSourceCount: feasibility.retainedCount,
       repairAttempts: 0,
+      ...sourceCountDiagnostics(),
     }, 502);
   }
   // The initial background response is stored explicitly and is the durable provider
@@ -630,7 +652,6 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
   // not chain to the immediately previous repair response id.
   const storedContextResponseId = String(openAiResponse?.id ?? '').trim();
   const repairStartedAt = Date.now();
-  let candidate = openAiResponse;
   let currentReason = initial.reason;
 
   for (let attempt = 1; attempt <= MAX_REPAIR_ATTEMPTS; attempt += 1) {
@@ -641,6 +662,7 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
         initialValidationReason: initial.reason,
         repairValidationReason: currentReason,
         repairAttempts: attempt - 1,
+        ...sourceCountDiagnostics(),
       }, 502);
     }
 
@@ -671,6 +693,7 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
         repairValidationReason: currentReason,
         repairAttempts: attempt,
         repairError: message.slice(0, 1_000),
+        ...sourceCountDiagnostics(),
       }, 502);
     }
   }
@@ -680,6 +703,7 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
     initialValidationReason: initial.reason,
     repairValidationReason: currentReason,
     repairAttempts: MAX_REPAIR_ATTEMPTS,
+    ...sourceCountDiagnostics(),
   }, 502);
 }
 

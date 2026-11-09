@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
 import { buildCarryForward } from './create-daily-carry-forward.mjs';
 import { validateEditorialBundle } from '../src/lib/daily-news-editorial-validation.js';
@@ -64,5 +65,22 @@ assert.throws(() => generate({ ...archive, sources: sources.map((x) => ({ ...x, 
 assert.throws(() => generate(archive, new Map([[sources[0].url, new Set(['2026-11-06', '2026-11-07'])],
   [sources[1].url, new Set(['2026-11-04', '2026-11-05'])]])),
   /fewer-than-three-eligible-dated-primary-sources/);
+
+// The generated fallback PR body must not accidentally contain GitHub's
+// auto-issue-closure syntax. The 2026-11-09 manual-late merge inadvertently
+// affected the still-open Daily incident because its PR body used such wording.
+const carryforwardWorkflow = readFileSync(
+  new URL('../../../.github/workflows/daily-news-late-carryforward.yml', import.meta.url),
+  'utf8',
+);
+const generatedPrBodyLine = carryforwardWorkflow.split('\n')
+  .find((line) => /^\s*--body\s+"/.test(line));
+assert.ok(generatedPrBodyLine, 'late carry-forward must keep its explicit PR body');
+assert.match(generatedPrBodyLine, /Keep Issue #840 OPEN/,
+  'the incident remains open until genuine unattended acceptance');
+assert.doesNotMatch(generatedPrBodyLine,
+  /\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#840\b/i,
+  'a negated GitHub closing keyword would still automatically close Issue #840');
+console.log('Carry-forward generated PR incident keyword safety PASS.');
 
 console.log('Daily no-paid carry-forward regression PASS: complete content and fail-closed source gates.');

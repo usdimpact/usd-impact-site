@@ -7,7 +7,7 @@ import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId, isAuthenticatedBotDispatch,
+  dispatchSourceRunId, isAuthenticatedBotDispatch, classifyPreMergeReadiness,
 } from './daily-news-auto-publish-policy.mjs';
 
 const auto = readFileSync(new URL('../../../.github/workflows/daily-news-auto-publish.yml', import.meta.url), 'utf8');
@@ -71,6 +71,44 @@ assert.throws(() => selectExactDailyPr([{ ...pr, draft: true }], run, base), /no
 assert.throws(() => selectExactDailyPr([{ ...pr, base: { ref: 'main', sha } }], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr([pr, pr], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr(Array(100).fill(pr), run, base), /incomplete/);
+// Native required checks can start after separately dispatched jobs pass.
+// A bounded wait is permitted; conflicts, drift and bypasses are not.
+const cleanPr = { ...pr, mergeable: true, mergeable_state: 'clean' };
+assert.equal(classifyPreMergeReadiness(base, base, cleanPr, sha), 'ready');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'blocked' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: null, mergeable_state: 'unknown' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha),
+  'pre-merge-main-or-pr-changed', 'main drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, head: { ...cleanPr.head, sha: base } }, sha),
+  'pre-merge-main-or-pr-changed', 'head drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, base: { ...cleanPr.base, sha } }, sha),
+  'pre-merge-main-or-pr-changed', 'base drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, draft: true }, sha), 'pre-merge-main-or-pr-changed');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, state: 'closed' }, sha), 'pre-merge-main-or-pr-changed');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: false, mergeable_state: 'blocked' }, sha),
+  'pre-merge-pr-not-clean', 'a known conflict must never wait/merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'dirty' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'behind' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base, null, sha), 'pre-merge-main-or-pr-changed');
+assert.match(runtime, /async function awaitProtectedMergeReadiness\(mainSha, prNumber, headSha\)/);
+assert.match(runtime, /const MAX_POLLS = 60/);
+assert.match(runtime, /for \(let poll = 0; poll < MAX_POLLS; poll\+\+\) \{\s*ensureMorning\(\);/);
+assert.match(runtime, /await sleep\(10000\)/);
+assert.match(runtime, /hold\('pre-merge-pr-check-readiness-timeout'\)/);
+assert.match(runtime, /await awaitProtectedMergeReadiness\(mainSha, prNumber, headSha\);\s*ensureMorning\(\);/);
+assert.doesNotMatch(runtime, /gh pr merge --admin|merge_method=force/);
+
 const comparison = {
   status: 'ahead', ahead_by: 1, behind_by: 0,
   files: [{ filename: 'apps/web/src/content/news/2026-11-04.md', status: 'added' }],

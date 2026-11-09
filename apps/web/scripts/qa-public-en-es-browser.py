@@ -158,6 +158,52 @@ def desktop_menu(browser, width):
     finally:
         ctx.close()
 
+def synthetic_score_lab_interaction(browser):
+    """Real Chrome/compiled Astro keyboard/input/CSV/reset test; all traffic stays on loopback."""
+    ctx, page = setup(browser, width=390)
+    try:
+        response = page.goto(origin + "/score/lab/", wait_until="load", timeout=30000)
+        assert response and response.status == 200, "Fictional lab route not built"
+        assert page.locator("html").get_attribute("lang") == "es", "Lab must retain Spanish locale"
+        assert page.locator("[data-lab-status='fictional-only']").count() == 1, "Synthetic disclaimer missing"
+        assert "noindex" in (page.locator('meta[name="robots"]').get_attribute("content") or "").lower(), "Lab must remain noindex"
+
+        score = page.locator("[data-sim-score]")
+        csv = page.locator("#lab-csv")
+        slider = page.locator("#lab-DXY")
+        display = page.locator('[data-sim-row="DXY"] [data-sim-x]')
+        row_initial = "DXY,0.125,900,900,1000,1100,1100,1120"
+        row_changed = "DXY,0.125,900,900,1000,1100,1100,1130"
+        assert score.inner_text().strip() == "0.4011", "Wrong initial fictional Score"
+        assert slider.get_attribute("type") == "range", "DXY must use native range control"
+        assert slider.input_value() == "1120", "Wrong initial DXY W6"
+        assert display.inner_text().strip() == "1120", "Displayed DXY W6 mismatch"
+        assert row_initial in csv.input_value().splitlines(), "Initial fictional CSV does not match input"
+
+        # Unlike visual cursor automation, focus + ArrowRight targets the exact range element.
+        slider.focus()
+        assert page.evaluate("document.activeElement?.id === 'lab-DXY'"), "DXY slider not keyboard focusable"
+        slider.press("ArrowRight")
+        page.wait_for_function("""() => document.querySelector('#lab-DXY')?.value === '1130'
+            && document.querySelector('[data-sim-score]')?.textContent?.trim() === '0.4088'""", timeout=10000)
+        assert display.inner_text().strip() == "1130", "DXY W6 visible output not updated"
+        assert row_changed in csv.input_value().splitlines(), "CSV did not update with changed W6"
+        assert row_initial not in csv.input_value().splitlines(), "CSV retained stale default W6"
+
+        page.locator("#lab-reset").click()
+        page.wait_for_function("""() => document.querySelector('#lab-DXY')?.value === '1120'
+            && document.querySelector('[data-sim-score]')?.textContent?.trim() === '0.4011'""", timeout=10000)
+        assert display.inner_text().strip() == "1120", "Reset did not restore visible DXY"
+        assert row_initial in csv.input_value().splitlines(), "Reset did not restore original CSV"
+        assert ctx.cookies() == [], "Interaction should not set cookies"
+        return {"route":"/score/lab/", "keyboard":"DXY 1120 -> 1130",
+                "score":"0.4011 -> 0.4088 -> 0.4011",
+                "csv":"updated and reset", "network":"loopback-only",
+                "indexing":"noindex"}
+    finally:
+        ctx.close()
+
+
 def reflow(browser, route):
     ctx, page = setup(browser, width=320)
     try:
@@ -191,6 +237,7 @@ try:
             for language in ("en", "es"):
                 check(f"{language.upper()} JS collapsed-header boundary {width}px",
                       lambda width=width, language=language: js_collapsed(browser, language, width))
+        check("synthetic Score Lab native slider/CSV/reset", lambda: synthetic_score_lab_interaction(browser))
         for route in ("/", "/es/", "/news/", "/reports/", "/learn/", "/quiz/"):
             check("reflow " + route, lambda route=route: reflow(browser, route))
         browser.close()

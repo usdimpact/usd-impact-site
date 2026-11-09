@@ -18,7 +18,7 @@ No raw event body, IP address, user-agent string, cookie, email address, quiz an
 ## Storage and retention
 
 - Provider: Upstash Redis through the Vercel Marketplace.
-- Environments: Preview and Production.
+- Historical Upstash resource bindings may exist in Preview and Production. In Draft PR #1217, non-Production telemetry event writes and aggregate report reads are blocked by the API handler. **This safeguard is not live until an explicitly authorized release.** Whether the historical Preview and Production bindings shared the same store remains to be independently verified.
 - Daily aggregate retention: 730 days.
 - Cumulative counters: retained until deletion or resource retirement.
 - Duplicate event IDs: retained for 24 hours only.
@@ -43,7 +43,7 @@ A Redis-backed per-minute event cap provides basic global rate limiting. Rate-li
 
 `GET /api/telemetry-report` returns cumulative and daily aggregate counters.
 
-Authentication uses a bearer token. The endpoint reads `TELEMETRY_REPORT_TOKEN` when configured and otherwise uses the existing `NEWSFEED_BEARER_TOKEN`.
+Authentication uses a bearer token. Draft PR #1217 requires the dedicated `TELEMETRY_REPORT_TOKEN` on Production only; no fallback to the broader `NEWSFEED_BEARER_TOKEN` is allowed. If the dedicated token is absent, Production aggregate reporting responds `503` and remains unavailable until the owner authorizes provisioning; this migration is a **release gate**, not a live change. All three reporting actions deny non-Production environments with `404` in the Draft.
 
 Example request:
 
@@ -103,7 +103,7 @@ Average quiz score is calculated as `score_sum / completions`.
 
 ## Access and deletion
 
-- Access is limited to Vercel project administrators with the report bearer token.
+- Access is intended only for authorized Production operators holding the dedicated report bearer token; Preview reporting is blocked by the Draft handler. Existing Production behavior stays unchanged until a separate release approval.
 - Do not expose the report endpoint token in browser code or public documentation.
 - To delete telemetry, remove keys beginning with `usd-impact:telemetry:v1:` from the connected Upstash resource.
 - During an incident, disable the Upstash resource connection or rotate its tokens; the public learning flow will continue using non-blocking degraded behavior.

@@ -1,5 +1,11 @@
 ---
-const rawMeasurementId = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? '';
+// Only the exact Vercel Production build may embed the configured GA4 ID.
+// Preview, Development and unknown build environments fail closed even if the
+// Production measurement variable is accidentally scoped to those targets.
+const deploymentEnvironment = String(process.env.VERCEL_ENV ?? '').trim().toLowerCase();
+const rawMeasurementId = deploymentEnvironment === 'production'
+  ? (import.meta.env.PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? '')
+  : '';
 const measurementIdPattern = /^G-[A-Z0-9]{4,32}$/;
 if (rawMeasurementId && !measurementIdPattern.test(rawMeasurementId)) {
   throw new Error('PUBLIC_GA4_MEASUREMENT_ID must be a GA4 Measurement ID such as G-XXXXXXXXXX.');

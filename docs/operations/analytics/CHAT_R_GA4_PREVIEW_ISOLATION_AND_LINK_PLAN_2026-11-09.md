@@ -148,3 +148,34 @@ The confirmed Preview share is 3/22 GA4 sessions (13.6%) and 16/95 GA4 page view
 5. Preserve G3 prohibition on direct merge-to-main deployment, separate actual release/rollback GO, and all other project NO-GO holds.
 
 **Disposition:** Gate A association COMPLETE; GA4 environment target narrowed to Production-only and **verified**; Gate B Draft code + synthetic QA COMPLETE; **Gate C merge/release remains HOLD**. This addendum supersedes earlier statements that the GA4 variable still targets both environments.
+
+---
+
+## 10. Independent NO-GO review and bounded F1/F2 fixes (2026-11-09)
+
+**Independent evidence received:** An external nonauthor reviewer cloned the public repository read-only and reviewed exact baseline `b845f841` versus implementation head `699627f8`, using only local synthetic fixtures (`G-TEST1234`, fake tokens) and no connected GitHub/Vercel credentials. Their verdict was **NO-GO**. They did **not** independently verify hosted CI and did **not** authorize release.
+
+- **F1 / P1 confirmed:** A local build with `VERCEL_ENV` unset but a configured ID produced zero GA4 bridges across 300 HTML pages and exited successfully. The draft original code could silently suppress Production GA4 if system build variables were unavailable.
+- **F2 / P2, potentially P1 if shared store:** All three authenticated GET report routes (`report`, `checklist-report`, `checkout-funnel-report`) remained reachable from synthetic Preview context, with aggregate reads invoked. Shared KV bindings were **not verified**; this does **not** prove customer-data exposure.
+- **F3 governance:** `main` remains deploy-triggering; G3–G6 still HOLD; no PR merge permitted.
+- **F4 privacy:** English Preview consent choices persist although GA4 and telemetry are deliberately inert. A privacy-owner UI-38 decision is required; no consent text changed.
+- **F5 paperwork:** PR #1217 description incorrectly described the GA4 environment variable as targeting both environments; the body was corrected after verified Production-only targeting.
+
+**Bounded remediation only in existing Draft PR #1217:**
+- `GoogleAnalyticsClient.astro`: fail loudly with `GA4_BUILD_ENV_UNRESOLVED` when the Vercel build marker or a configured GA4 ID is present but `VERCEL_ENV` cannot be resolved, and `GA4_PRODUCTION_ID_MISSING` when Production lacks a configured ID. This prevents a silent Production output loss without injecting analytics into Preview/Development.
+- `verify-production-build.mjs`: for a known Production target, verify that compiled public homepage contains the expected GA4 bridge, without logging the ID.
+- `api/telemetry.js`: all three GET aggregate reports fail closed with 404 outside Production **before** bearer-token evaluation and Upstash access. GET reporting uses dedicated `TELEMETRY_REPORT_TOKEN` only; no `NEWSFEED_BEARER_TOKEN` fallback. Existing non-Production POST non-durable guard remains.
+- Synthetic regression tests cover 12 non-Production GET denials with zero aggregate reads, legacy token fallback denial, and `VERCEL=1` with unset `VERCEL_ENV` / fictional ID requiring build failure.
+- A stale checklist dashboard source-contract test was updated to the new privilege separation after the first revised Web Quality run failed, and the Phase 2 telemetry operations documentation was reconciled in the Draft. **Production credential readiness remains UNVERIFIED** because Vercel's read-only environment listing is capped.
+
+**Current candidate head after focused corrections:** `ab88f2ae78a92fb088cc194bd9a978f2a6a161ad` in PR #1217, containing nine changed files. The original author's six successful checks on old head `699627f8` **must not** be counted as acceptance of the revised candidate. As of the evidence check, four revised-head workflows had passed and CodeQL / compiled Astro browser QA were still in progress. Recheck all exact-head checks before owner decision; if further changes occur, this checkpoint becomes historical.
+
+**Remaining conditional GO prerequisites:**
+1. Metadata-only owner readback of the actual Vercel project setting exposing `VERCEL_ENV` to Production builds. Official Vercel docs alone are insufficient for a project-specific assertion.
+2. Verify a dedicated **Production-scoped** `TELEMETRY_REPORT_TOKEN` already exists and identify legitimate dashboard readers; without it, the new Draft's Production GET reports will return 503. Do not print, copy or rotate any tokens without separate authorization.
+3. Independent nonauthor re-review of the **new exact head**, including CI log verification. The independent reviewer asked for this once F1 and F2 changes were available; author CI alone is not independent sign-off.
+4. Privacy owner UI-38 decision on English Preview consent presentation.
+5. Review access policy of historical protected Preview artifacts; **no deletion or forced cleanup** under Chat R.
+6. Separate G3-governed release authorization with explicit Production parity and rollback checks. Direct `main` no-deployment merges and release remain BLOCK; #1201 stays OPEN.
+
+**Disposition:** New F1/F2 source fixes are Draft-only and not yet accepted for deployment. GA4 Vercel variable remains Production-only, previous Production deployment intact, no new Preview, no Production or Vercel mutation from these Draft commits.

@@ -446,12 +446,11 @@ async function handleEvent(request, response) {
     });
   }
 
-  const vercelEnvironment = String(process.env.VERCEL_ENV ?? '').trim();
-  if (
-    normalized.record.eventName.startsWith('checkout_')
-    && vercelEnvironment
-    && vercelEnvironment !== 'production'
-  ) {
+  // No optional telemetry, including checklist/quiz events, may be recorded
+  // by Previews, Development or an unknown deployment environment. This
+  // check precedes duplicate-state mutation and every storage/log write.
+  const vercelEnvironment = String(process.env.VERCEL_ENV ?? '').trim().toLowerCase();
+  if (vercelEnvironment !== 'production') {
     return send(response, 202, {
       accepted: true,
       duplicate: false,

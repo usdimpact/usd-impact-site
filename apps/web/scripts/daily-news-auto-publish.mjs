@@ -6,7 +6,7 @@ import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId, isAuthenticatedBotDispatch, classifyPreMergeReadiness,
+  dispatchSourceRunId, isAuthenticatedBotDispatch, waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -70,21 +70,13 @@ async function previewReady(headSha) {
 // Wait only for native protected GitHub PR checks to settle. Never modify the
 // original source/PR identity, required checks, main branch or cutoff.
 async function awaitProtectedMergeReadiness(mainSha, prNumber, headSha) {
-  const MAX_POLLS = 60; // at most ten minutes of sleeps, below 25-minute job lease
-  for (let poll = 0; poll < MAX_POLLS; poll++) {
-    ensureMorning();
-    const freshMainSha = currentMain();
-    const freshPr = api('pulls/' + prNumber);
-    const decision = classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSha);
-    if (decision === 'ready') return;
-    if (decision !== 'pending') hold(decision);
-    if (poll === 0 || (poll + 1) % 12 === 0) {
-      notice('Waiting for native protected PR checks: PR #' + prNumber
-        + ', mergeable_state=' + freshPr.mergeable_state + ', poll ' + (poll + 1));
-    }
-    if (poll + 1 < MAX_POLLS) await sleep(10000);
-  }
-  hold('pre-merge-pr-check-readiness-timeout');
+  const MAX_POLLS = 60;
+  return waitForProtectedPrChecks({
+    mainSha, prNumber, headSha, readMain: currentMain,
+    readPr: (number) => api('pulls/' + number),
+    checkCutoff: ensureMorning, pause: sleep, report: notice,
+    maxPolls: MAX_POLLS, retryDelayMs: 10000,
+  });
 }
 
 async function verifyLive(editionDate) {

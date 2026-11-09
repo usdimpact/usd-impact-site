@@ -172,3 +172,19 @@ export function requireExactChecks(checkRuns, headSha) {
   }
   return true;
 }
+
+// A fresh GitHub App pull_request may still be running native required checks
+// after separately dispatched supplemental checks have completed. "pending"
+// only permits a bounded retry: it never authorizes merge or bypass.
+export function classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSha) {
+  if (!freshPr || freshMainSha !== mainSha
+      || freshPr.head?.sha !== headSha || freshPr.base?.sha !== mainSha
+      || freshPr.state !== 'open' || freshPr.draft
+      || freshPr.head?.repo?.full_name !== REPOSITORY) {
+    return 'pre-merge-main-or-pr-changed';
+  }
+  if (freshPr.mergeable === true && freshPr.mergeable_state === 'clean') return 'ready';
+  if ((freshPr.mergeable === true || freshPr.mergeable === null)
+      && ['blocked', 'unknown'].includes(freshPr.mergeable_state)) return 'pending';
+  return 'pre-merge-pr-not-clean';
+}

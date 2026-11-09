@@ -146,6 +146,40 @@ try {
   assert.equal(isolatedPreviewEvent.status, 202);
   assert.equal(isolatedPreviewEvent.json.environmentIsolated, true);
   assert.equal(isolatedPreviewEvent.json.durable, false);
+
+  // All other allowed event types must also be discarded before any
+  // persistent write, runtime log or duplicate-event state mutation.
+  const logCountBeforePreview = logged.length;
+  const previewCases = [
+    { eventId: 'evt-preview-checklist-0001', eventName: 'checklist_download', route: '/lead-magnets/weekly-dollar-regime-checklist/' },
+    { eventId: 'evt-preview-quiz-start-0001', eventName: 'quiz_start', route: '/start-here/quiz', quizId: 'quiz-start-here' },
+    { eventId: 'evt-preview-quiz-retry-0001', eventName: 'quiz_retry', route: '/start-here/quiz', quizId: 'quiz-start-here' },
+    { eventId: 'evt-preview-quiz-complete-0001', eventName: 'quiz_complete', route: '/start-here/quiz', quizId: 'quiz-start-here', outcome: 'pass', score: 9, questionCount: 10 },
+    { eventId: 'evt-preview-checkout-click-0001', eventName: 'checkout_button_click', route: '/checkout/' },
+    { eventId: 'evt-preview-signin-0001', eventName: 'checkout_sign_in_redirect', route: '/checkout/' },
+  ];
+  for (const event of previewCases) {
+    const discarded = await request(event);
+    assert.equal(discarded.status, 202);
+    assert.equal(discarded.json.accepted, true);
+    assert.equal(discarded.json.environmentIsolated, true);
+    assert.equal(discarded.json.durable, false);
+  }
+  assert.equal(logged.length, logCountBeforePreview, 'Preview must not log optional event bodies');
+
+  for (const environment of ['development', '', undefined]) {
+    if (environment === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = environment;
+    const discarded = await request({
+      eventId: 'evt-no-production-env-0001',
+      eventName: 'checklist_download',
+      route: '/lead-magnets/weekly-dollar-regime-checklist/',
+    });
+    assert.equal(discarded.status, 202);
+    assert.equal(discarded.json.environmentIsolated, true);
+    assert.equal(discarded.json.durable, false);
+  }
+  assert.equal(logged.length, logCountBeforePreview, 'Unknown targets must not log optional events');
   process.env.VERCEL_ENV = 'production';
   setTelemetryRecorderForTests(async () => ({
     durable: true,

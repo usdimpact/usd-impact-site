@@ -198,7 +198,7 @@ def score_lab_native_slider(browser, width):
             """() => document.querySelector('#lab-DXY')?.value === '1130'
                && document.querySelector('[data-sim-score]')?.textContent === '0.4088'
                && document.querySelector('[data-sim-row="DXY"] [data-sim-x]')?.textContent === '1130'
-               && document.querySelector('#lab-csv')?.value.split('\n')[1]
+               && document.querySelector('#lab-csv')?.value.split('\\n')[1]
                     === 'DXY,0.125,900,900,1000,1100,1100,1130'""",
             timeout=8000,
         )
@@ -209,7 +209,7 @@ def score_lab_native_slider(browser, width):
         page.wait_for_function(
             """() => document.querySelector('#lab-DXY')?.value === '1120'
                && document.querySelector('[data-sim-score]')?.textContent === '0.4011'
-               && document.querySelector('#lab-csv')?.value.split('\n')[1]
+               && document.querySelector('#lab-csv')?.value.split('\\n')[1]
                     === 'DXY,0.125,900,900,1000,1100,1100,1120'""",
             timeout=8000,
         )

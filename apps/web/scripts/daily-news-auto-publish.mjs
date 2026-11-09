@@ -6,7 +6,8 @@ import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId, isAuthenticatedBotDispatch, waitForProtectedPrChecks,
+  dispatchSourceRunId, isAuthenticatedBotDispatch,
+  classifyPreMergeReadiness, waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -213,6 +214,13 @@ async function run() {
   await awaitProtectedMergeReadiness(mainSha, prNumber, headSha);
   ensureMorning();
   requireExactChecks(requiredCheckSnapshot(headSha), headSha);
+  // Do not rely on the earlier clean snapshot if checks finished while the
+  // protected base/head moved. This does not bypass GitHub's atomic rules.
+  ensureMorning();
+  const finalMainSha = currentMain();
+  const finalPr = api('pulls/' + prNumber);
+  const finalDecision = classifyPreMergeReadiness(finalMainSha, mainSha, finalPr, headSha);
+  if (finalDecision !== 'ready') hold('final-pr-readiness-' + finalDecision);
   const result = JSON.parse(gh(['api', '-X', 'PUT',
     'repos/' + REPOSITORY + '/pulls/' + prNumber + '/merge',
     '-f', 'sha=' + headSha, '-f', 'merge_method=squash',

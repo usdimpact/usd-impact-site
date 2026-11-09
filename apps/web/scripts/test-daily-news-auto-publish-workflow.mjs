@@ -164,6 +164,23 @@ await assert.rejects(waitForProtectedPrChecks({
 await assert.rejects(waitForProtectedPrChecks({
   ...waitFixture, maxPolls: 61,
 }), /invalid-protected-pr-readiness-bounds/);
+
+assert.match(runtime, /const finalMainSha = currentMain\(\);/);
+assert.match(runtime, /const finalPr = api\('pulls\/' \+ prNumber\);/);
+assert.match(runtime, /const finalDecision = classifyPreMergeReadiness\(finalMainSha, mainSha, finalPr, headSha\);/);
+assert.match(runtime, /if \(finalDecision !== 'ready'\) hold\('final-pr-readiness-' \+ finalDecision\);/);
+const afterExactChecks = runtime.lastIndexOf('requireExactChecks(requiredCheckSnapshot(headSha), headSha);');
+const afterFinalCheck = runtime.indexOf('const finalDecision = classifyPreMergeReadiness(');
+const mergeCall = runtime.indexOf("'repos/' + REPOSITORY + '/pulls/' + prNumber + '/merge'");
+assert.ok(afterExactChecks >= 0 && afterFinalCheck > afterExactChecks && mergeCall > afterFinalCheck,
+  'the immutable main/PR must be revalidated after final exact-head checks and before any merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'blocked' }, sha), 'pending',
+  'a PR that became blocked after the prior clean read must not pass final guard');
+assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha), 'pre-merge-main-or-pr-changed',
+  'a base change after prior checks must not pass final guard');
+console.log('Daily pre-merge last-read protection: ordering and two negatives PASS.');
+
 console.log('Daily bounded protected PR wait: eight offline cases PASS.');
 
 const comparison = {

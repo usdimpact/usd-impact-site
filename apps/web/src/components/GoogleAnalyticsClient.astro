@@ -3,8 +3,18 @@
 // Preview, Development and unknown build environments fail closed even if the
 // Production measurement variable is accidentally scoped to those targets.
 const deploymentEnvironment = String(process.env.VERCEL_ENV ?? '').trim().toLowerCase();
+const configuredMeasurementId = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? '';
+// A real Vercel build or any build carrying a configured GA4 ID cannot
+// silently ship without knowing its environment. Preview and Development
+// never inject the ID, even when a synthetic ID is supplied deliberately.
+if (!deploymentEnvironment && (process.env.VERCEL === '1' || configuredMeasurementId)) {
+  throw new Error('GA4_BUILD_ENV_UNRESOLVED: VERCEL_ENV is required for a Vercel build or a build with a GA4 ID.');
+}
+if (deploymentEnvironment === 'production' && !configuredMeasurementId) {
+  throw new Error('GA4_PRODUCTION_ID_MISSING: Production GA4 is configured as required but no measurement ID was supplied.');
+}
 const rawMeasurementId = deploymentEnvironment === 'production'
-  ? (import.meta.env.PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? '')
+  ? configuredMeasurementId
   : '';
 const measurementIdPattern = /^G-[A-Z0-9]{4,32}$/;
 if (rawMeasurementId && !measurementIdPattern.test(rawMeasurementId)) {

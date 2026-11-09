@@ -7,6 +7,8 @@ on:
       - 'apps/web/scripts/test-ga4-compiled-astro-browser.py'
       - 'apps/web/scripts/test-ga4-preview-compiled-output.mjs'
       - 'apps/web/scripts/test-ga4-preview-compiled-browser.py'
+      - 'apps/web/scripts/test-ga4-optional-production-build.mjs'
+      - 'apps/web/scripts/verify-production-build.mjs'
       - 'apps/web/src/components/GoogleAnalyticsClient.astro'
       - 'apps/web/src/components/ConsentClient.astro'
       - 'apps/web/src/layouts/BaseLayout.astro'
@@ -84,6 +86,20 @@ jobs:
             exit 1
           fi
           grep -F 'GA4_BUILD_ENV_UNRESOLVED' "$RUNNER_TEMP/ga4-missing-target.log" >/dev/null
+
+      - name: Verify optional GA4-off full Production build still publishes
+        working-directory: apps/web
+        env:
+          # Simulate an intentionally unconfigured GA4 ID without altering
+          # Vercel settings. The *full* build runs Production validation.
+          VERCEL: '1'
+          VERCEL_ENV: production
+          PUBLIC_GA4_MEASUREMENT_ID: ''
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run build
+          node scripts/test-ga4-optional-production-build.mjs
 
       - name: Verify Preview compiled output never embeds a GA4 ID
         working-directory: apps/web

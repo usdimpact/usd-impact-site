@@ -179,3 +179,35 @@ The confirmed Preview share is 3/22 GA4 sessions (13.6%) and 16/95 GA4 page view
 6. Separate G3-governed release authorization with explicit Production parity and rollback checks. Direct `main` no-deployment merges and release remain BLOCK; #1201 stays OPEN.
 
 **Disposition:** New F1/F2 source fixes are Draft-only and not yet accepted for deployment. GA4 Vercel variable remains Production-only, previous Production deployment intact, no new Preview, no Production or Vercel mutation from these Draft commits.
+
+
+---
+
+## 11. Second independent review, owner D1 policy, and D2/D3 test closure
+
+**Date:** 2026-11-09 UTC. All new changes remain **Draft-only** in the existing implementation PR #1217, and do not change the live GA4/telemetry runtime.
+
+A separate nonauthor reviewer independently rebuilt implementation head `ab88f2ae78a92fb088cc194bd9a978f2a6a161ad` against protected `main@b845f841`, using fictional IDs and tokens. Their verdict: **conditional source-code PASS / release NO-GO**. They reproduced key F1/F2 protections and showed the Production compiled output was byte-identical to the base when `VERCEL_ENV=production`; the external reviewer could not fetch authenticated GitHub workflows in their environment. Connected GitHub independently verified the six original exact-head workflows by reading live run records.
+
+**Independent remaining findings at their reviewed head:**
+
+- **D1 (P2, OWNER DECISION / RELEASE BLOCK):** the proposed `GA4_PRODUCTION_ID_MISSING` guard makes every Production deploy, including unattended Daily publication, depend on the optional GA4 ID. It is a deliberate availability coupling and requires the owner's explicit choice: **A** retain mandatory Production GA4 (missing ID means fail build) or **B** make GA4 optional so a Production build with no ID succeeds with GA4 disabled, while configured-ID builds with unresolved environment still fail loudly. Both strategies must preserve EN consent, ES analytics-off, Preview ID exclusion, and Production parity when ID is supplied. This policy was NOT selected by Chat R.
+- **D2 (P3):** old tests did not prove Preview reporting guards execute *before* missing-token validation; a mutation moved the guards later and tests still passed.
+- **D3 (P3):** the direct legacy-Newsfeed-token rejection test covered only one of three reporting GET actions, despite the source contract covering all three.
+- **F4 owner privacy:** English Preview consent choice with inactive analytics remains an owner design decision, not legal certification. Historic Preview artifacts retain individual access/retention decision gates.
+- **External:** still unverified: real Production system-variable exposure, Production-scoped dedicated `TELEMETRY_REPORT_TOKEN` metadata (the connected env list is capped), and independent G3-governed deployment authorization.
+
+**Draft-only D2/D3 repair** at new exact implementation head `7013de72b0a6a236f06f476d9f683f3f271a478d` changes only `apps/web/scripts/test-telemetry-function.mjs`: 12 non-Production report-route cases now also test missing `TELEMETRY_REPORT_TOKEN` and no Authorization, asserting 404, no missing-token console error and no aggregate reads; all three report routes reject a legacy Newsfeed bearer (503 if dedicated token absent, 401 if present), without aggregate reads. The behavior guards themselves did not change.
+
+**Connected GitHub read-back on NEW exact SHA:** all six pull-request-triggered workflows are **completed / SUCCESS**, independently fetched by run ID with matching `head_sha`:
+
+| Workflow | Run |
+| --- | --- |
+| Web Quality | https://github.com/usdimpact/usd-impact-site/actions/runs/42702706540 |
+| Dependency Review | https://github.com/usdimpact/usd-impact-site/actions/runs/42702706361 |
+| Supabase migration-intake guard (no database access) | https://github.com/usdimpact/usd-impact-site/actions/runs/42702706356 |
+| GA4 native-cookie QA | https://github.com/usdimpact/usd-impact-site/actions/runs/42702706542 |
+| GA4 compiled Astro native-browser QA | https://github.com/usdimpact/usd-impact-site/actions/runs/42702706492 |
+| CodeQL security analysis | https://github.com/usdimpact/usd-impact-site/actions/runs/42702706464 |
+
+**Release gate status:** D2/D3 **test coverage complete**, source still Draft; D1 **owner unresolved**; real Vercel build target and dedicated report token **unknown**; independent re-review of the *latest* exact head **not yet recorded**; privacy owner decision **unknown**; G3 release authorization **NO-GO**. Production and inherited Preview artifacts unchanged. No merge, deploy, Vercel settings change, secret read, workflow dispatch or historical deletion undertaken. **Issue #1201 stays OPEN.**

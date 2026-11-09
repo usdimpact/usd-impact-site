@@ -310,6 +310,19 @@ try {
       });
       assert.equal(denied.status, 404, `${environment ?? 'unset'} must block ${action}`);
       assert.equal(denied.json.error, 'Not found.');
+
+      // D2: The environment guard must run before any bearer validation.
+      // With the dedicated token entirely absent and no Authorization header,
+      // Preview, Development, and unknown targets must still return 404.
+      const errorCountBefore = errors.length;
+      delete process.env.TELEMETRY_REPORT_TOKEN;
+      const noTokenDenied = await request(null, 'GET', {
+        url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+      });
+      assert.equal(noTokenDenied.status, 404, `${environment ?? 'unset'} must reject ${action} before token validation`);
+      assert.equal(noTokenDenied.json.error, 'Not found.');
+      assert.equal(errors.length, errorCountBefore, 'Non-Production report must not log missing-token errors');
+      process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
     }
   }
   assert.equal(unauthorizedAggregateReads, 0, 'Non-Production report path read aggregates');
@@ -317,13 +330,24 @@ try {
 
   // A legacy Newsfeed bearer token must never act as telemetry-report privilege.
   delete process.env.TELEMETRY_REPORT_TOKEN;
-  const legacyOnly = await request(null, 'GET', {
-    url: '/api/telemetry?action=report&end=2026-07-30&days=2',
-    headers: { authorization: 'Bearer legacy-newsfeed-token-for-tests' },
-  });
-  assert.equal(legacyOnly.status, 503, 'Dedicated telemetry report token is required');
-  assert.equal(unauthorizedAggregateReads, 0, 'Legacy token fallback read aggregates');
+  // D3: No report action may silently fall back to the Newsfeed credential.
+  for (const action of ['report', 'checklist-report', 'checkout-funnel-report']) {
+    const legacyOnly = await request(null, 'GET', {
+      url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+      headers: { authorization: 'Bearer legacy-newsfeed-token-for-tests' },
+    });
+    assert.equal(legacyOnly.status, 503, `${action} requires a dedicated report token`);
+    assert.equal(unauthorizedAggregateReads, 0, `${action} legacy-only auth read aggregates`);
+  }
   process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+  for (const action of ['report', 'checklist-report', 'checkout-funnel-report']) {
+    const legacyCredential = await request(null, 'GET', {
+      url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+      headers: { authorization: 'Bearer legacy-newsfeed-token-for-tests' },
+    });
+    assert.equal(legacyCredential.status, 401, `${action} must reject the Newsfeed credential`);
+    assert.equal(unauthorizedAggregateReads, 0, `${action} legacy bearer read aggregates`);
+  }
 
   setTelemetryAggregateReaderForTests(async (dates) => {
     assert.deepEqual(dates, ['2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30']);

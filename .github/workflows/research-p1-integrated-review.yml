@@ -11,6 +11,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
+      - 'docs/operations/research-p1-two-phase/**'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'

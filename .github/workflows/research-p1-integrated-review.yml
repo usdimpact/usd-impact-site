@@ -12,6 +12,11 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
       - 'docs/operations/research-p1-two-phase/**'
+      - 'apps/web/src/lib/**'
+      - 'apps/web/api/commerce.js'
+      - 'apps/web/scripts/test-research-membership-webhook-replay.mjs'
+      - 'apps/web/scripts/test-research-bound-invoice-after-auth-intent.mjs'
+      - 'apps/web/scripts/test-lemon-squeezy-research-membership-adapter.mjs'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'
@@ -69,6 +74,7 @@ jobs:
           node --check src/lib/account-deletion-finalizer.js
           node scripts/test-research-membership-first-purchase.mjs
           node scripts/test-research-membership-persistence.mjs
+          node scripts/test-lemon-squeezy-research-membership-adapter.mjs
           node scripts/test-research-membership-webhook-replay.mjs
           node scripts/test-account-deletion-finalizer.mjs
           node --check src/lib/account-deletion-two-phase-review.js
@@ -93,6 +99,7 @@ jobs:
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"
+          python3 supabase/tests/research-p1/test_research_p1_d3_legacy_claim.py
           # Uninstalled A-strict review overlay: only isolated job-local PG17,
           # after baseline tests so old candidate expectations remain separate.
           python3 - <<'PY'
@@ -116,6 +123,9 @@ jobs:
               print('A-STRICT owner recovery review overlay applied to disposable PG17 only')
           PY
           python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+          # Real signed webhook handler -> disposable service-role SQL RPC,
+          # after durable A-strict Auth intent. No outside network is opened.
+          node apps/web/scripts/test-research-bound-invoice-after-auth-intent.mjs
 
   ui02-ui03-a-strict-recovery-combined:
     name: UI02/UI03 plus Research A-strict/Recovery, all synthetic PG17
@@ -169,6 +179,7 @@ jobs:
           # two-user negative cases and Phase A deletion on pinned migrations.
           python3 supabase/tests/research-p1/test_research_p1_ui_locale_combined.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"
+          python3 supabase/tests/research-p1/test_research_p1_d3_legacy_claim.py
           # Only AFTER original UI02/UI03 + parent P1 tests, overlay A-strict.
           # Source-only review SQL; not normal migrations nor hosted Supabase.
           python3 - <<'PY'
@@ -186,4 +197,13 @@ jobs:
           python3 supabase/tests/research-p1/test_a_strict_review.py
           python3 supabase/tests/research-p1/test_a_strict_outbox_immutability.py
           python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+          # Real signed webhook handler -> disposable service-role SQL RPC,
+          # after durable A-strict Auth intent. No outside network is opened.
+          node apps/web/scripts/test-research-bound-invoice-after-auth-intent.mjs
+      - name: Verify copied #1189 invoice webhook regression under UI02/UI03 combined job (offline Node)
+        working-directory: apps/web
+        run: |
+          node --check src/lib/research-membership-webhook-handler.js
+          node scripts/test-research-membership-webhook-replay.mjs
+          node scripts/test-lemon-squeezy-research-membership-adapter.mjs
 

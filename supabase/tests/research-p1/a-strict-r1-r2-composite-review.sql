@@ -92,6 +92,12 @@ begin
     or not (old.reason_codes <@ new.reason_codes) then
    raise exception using errcode='42501',message='financial incident generation cannot rewind';
  end if;
+ -- A resolved incident may reopen only with a genuinely NEW observation
+ -- generation; owner DML cannot clear resolution fields within the old one.
+ if old.status='resolved' and new.status='open'
+    and new.observation_count<=old.observation_count then
+   raise exception using errcode='42501',message='resolved financial incident needs a new generation to reopen';
+ end if;
  if new.observation_count>old.observation_count then
    if new.observation_count<>old.observation_count+1
       or new.status<>'open'

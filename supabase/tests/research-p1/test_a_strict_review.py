@@ -391,6 +391,27 @@ delivery=q("service_role",
   (outbox,))
 check("legitimate completion delivery status update still permitted",
   delivery==("OK","sending"),delivery)
+check("N3e provider mutation denied to SQL owner by immutable trigger",
+  q("postgres","UPDATE public.notification_outbox SET provider='smtp' WHERE id=%s RETURNING id",
+    (outbox,))[0]=="ERR")
+check("N3f payload mutation denied to SQL owner by immutable trigger",
+  q("postgres","UPDATE public.notification_outbox SET payload=payload || %s::jsonb WHERE id=%s RETURNING id",
+    ('{"extra":"not-in-intent"}',outbox))[0]=="ERR")
+check("N3g completion consent metadata mutation denied to SQL owner",
+  q("postgres","UPDATE public.notification_outbox SET consent_checked_at=clock_timestamp() WHERE id=%s RETURNING id",
+    (outbox,))[0]=="ERR")
+check("N3h completion created timestamp mutation denied to SQL owner",
+  q("postgres","UPDATE public.notification_outbox SET created_at=clock_timestamp() WHERE id=%s RETURNING id",
+    (outbox,))[0]=="ERR")
+check("P2 service_role cannot UPDATE completion identity even before trigger",
+  db("SELECT has_column_privilege('service_role','public.notification_outbox','recipient_email_normalized','UPDATE')") is False)
+check("P2 service_role retains status-only UPDATE permission",
+  db("SELECT has_column_privilege('service_role','public.notification_outbox','status','UPDATE')") is True)
+final=q("service_role","UPDATE public.notification_outbox SET status='delivered' WHERE id=%s RETURNING status",(outbox,))
+check("P2 legitimate completion delivery terminal state still allowed",
+  final==("OK","delivered"),final)
+check("N6 delivered completion cannot re-arm queued resend",
+  q("service_role","UPDATE public.notification_outbox SET status='queued' WHERE id=%s RETURNING id",(outbox,))[0]=="ERR")
 # Actual TWO-CONNECTION synthetic worker contention. Both callers race to
 # lease one account; profile/q locks must permit only one unexpired lease.
 from concurrent.futures import ThreadPoolExecutor
@@ -631,6 +652,13 @@ check("post-HOLD, post-Auth scoped provider receipt recorded",newpost[0]=="OK",n
 check("owner cannot resume without D4 reference",q("postgres",
   "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
   (n,ncase,newpost[1],nid,nd,None,"resume"))[0]=="ERR")
+check("B1 legacy resolver cannot bypass owner D2/D4 ledger under SQL owner",
+  q("postgres","SELECT public.resolve_research_deletion_billing_incident(%s,%s,%s)",
+    (n,newpost[1],nid))[0]=="ERR")
+check("B1 bypass denial leaves incident and privacy held, with no decision row",
+  inc(n)=="open" and privacy_open(n)>=1 and sendable(n)==0
+  and db("SELECT count(*) FROM research_lifecycle_private.a_strict_owner_resolutions WHERE account_id=%s",
+    (n,))==0)
 resumed=q("postgres","SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
   (n,ncase,newpost[1],nid,nd,nf,"resume"))
 check("owner reconciles signed-off financial hold after Auth confirmed",resumed==("OK","resume"),resumed)

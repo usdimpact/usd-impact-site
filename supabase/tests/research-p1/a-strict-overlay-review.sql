@@ -53,6 +53,131 @@ create trigger a_strict_no_truncate before truncate
  on research_lifecycle_private.a_strict_exceptions
  for each statement execute function research_lifecycle_private.reject_append_only_change();
 
+-- Evidence is OWNER-ATTESTED, NOT cryptographically verified provider cessation.
+-- Only digests/opaque references; never store email, invoice links or raw IDs.
+-- This is a private append-only capsule linking a canonical live Research
+-- merchant scope, one account+case and exact clearance/read-observation time.
+create table research_lifecycle_private.a_strict_merchant_receipts (
+  id uuid primary key default pg_catalog.gen_random_uuid(),
+  account_id uuid not null references public.profiles(account_id) on delete restrict,
+  case_ref text not null check (case_ref ~ '^p1-[0-9a-f]{12,40}$'),
+  clearance_id uuid not null unique references public.research_billing_clearances(id),
+  stage text not null check (stage in ('pre_auth','post_auth')),
+  merchant_store_id text not null check (merchant_store_id ~ '^[0-9]{1,20}$'),
+  product_key text not null check (product_key='research-membership'),
+  merchant_mode text not null check (merchant_mode='live'),
+  customer_scope_digest text not null check(customer_scope_digest ~ '^[0-9a-f]{64}$'),
+  inventory_digest text not null check(inventory_digest ~ '^[0-9a-f]{64}$'),
+  receipt_digest text not null check(receipt_digest ~ '^[0-9a-f]{64}$'),
+  subscription_pages integer not null check(subscription_pages between 1 and 10000),
+  invoice_pages integer not null check(invoice_pages between 1 and 10000),
+  order_pages integer not null check(order_pages between 1 and 10000),
+  checkout_pages integer not null check(checkout_pages between 1 and 10000),
+  read_observed_at timestamptz not null,
+  recorded_at timestamptz not null default pg_catalog.clock_timestamp(),
+  unique(account_id,case_ref,clearance_id,stage)
+);
+alter table research_lifecycle_private.a_strict_merchant_receipts enable row level security;
+alter table research_lifecycle_private.a_strict_merchant_receipts force row level security;
+revoke all on research_lifecycle_private.a_strict_merchant_receipts from public,anon,authenticated,service_role;
+create trigger a_strict_merchant_receipts_append_only before update or delete
+ on research_lifecycle_private.a_strict_merchant_receipts
+ for each row execute function research_lifecycle_private.reject_append_only_change();
+create trigger a_strict_merchant_receipts_no_truncate before truncate
+ on research_lifecycle_private.a_strict_merchant_receipts
+ for each statement execute function research_lifecycle_private.reject_append_only_change();
+
+-- p_evidence is a STRICT allowlist, not a free-text evidence blob:
+-- store_id, product_key, mode, customer_scope_digest, inventory_digest,
+-- receipt_digest, read_observed_at, subscription_pages, invoice_pages,
+-- order_pages, checkout_pages and 5 boolean coverage checks. A missing
+-- provider page, unsettled invoice, open checkout or unknown state is HOLD.
+-- This function NEVER calls the merchant and can never verify owner truth.
+create function public.a_strict_owner_record_merchant_receipt(
+ p_account uuid,p_case text,p_clearance uuid,p_stage text,p_evidence jsonb
+) returns uuid language plpgsql security definer set search_path='' as $merchant$
+declare
+ v_clearance public.research_billing_clearances;
+ v_case research_lifecycle_private.a_strict_cases;
+ v_id uuid;
+ v_observed timestamptz;
+ v_pages text;
+ v_key text;
+ v_allowed text[] := array[
+  'store_id','product_key','mode','customer_scope_digest',
+  'inventory_digest','receipt_digest','read_observed_at',
+  'subscription_pages','invoice_pages','order_pages','checkout_pages',
+  'subscriptions_terminal','invoices_settled','checkout_closed',
+  'no_retries','no_unknown_provider_objects'
+ ];
+begin
+ if p_account is null or p_case !~ '^p1-[0-9a-f]{12,40}$'
+    or p_stage not in ('pre_auth','post_auth')
+    or pg_catalog.jsonb_typeof(p_evidence) is distinct from 'object'
+    or (select count(*) from pg_catalog.jsonb_object_keys(p_evidence) as t(key))<>16
+    or exists (select 1 from pg_catalog.jsonb_object_keys(p_evidence) as t(key)
+      where not (t.key=any(v_allowed)))
+    or p_evidence->>'store_id' !~ '^[0-9]{1,20}$'
+    or p_evidence->>'product_key' is distinct from 'research-membership'
+    or p_evidence->>'mode' is distinct from 'live'
+    or p_evidence->>'customer_scope_digest' !~ '^[0-9a-f]{64}$'
+    or p_evidence->>'inventory_digest' !~ '^[0-9a-f]{64}$'
+    or p_evidence->>'receipt_digest' !~ '^[0-9a-f]{64}$'
+    or p_evidence->>'read_observed_at' is null
+    or p_evidence->'subscriptions_terminal' is distinct from 'true'::jsonb
+    or p_evidence->'invoices_settled' is distinct from 'true'::jsonb
+    or p_evidence->'checkout_closed' is distinct from 'true'::jsonb
+    or p_evidence->'no_retries' is distinct from 'true'::jsonb
+    or p_evidence->'no_unknown_provider_objects' is distinct from 'true'::jsonb then
+   raise exception using errcode='55000',message='merchant attestation incomplete or unsafe';
+ end if;
+ foreach v_key in array array['subscription_pages','invoice_pages','order_pages','checkout_pages'] loop
+   v_pages:=p_evidence->>v_key;
+   if v_pages is null or v_pages !~ '^[1-9][0-9]{0,3}$' then
+     raise exception using errcode='55000',message='merchant page inventory incomplete';
+   end if;
+ end loop;
+ begin
+  v_observed:=(p_evidence->>'read_observed_at')::timestamptz;
+ exception when others then
+  raise exception using errcode='55000',message='merchant observation timestamp malformed';
+ end;
+ select c.* into v_clearance from public.research_billing_clearances c
+   where c.id=p_clearance and c.account_id=p_account;
+ if not found or v_clearance.verification_reference !~ '^p1-[a-z0-9-]{12,80}$'
+   or v_clearance.verified_at is distinct from v_observed
+   or v_observed>pg_catalog.clock_timestamp()
+   or v_observed<pg_catalog.clock_timestamp()-interval '15 minutes' then
+  raise exception using errcode='55000',message='merchant observation lacks current opaque clearance';
+ end if;
+ select a.* into v_case from research_lifecycle_private.a_strict_cases a
+   where a.account_id=p_account for update;
+ if p_stage='post_auth' and (
+   v_case.account_id is null or v_case.case_ref<>p_case
+   or v_case.auth_observed_at is null or v_observed<=v_case.auth_observed_at
+ ) then
+   raise exception using errcode='55000',message='post-Auth evidence not account/case bound';
+ end if;
+ insert into research_lifecycle_private.a_strict_merchant_receipts (
+  account_id,case_ref,clearance_id,stage,merchant_store_id,product_key,
+  merchant_mode,customer_scope_digest,inventory_digest,receipt_digest,
+  subscription_pages,invoice_pages,order_pages,checkout_pages,read_observed_at
+ ) values (
+  p_account,p_case,p_clearance,p_stage,p_evidence->>'store_id',
+  p_evidence->>'product_key',p_evidence->>'mode',
+  p_evidence->>'customer_scope_digest',p_evidence->>'inventory_digest',
+  p_evidence->>'receipt_digest',
+  (p_evidence->>'subscription_pages')::integer,
+  (p_evidence->>'invoice_pages')::integer,
+  (p_evidence->>'order_pages')::integer,
+  (p_evidence->>'checkout_pages')::integer,v_observed
+ ) returning id into v_id;
+ return v_id;
+end;
+$merchant$;
+revoke all on function public.a_strict_owner_record_merchant_receipt(uuid,text,uuid,text,jsonb)
+ from public,anon,authenticated,service_role;
+
 -- SQL owner issues one opaque, expiring, case-bound capability. NEVER callable
 -- from PostgREST service_role, anon or authenticated. No re-issuance after Phase A
 -- in this conservative candidate; crash/recovery requires owner incident review.

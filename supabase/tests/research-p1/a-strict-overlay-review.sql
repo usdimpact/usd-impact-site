@@ -1550,8 +1550,8 @@ begin
      or p_metadata ->> 'lemonDataType' is distinct from 'subscription-invoices'
      or p_metadata ->> 'replayFingerprintVersion' is distinct from '1'
      or coalesce(p_metadata ->> 'replayFingerprint','') !~ '^[0-9a-f]{64}$'
-     or (p_metadata ? 'invoiceFinancialDigest'
-       and coalesce(p_metadata->>'invoiceFinancialDigest','') !~ '^[0-9a-f]{64}$')
+     -- Every NEW signed invoice receipt must have digest-complete custody.
+     or coalesce(p_metadata->>'invoiceFinancialDigest','') !~ '^[0-9a-f]{64}$'
      or p_metadata ? 'researchP1InvoiceReceipt'
      or p_metadata ? 'researchP1NonactiveHeld'
      or p_metadata ? 'researchP1StaleHeld' then

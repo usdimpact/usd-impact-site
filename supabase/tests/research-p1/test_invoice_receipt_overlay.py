@@ -61,6 +61,20 @@ roles=[owner("SELECT has_function_privilege(%s,%s,'EXECUTE')",(r,validfn)) for r
 check('transition definer RPC only callable by service_role',roles==[False,False,True],roles)
 saved=svc(rpc,(sid,ek,pid,obs,md))
 check('non-granting signed invoice persisted',saved[0]=='OK' and saved[1]['action']=='invoice_recorded',saved)
+
+# Reject digest-free/malformed receipts before a new event key can be claimed.
+without=svc(rpc,(sid,'lemon-squeezy:missing-finance','missing-finance',obs,
+ Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices',
+  'replayFingerprintVersion':1,'replayFingerprint':'1'*64})))
+check('invoice custody rejects missing financial digest',without==('ERR','22023'),without)
+bad=svc(rpc,(sid,'lemon-squeezy:malformed-finance','malformed-finance',obs,
+ Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices',
+  'replayFingerprintVersion':1,'replayFingerprint':'1'*64,'invoiceFinancialDigest':'z'*64})))
+check('invoice custody rejects invalid financial digest',bad==('ERR','22023'),bad)
+keys=owner("SELECT count(*) FROM public.subscription_events WHERE event_key=ANY(%s::text[])",
+ (['lemon-squeezy:missing-finance','lemon-squeezy:malformed-finance'],))
+check('invalid invoice digest cannot preclaim an event key',keys==0,keys)
+
 after=owner("SELECT jsonb_build_object('s',s.state,'e',e.state) FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id WHERE s.id=%s",(sid,))
 check('paid rights and state unchanged by receipt',before==after,(before,after))
 dup=svc(rpc,(sid,ek,pid,obs,md))
@@ -86,6 +100,31 @@ check('E3 4c changed amount digest with original v1 fingerprint is quarantined',
  amount[0]=='OK' and amount[1]['action']=='conflict_quarantined',amount)
 count=owner("SELECT count(*) FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE account_id=%s",(a,))
 check('E3 4c two distinct conflicting financial claims retained',count==2,count)
+
+# Client roles cannot inspect or forge private immutable conflict custody.
+fn='public.record_research_signed_invoice_conflict(uuid,text,text,text,text)'
+grants=[owner("SELECT has_function_privilege(%s,%s,'EXECUTE')",(r,fn))
+  for r in ('anon','authenticated','service_role')]
+check('conflict RPC EXECUTE restricted to service_role',grants==[False,False,True],grants)
+table_grants=[owner("SELECT has_table_privilege(%s,'research_lifecycle_private.a_strict_invoice_conflicts','SELECT')",(r,))
+  for r in ('anon','authenticated','service_role')]
+check('no client/service direct conflict-ledger SELECT',table_grants==[False,False,False],table_grants)
+wrong_key=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",
+ (sid,'lemon-squeezy:other-provider-id',pid,'b'*64,'d'*64))
+check('conflict custody rejects unrelated event identity',wrong_key==('ERR','22023'),wrong_key)
+wrong_sub=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",
+ (uuid.uuid4(),ek,pid,'b'*64,'d'*64))
+check('conflict custody rejects absent subscription',wrong_sub==('ERR','P0002'),wrong_sub)
+row=owner("SELECT id FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE account_id=%s LIMIT 1",(a,))
+rewrite=call('postgres',"UPDATE research_lifecycle_private.a_strict_invoice_conflicts SET conflicting_financial_digest=%s WHERE id=%s",('f'*64,row))
+check('even SQL owner cannot rewrite signed conflict evidence',rewrite[0]=='ERR',rewrite)
+delete=call('postgres',"DELETE FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE id=%s",(row,))
+check('even SQL owner cannot delete signed conflict evidence',delete[0]=='ERR',delete)
+truncate=call('postgres',"TRUNCATE research_lifecycle_private.a_strict_invoice_conflicts")
+check('even SQL owner cannot truncate signed conflict evidence',truncate[0]=='ERR',truncate)
+after=owner("SELECT count(*) FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE account_id=%s",(a,))
+check('original two signed conflict claims survived negative probes',after==2,after)
+
 
 v=svc(tr,(sid,'e3-refund-'+psub,'e3-refund-provider-'+psub,psub,'active','refunded','refunded',owner("SELECT now()+interval '1 second'")))
 check('invoice chronology does not suppress legitimate terminal refund',v[0]=='OK' and v[1]['action']=='applied',v)

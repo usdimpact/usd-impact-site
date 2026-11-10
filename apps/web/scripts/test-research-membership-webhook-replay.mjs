@@ -54,9 +54,9 @@ function archived(value = payload(), subscription = base) {
     actor_type: 'provider_webhook', occurred_at: e.occurredAt, metadata: { ...e.metadata },
   };
 }
-function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply, invoiceReply } = {}) {
+function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply, invoiceReply, conflictReply } = {}) {
   const originalLibrary = Object.freeze({ product_id: 'read-the-dollar-first-guided-interactive-edition', state: 'active' });
-  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], invoiceReceipts: [], invoiceConflicts: [], ledgerReads: 0, library: originalLibrary };
+  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], invoiceReceipts: [], invoiceConflicts: [], invoiceConflictAttempts: [], ledgerReads: 0, library: originalLibrary };
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
   ctx.fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -102,6 +102,8 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
     if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_conflict') {
       const conflict = JSON.parse(init.body);
       assert.match(conflict.p_incoming_financial_digest, /^[0-9a-f]{64}$/);
+      ctx.invoiceConflictAttempts.push(conflict);
+      if (conflictReply) return conflictReply(ctx, json, conflict);
       ctx.invoiceConflicts.push(conflict);
       return json({ action: 'conflict_quarantined', event_key: conflict.p_event_key });
     }
@@ -588,3 +590,55 @@ await test('amount-only signed invoice conflict retained without changing histor
   assert.equal(ctx.invoiceReceipts.length, 1);
   assert.equal(ctx.current.state, 'active');
 });
+
+await test('lost invoice receipt response after durable insert is resolved by exact-key read', async () => {
+  const ctx = fixture({ invoiceReply: (c, _json, receipt) => {
+    c.rows.push({
+      event_key: receipt.p_event_key, subscription_id: subscriptionId,
+      account_id: accountId, product_id: 'research-membership',
+      provider_event_id: receipt.p_provider_event_id,
+      from_state: c.current.state, to_state: c.current.state,
+      reason: receipt.p_event_name, actor_type: 'provider_webhook',
+      occurred_at: receipt.p_occurred_at,
+      metadata: { ...receipt.p_metadata, researchP1InvoiceReceipt: true },
+    });
+    throw new Error('synthetic SQL committed, transport response lost');
+  } });
+  const result = await ctx.run(invoicePayload());
+  assert.equal(result.action, 'duplicate', 'only committed exact-key signed evidence may be acknowledged');
+  assert.equal(ctx.rows.length, 1);
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.calls.filter(c => c.path === '/rest/v1/rpc/record_research_signed_invoice_receipt').length, 1);
+});
+for (const [label, reply] of [
+  ['false 2xx action', (_c, json, receipt) => json({ action: 'ignored', event_key: receipt.p_event_key })],
+  ['wrong event identity', (_c, json, receipt) => json({ action: 'invoice_recorded', event_key: receipt.p_event_key + '-wrong' })],
+]) {
+  await test('signed invoice '+label+' cannot be acknowledged without committed proof', async () => {
+    const ctx = fixture({ invoiceReply: reply });
+    await assert.rejects(() => ctx.run(invoicePayload()),
+      { code: 'RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', status: 503 });
+    assert.equal(ctx.rows.length, 0);
+    assert.equal(ctx.writes.length, 0);
+  });
+}
+for (const [label, callback] of [
+  ['RPC outage', (_c, json) => json({ error: 'synthetic DB outage' }, 503)],
+  ['false 2xx event identity', (_c, json, conflict) => json({ action: 'conflict_quarantined', event_key: conflict.p_event_key + '-wrong' })],
+]) {
+  await test('signed conflicting invoice '+label+' remains unacknowledged', async () => {
+    const ctx = fixture({ conflictReply: callback });
+    const value = invoicePayload();
+    assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+    const changed = structuredClone(value);
+    changed.data.attributes.total = 2000;
+    await assert.rejects(() => ctx.run(changed),
+      { code: 'RESEARCH_WEBHOOK_INVOICE_CONFLICT_CUSTODY_UNAVAILABLE', status: 503 });
+    assert.equal(ctx.invoiceConflictAttempts.length, 1);
+    assert.equal(ctx.invoiceConflicts.length, 0, 'no simulated committed conflict');
+    assert.equal(ctx.rows.length, 1, 'original signed evidence is not overwritten');
+    assert.equal(ctx.invoiceReceipts.length, 1);
+    assert.equal(ctx.writes.length, 0);
+    assert.equal(ctx.current.state, 'active');
+  });
+}

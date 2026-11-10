@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, chmod, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -194,16 +194,29 @@ const preflightCases = [
     event: 'workflow_dispatch', expected: 'reason=missing', exit: 0 },
 ];
 
+// The Vercel build image may lack jq. Exercise both the real jq (when present)
+// and a deliberately narrow offline interpreter for exactly the workflow's
+// fixture queries; no GitHub calls, credentials, or publication side effects.
+const nativeJqAvailable = spawnSync('bash', ['-c', 'command -v jq'], { encoding: 'utf8' }).status === 0;
+const jqFixtureModes = nativeJqAvailable ? ['native', 'portable'] : ['portable'];
+const portableJqSource = '#!' + process.execPath + '\n' + "// This substitute executes only offline fixture queries; Production continues to use native jq.\nconst { readFileSync } = require('node:fs');\ntry {\n  const args = process.argv.slice(2);\n  const variables = {};\n  let query = '';\n  for (let i = 0; i < args.length; i++) {\n    if (args[i] === '--arg') {\n      variables[args[++i]] = args[++i];\n    } else if (args[i] === '-r' || args[i] === '-e' || args[i] === '-er') {\n      // Query and input are both supplied by the offline test harness.\n    } else if (!args[i].startsWith('-')) {\n      query = args[i];\n    } else {\n      throw new Error('unsupported-flag');\n    }\n  }\n  const input = JSON.parse(readFileSync(0, 'utf8'));\n  if (Array.isArray(input)) {\n    if (query === 'if type == \"array\" and length <= 100 then length else error(\"invalid-pull-page\") end') {\n      if (input.length > 100) throw new Error('invalid-pull-page');\n      console.log(input.length);\n    } else if (query.includes('select(.title == $title') && query.includes('startswith($prefix)') && query.includes('@tsv')) {\n      const found = input.find(pr => pr?.title === variables.title &&\n        typeof pr?.head?.ref === 'string' && pr.head.ref.startsWith(variables.prefix));\n      if (found) console.log([found.number, found.state, found.html_url].join('\\t'));\n    } else {\n      throw new Error('unsupported-pull-query');\n    }\n  } else if (input && typeof input === 'object') {\n    if (!Array.isArray(input.workflow_runs)) throw new Error('invalid-run-history');\n    if (query === '.total_count == (.workflow_runs | length) and .total_count <= 100') {\n      const complete = Number.isInteger(input.total_count) &&\n        input.total_count === input.workflow_runs.length && input.total_count <= 100;\n      console.log(complete);\n      if (!complete) process.exitCode = 1;\n    } else if (query.includes('.workflow_runs[]') && query.endsWith('| length')) {\n      if (typeof variables.day !== 'string') throw new Error('missing-day');\n      let matching = input.workflow_runs.filter(run =>\n        typeof run?.created_at === 'string' && run.created_at.startsWith(variables.day));\n      if (query.includes('.status != \"completed\"'))\n        matching = matching.filter(run => run.status !== 'completed');\n      if (query.includes('.status == \"completed\"'))\n        matching = matching.filter(run => run.status === 'completed');\n      if (query.includes('.conclusion == \"success\"'))\n        matching = matching.filter(run => run.conclusion === 'success');\n      if (query.includes('.conclusion != \"success\"'))\n        matching = matching.filter(run => run.conclusion !== 'success');\n      if (query.includes('.event == \"workflow_dispatch\"'))\n        matching = matching.filter(run => run.event === 'workflow_dispatch');\n      console.log(matching.length);\n    } else {\n      throw new Error('unsupported-run-query');\n    }\n  } else {\n    throw new Error('invalid-json-type');\n  }\n} catch {\n  console.error('offline-jq-fixture-rejected-input');\n  process.exitCode = 2;\n}\n";
+async function installPortableJq(directory) {
+  const executable = join(directory, 'jq');
+  await writeFile(executable, portableJqSource);
+  await chmod(executable, 0o700);
+}
 const preflightTemp = await mkdtemp(join(tmpdir(), 'usd-daily-preflight-offline-'));
+await installPortableJq(preflightTemp);
 
 try {
-  for (const scenario of preflightCases) {
+  for (const jqMode of jqFixtureModes) {
+    for (const scenario of preflightCases) {
     const outPath = join(preflightTemp, 'outputs');
     await writeFile(outPath, '');
     const test = spawnSync('bash', ['-c', preflightMock + '\n' + preflightShell], {
       encoding: 'utf8', timeout: 10000,
       env: {
-        PATH: process.env.PATH, GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
+        PATH: jqMode === 'portable' ? `${preflightTemp}:${process.env.PATH}` : process.env.PATH, GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
         GITHUB_OUTPUT: outPath, GITHUB_EVENT_NAME: scenario.event ?? 'schedule',
         MOCK_STATUS: scenario.status, MOCK_WEEKDAY: scenario.weekday ?? '5',
         MOCK_PR_PAGE1: scenario.page1 ?? '[]', MOCK_PR_PAGE2: scenario.page2 ?? '[]',
@@ -225,6 +238,7 @@ try {
       scenario.label + ': uncertain GitHub state authorized paid generation');
     assert.doesNotMatch(test.stderr, /MOCK_UNAUTHORIZED_DISPATCH/,
       scenario.label + ': preflight should not dispatch an extra Daily');
+    }
   }
 } finally {
   await rm(preflightTemp, { recursive: true, force: true });
@@ -244,14 +258,16 @@ const backstopScenarios = [...preflightCases.filter((caseItem) => caseItem.weekd
   { label: 'incomplete current-day run history', status: '404',
     runHistoryIncomplete: true, exit: 1 }];
 const backstopTemp = await mkdtemp(join(tmpdir(), 'usd-daily-backstop-preflight-offline-'));
+await installPortableJq(backstopTemp);
 try {
-  for (const scenario of backstopScenarios) {
+  for (const jqMode of jqFixtureModes) {
+    for (const scenario of backstopScenarios) {
     const outPath = join(backstopTemp, 'summary');
     await writeFile(outPath, '');
     const test = spawnSync('bash', ['-c', preflightMock + '\n' + backstopShellForMock], {
       encoding: 'utf8', timeout: 10000,
       env: {
-        PATH: process.env.PATH, GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
+        PATH: jqMode === 'portable' ? `${backstopTemp}:${process.env.PATH}` : process.env.PATH, GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
         GITHUB_STEP_SUMMARY: outPath, GITHUB_RUN_ID: '90001',
         GITHUB_EVENT_NAME: 'schedule', MOCK_STATUS: scenario.status,
         MOCK_WEEKDAY: '5',
@@ -280,6 +296,7 @@ try {
       'ambiguous 20-page PR inventory must hold recovery');
     assert.doesNotMatch(test.stderr, /MOCK_UNAUTHORIZED_DISPATCH/,
       'backstop must not dispatch a second paid Daily in the test');
+    }
   }
 } finally {
   await rm(backstopTemp, { recursive: true, force: true });

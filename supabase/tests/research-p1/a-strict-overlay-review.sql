@@ -1550,6 +1550,8 @@ begin
      or p_metadata ->> 'lemonDataType' is distinct from 'subscription-invoices'
      or p_metadata ->> 'replayFingerprintVersion' is distinct from '1'
      or coalesce(p_metadata ->> 'replayFingerprint','') !~ '^[0-9a-f]{64}$'
+     or (p_metadata ? 'invoiceFinancialDigest'
+       and coalesce(p_metadata->>'invoiceFinancialDigest','') !~ '^[0-9a-f]{64}$')
      or p_metadata ? 'researchP1InvoiceReceipt'
      or p_metadata ? 'researchP1NonactiveHeld'
      or p_metadata ? 'researchP1StaleHeld' then
@@ -1582,6 +1584,7 @@ begin
        or v_existing.reason is distinct from p_event_name
        or v_existing.metadata ->> 'researchP1InvoiceReceipt' is distinct from 'true'
        or v_existing.metadata ->> 'replayFingerprint' is distinct from p_metadata ->> 'replayFingerprint'
+       or v_existing.metadata ->> 'invoiceFinancialDigest' is distinct from p_metadata ->> 'invoiceFinancialDigest'
        or v_existing.occurred_at is distinct from p_occurred_at then
       raise exception using errcode='23505',message='Research invoice event key conflicts with stored evidence';
     end if;
@@ -1652,8 +1655,10 @@ create table research_lifecycle_private.a_strict_invoice_conflicts (
  provider_event_id text not null,
  original_fingerprint text not null check(original_fingerprint ~ '^[0-9a-f]{64}$'),
  conflicting_fingerprint text not null check(conflicting_fingerprint ~ '^[0-9a-f]{64}$'),
+ original_financial_digest text not null check(original_financial_digest ~ '^[0-9a-f]{64}$'),
+ conflicting_financial_digest text not null check(conflicting_financial_digest ~ '^[0-9a-f]{64}$'),
  observed_at timestamptz not null default pg_catalog.clock_timestamp(),
- unique(account_id,event_key,conflicting_fingerprint)
+ unique(account_id,event_key,conflicting_fingerprint,conflicting_financial_digest)
 );
 alter table research_lifecycle_private.a_strict_invoice_conflicts enable row level security;
 alter table research_lifecycle_private.a_strict_invoice_conflicts force row level security;
@@ -1666,14 +1671,17 @@ create trigger a_strict_invoice_conflicts_no_truncate before truncate
  for each statement execute function research_lifecycle_private.reject_append_only_change();
 
 create function public.record_research_signed_invoice_conflict(
- p_subscription uuid,p_event_key text,p_provider_event_id text,p_incoming_fingerprint text
+ p_subscription uuid,p_event_key text,p_provider_event_id text,p_incoming_fingerprint text,
+ p_incoming_financial_digest text
 ) returns jsonb language plpgsql security definer set search_path='' as $invoice_conflict$
 declare v_account uuid;v_sub public.subscriptions;v_old public.subscription_events;
 begin
  if p_subscription is null or p_event_key is null or p_provider_event_id is null
     or p_event_key is distinct from 'lemon-squeezy:'||p_provider_event_id
     or p_incoming_fingerprint is null
-    or p_incoming_fingerprint !~ '^[0-9a-f]{64}$' then
+    or p_incoming_fingerprint !~ '^[0-9a-f]{64}$'
+    or p_incoming_financial_digest is null
+    or p_incoming_financial_digest !~ '^[0-9a-f]{64}$' then
    raise exception using errcode='22023',message='invoice conflict custody invalid';
  end if;
  select account_id into v_account from public.subscriptions where id=p_subscription;
@@ -1689,16 +1697,20 @@ begin
     or v_old.provider_event_id is distinct from p_provider_event_id
     or v_old.metadata->>'researchP1InvoiceReceipt' is distinct from 'true'
     or v_old.metadata->>'replayFingerprint' !~ '^[0-9a-f]{64}$'
-    or v_old.metadata->>'replayFingerprint' is not distinct from p_incoming_fingerprint
+    or coalesce(v_old.metadata->>'invoiceFinancialDigest','') !~ '^[0-9a-f]{64}$'
+    or (v_old.metadata->>'replayFingerprint' is not distinct from p_incoming_fingerprint
+      and v_old.metadata->>'invoiceFinancialDigest' is not distinct from p_incoming_financial_digest)
  then raise exception using errcode='55000',message='signed invoice conflict not bound to original custody';
  end if;
  insert into research_lifecycle_private.a_strict_invoice_conflicts(
    account_id,subscription_id,event_key,provider_event_id,
-   original_fingerprint,conflicting_fingerprint
+   original_fingerprint,conflicting_fingerprint,
+   original_financial_digest,conflicting_financial_digest
  ) values (
    v_account,p_subscription,p_event_key,p_provider_event_id,
-   v_old.metadata->>'replayFingerprint',p_incoming_fingerprint
- ) on conflict (account_id,event_key,conflicting_fingerprint) do nothing;
+   v_old.metadata->>'replayFingerprint',p_incoming_fingerprint,
+   v_old.metadata->>'invoiceFinancialDigest',p_incoming_financial_digest
+ ) on conflict (account_id,event_key,conflicting_fingerprint,conflicting_financial_digest) do nothing;
  -- The existing provider/account quarantine also triggers durable post-Phase-A
  -- financial incident custody. Do not overwrite the signed original row.
  perform public.record_research_paid_binding_refusal(
@@ -1708,7 +1720,7 @@ begin
  return pg_catalog.jsonb_build_object('action','conflict_quarantined','event_key',p_event_key);
 end;
 $invoice_conflict$;
-revoke all on function public.record_research_signed_invoice_conflict(uuid,text,text,text)
+revoke all on function public.record_research_signed_invoice_conflict(uuid,text,text,text,text)
  from public,anon,authenticated,service_role;
-grant execute on function public.record_research_signed_invoice_conflict(uuid,text,text,text)
+grant execute on function public.record_research_signed_invoice_conflict(uuid,text,text,text,text)
  to service_role;

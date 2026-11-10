@@ -41,7 +41,7 @@ before=owner("SELECT jsonb_build_object('s',s.state,'e',e.state) FROM public.sub
 pid='lemon-squeezy:subscription_payment_success:subscription-invoices:inve3demo:2026-11-10T21:00:00Z'
 ek='lemon-squeezy:'+pid
 obs=owner("SELECT now()+interval '2 seconds'")
-md=Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'a'*64})
+md=Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'a'*64,'invoiceFinancialDigest':'c'*64})
 rpc="SELECT public.record_research_signed_invoice_receipt(%s,%s,%s,'subscription_payment_success',%s,%s::jsonb)"
 # A direct service_role preclaim used to suppress genuine signed invoice custody.
 # Forbidding direct INSERT must not deny the validated transition RPC.
@@ -69,11 +69,11 @@ other=svc(rpc,(sid,'lemon-squeezy:secondary-event-key',pid,obs,md))
 check('alternate key for provider ID refused',other==('ERR','22023'),other)
 future=svc(rpc,(sid,'lemon-squeezy:future','future','2099-01-01T00:00:00Z',md))
 check('2099 timestamp refused',future==('ERR','22023'),future)
-conflict=svc(rpc,(sid,ek,pid,obs,Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'b'*64})))
+conflict=svc(rpc,(sid,ek,pid,obs,Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'b'*64,'invoiceFinancialDigest':'d'*64})))
 check('conflicting signed fingerprint refused',conflict==('ERR','23505'),conflict)
 original=owner("SELECT metadata->>'replayFingerprint' FROM public.subscription_events WHERE event_key=%s",(ek,))
 check('stored fingerprint remains intact',original=='a'*64,original)
-conf=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s)",(sid,ek,pid,'b'*64))
+conf=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",(sid,ek,pid,'b'*64,'d'*64))
 check('E3 4c conflicting signed invoice stored with digest-only custody',
   conf[0]=='OK' and conf[1]['action']=='conflict_quarantined',conf)
 quarantine=owner("SELECT count(*) FROM public.research_paid_binding_quarantine WHERE claimed_account_id=%s",(a,))
@@ -81,6 +81,11 @@ check('E3 4c signed conflict also creates durable financial quarantine',quaranti
 minimal=owner("SELECT count(*) FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE account_id=%s AND conflicting_fingerprint=%s",(a,'b'*64))
 check('E3 4c original+incoming fingerprint audit retained',minimal==1,minimal)
 check('E3 4c conflicting event does not revoke paid Research access',owner("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))=='active')
+amount=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",(sid,ek,pid,'a'*64,'e'*64))
+check('E3 4c changed amount digest with original v1 fingerprint is quarantined',
+ amount[0]=='OK' and amount[1]['action']=='conflict_quarantined',amount)
+count=owner("SELECT count(*) FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE account_id=%s",(a,))
+check('E3 4c two distinct conflicting financial claims retained',count==2,count)
 
 v=svc(tr,(sid,'e3-refund-'+psub,'e3-refund-provider-'+psub,psub,'active','refunded','refunded',owner("SELECT now()+interval '1 second'")))
 check('invoice chronology does not suppress legitimate terminal refund',v[0]=='OK' and v[1]['action']=='applied',v)

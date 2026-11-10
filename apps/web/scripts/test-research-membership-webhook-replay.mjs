@@ -101,6 +101,7 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
     }
     if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_conflict') {
       const conflict = JSON.parse(init.body);
+      assert.match(conflict.p_incoming_financial_digest, /^[0-9a-f]{64}$/);
       ctx.invoiceConflicts.push(conflict);
       return json({ action: 'conflict_quarantined', event_key: conflict.p_event_key });
     }
@@ -111,6 +112,7 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       assert.equal(receipt.p_event_key.startsWith('lemon-squeezy:'), true);
       assert.equal(receipt.p_metadata.lemonDataType, 'subscription-invoices');
       assert.equal(receipt.p_metadata.replayFingerprintVersion, 1);
+      assert.match(receipt.p_metadata.invoiceFinancialDigest, /^[0-9a-f]{64}$/);
       if (invoiceReply) return invoiceReply(ctx, json, receipt);
       if (ctx.rows.some(r => r.event_key === receipt.p_event_key)) {
         return json({ action: 'duplicate', event_key: receipt.p_event_key });
@@ -559,8 +561,7 @@ await test('different signed invoice fingerprint is durably quarantined and neve
   const initial = await ctx.run(original);
   assert.equal(initial.action, 'invoice_recorded');
   const conflict = structuredClone(original);
-  // billing_reason is a fingerprinted signed field; total-only differences
-  // currently need separate financial-payload versioning review.
+  // Both v1 replay and independent amount-digest mismatches are now captured.
   conflict.data.attributes.billing_reason = 'updated';
   conflict.data.attributes.total = 2000;
   await assert.rejects(() => ctx.run(conflict), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status: 409 });
@@ -568,4 +569,22 @@ await test('different signed invoice fingerprint is durably quarantined and neve
   assert.equal(ctx.rows.length, 1, 'the original signed receipt remains immutable');
   assert.equal(ctx.writes.length, 0);
   assert.equal(ctx.invoiceReceipts.length, 1);
+});
+
+await test('amount-only signed invoice conflict retained without changing historical v1 replay identity', async () => {
+  const value = invoicePayload();
+  const ctx = fixture();
+  assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+  const modified = structuredClone(value);
+  modified.data.attributes.total = 2000;
+  await assert.rejects(() => ctx.run(modified),
+    { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status: 409 });
+  assert.equal(ctx.rows.length, 1);
+  assert.equal(ctx.invoiceConflicts.length, 1);
+  assert.equal(ctx.invoiceConflicts[0].p_incoming_fingerprint,
+    ctx.rows[0].metadata.replayFingerprint);
+  assert.notEqual(ctx.invoiceConflicts[0].p_incoming_financial_digest,
+    ctx.rows[0].metadata.invoiceFinancialDigest);
+  assert.equal(ctx.invoiceReceipts.length, 1);
+  assert.equal(ctx.current.state, 'active');
 });

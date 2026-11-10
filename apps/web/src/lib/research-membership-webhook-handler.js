@@ -283,7 +283,9 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
     // The signed replay fingerprint, timestamp, provider and invoice identity
     // were checked above, and the SQL receipt was created only after binding.
     if (metadata.replayFingerprintVersion !== 1
-        || metadata.replayFingerprint !== inspected.metadata.replayFingerprint) throw replayError();
+        || metadata.replayFingerprint !== inspected.metadata.replayFingerprint
+        || !/^[0-9a-f]{64}$/.test(metadata.invoiceFinancialDigest || '')
+        || metadata.invoiceFinancialDigest !== inspected.metadata.invoiceFinancialDigest) throw replayError();
     return Object.freeze({
       action: 'duplicate', eventKey,
       providerSubscriptionId: subscription.providerSubscriptionId,
@@ -391,7 +393,7 @@ async function recordSignedNonAppliedInvoice({
 // immutable invoice receipt. Store digests only; always return non-2xx to the
 // provider because the conflicting payment must not be accepted as resolved.
 async function custodyConflictingSignedInvoice({ config, subscriptionId, eventKey,
-  providerEventId, incomingFingerprint, fetchImpl }) {
+  providerEventId, incomingFingerprint, incomingFinancialDigest, fetchImpl }) {
   let response;
   try {
     response = await fetchImpl(config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_conflict', {
@@ -400,6 +402,7 @@ async function custodyConflictingSignedInvoice({ config, subscriptionId, eventKe
       body: JSON.stringify({
         p_subscription: subscriptionId, p_event_key: eventKey,
         p_provider_event_id: providerEventId, p_incoming_fingerprint: incomingFingerprint,
+        p_incoming_financial_digest: incomingFinancialDigest,
       }),
     });
   } catch {
@@ -461,11 +464,15 @@ export async function processResearchMembershipWebhook({
           && stored?.researchP1InvoiceReceipt === true
           && /^[0-9a-f]{64}$/.test(stored.replayFingerprint || '')
           && /^[0-9a-f]{64}$/.test(inspected.metadata.replayFingerprint || '')
-          && stored.replayFingerprint !== inspected.metadata.replayFingerprint) {
+          && /^[0-9a-f]{64}$/.test(stored.invoiceFinancialDigest || '')
+          && /^[0-9a-f]{64}$/.test(inspected.metadata.invoiceFinancialDigest || '')
+          && (stored.replayFingerprint !== inspected.metadata.replayFingerprint
+            || stored.invoiceFinancialDigest !== inspected.metadata.invoiceFinancialDigest)) {
         await custodyConflictingSignedInvoice({
           config, subscriptionId: existingSubscription.id, eventKey,
           providerEventId: inspected.providerEventId,
-          incomingFingerprint: inspected.metadata.replayFingerprint, fetchImpl,
+          incomingFingerprint: inspected.metadata.replayFingerprint,
+          incomingFinancialDigest: inspected.metadata.invoiceFinancialDigest, fetchImpl,
         });
       }
       throw error;

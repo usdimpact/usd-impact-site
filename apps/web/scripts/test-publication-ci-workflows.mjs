@@ -135,7 +135,7 @@ check('schedules and generation retry budgets remain unchanged', () => {
 check('import and publication-eligibility protections remain', () => {
   assert.match(daily, /import-daily-news\.mjs.*--replace --skip-published --publish/);
   assert.match(catalyst, /import-catalyst-brief\.mjs.*--publish --skip-published/);
-  assert.match(daily, /existing_pr=.*[\s\S]*--state all/);
+  assert.match(daily, /pr_scan_complete=false[\s\S]*pulls\?state=all&base=main&per_page=100&page=\$pr_page[\s\S]*pr_scan_complete=true[\s\S]*pr_scan_complete" != true/);
   assert.match(catalyst, /if: steps\.eligibility\.outputs\.publishable == 'true'/);
 });
 check('new preflight failure label is accurate and backward compatible', () => {

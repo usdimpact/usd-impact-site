@@ -171,6 +171,25 @@ l2 = lease_for(a2)
 f2 = fence(a2, l2)
 rec("2 clearance older than 24 hours cannot authorize Auth retirement",
     stale[0] == "OK" and f2[0] == "ERR" and "fresh per-account provider cessation" in f2[1], f2)
+# D3 regression: provider evidence can still be after Phase A but too old
+# for a strict 15-minute Auth retirement fence. A fresh owner verification,
+# not merely retrying the lease, is required to proceed.
+a2c = new_due_account("fifteen-minute-boundary")
+assert phase_a(a2c)[0] == "OK"
+db("""UPDATE research_lifecycle_private.deletion_auth_cleanup
+      SET started_at=now()-interval '2 hours' WHERE account_id=%s""", (a2c,))
+old_16m = clearance(a2c, "syn-split-stale-16m", "clock_timestamp()-interval '16 minutes'")
+l2c = lease_for(a2c)
+f2c = fence(a2c, l2c)
+rec("2 clearance 16 minutes old is rejected, with Auth intact",
+    old_16m[0] == "OK" and l2c is not None
+    and f2c[0] == "ERR" and "fresh per-account provider cessation" in f2c[1]
+    and ledger(a2c)["financial_fence_passed_at"] is None and auth_rows(a2c) == 1, f2c)
+assert clearance(a2c, "syn-split-fresh-after-16m")[0] == "OK"
+rec("2 a fresh post-Phase-A owner clearance allows a clean current lease",
+    fence(a2c, l2c) == ("OK", True)
+    and ledger(a2c)["financial_fence_passed_at"] is not None
+    and auth_rows(a2c) == 1)
 a2b = new_due_account("prephasea")
 assert clearance(a2b, "syn-split-pre-0001")[0] == "OK"
 time.sleep(0.01)

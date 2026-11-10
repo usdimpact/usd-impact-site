@@ -223,7 +223,9 @@ begin
         where c.id=p_clearance and c.account_id=p_account
           and c.verified_at<=v_now
           and c.verified_at>=v_now-interval '15 minutes'
-    ) then
+    )
+    or not research_lifecycle_private.a_strict_receipt_valid(
+        p_account,p_case,p_clearance,'pre_auth',p_clearance) then
   raise exception using errcode='55000',message='owner cessation custody or expiry invalid';
  end if;
  select p.* into v_profile from public.profiles p where p.account_id=p_account for update;
@@ -279,7 +281,9 @@ begin
    or not exists(select 1 from public.research_billing_clearances c
       where c.id=p_clearance and c.account_id=p_account
         and c.verified_at>v_a.authorized_at
-        and c.verified_at<=v_now and c.verified_at>=v_now-interval '15 minutes') then
+        and c.verified_at<=v_now and c.verified_at>=v_now-interval '15 minutes')
+   or not research_lifecycle_private.a_strict_receipt_valid(
+       p_account,p_case,p_clearance,'pre_auth',v_a.pre_clearance_id) then
   raise exception using errcode='55000',message='supervised case requires new owner reconciliation';
  end if;
  update research_lifecycle_private.a_strict_cases a set
@@ -401,6 +405,8 @@ begin
       and c.verified_at>=pg_catalog.clock_timestamp()-interval '15 minutes'
       and c.verified_at<=pg_catalog.clock_timestamp()
       and (q.financial_hold_at is null or c.verified_at>q.financial_hold_at)
+      and research_lifecycle_private.a_strict_receipt_valid(
+          p_account,a.case_ref,c.id,'pre_auth',a.pre_clearance_id)
  ) then
     raise exception using errcode='55000',message='A-strict D3 pre-Auth clearance stale';
  end if;
@@ -434,7 +440,9 @@ begin
       where c.account_id=p_account
         and c.verified_at>=a.phase_a_at
         and c.verified_at>=pg_catalog.clock_timestamp()-interval '15 minutes'
-        and c.verified_at<=pg_catalog.clock_timestamp())
+        and c.verified_at<=pg_catalog.clock_timestamp()
+        and research_lifecycle_private.a_strict_receipt_valid(
+          p_account,a.case_ref,c.id,'pre_auth',a.pre_clearance_id))
   and not exists(select 1 from research_lifecycle_private.deletion_billing_incidents i
        where i.account_id=p_account and i.status='open');
  if not found then raise exception using errcode='42501',message='Auth attempt denied'; end if;
@@ -511,6 +519,8 @@ begin
     or (v_a.latest_exception_at is not null and v_c.verified_at<=v_a.latest_exception_at)
     or p_all_pages is not true or p_no_future_charge is not true
     or p_pending_invoices_cleared is not true
+    or not research_lifecycle_private.a_strict_receipt_valid(
+        p_account,p_case,p_clearance,'post_auth',v_a.pre_clearance_id)
     or pg_catalog.cardinality(research_lifecycle_private.billing_hold_reasons(p_account))>0
     or exists(select 1 from research_lifecycle_private.deletion_billing_incidents i
       where i.account_id=p_account and
@@ -546,6 +556,8 @@ begin
    or v_a.post_recorded_at is null or v_c.id is null
    or v_c.verified_at<=v_a.auth_observed_at
    or v_c.verified_at<pg_catalog.clock_timestamp()-interval '15 minutes'
+   or not research_lifecycle_private.a_strict_receipt_valid(
+       p_account,v_a.case_ref,v_a.post_clearance_id,'post_auth',v_a.pre_clearance_id)
    or (v_a.latest_exception_at is not null and v_c.verified_at<=v_a.latest_exception_at)
    or (v_q.financial_hold_at is not null and
       (v_c.verified_at<=v_q.financial_hold_at

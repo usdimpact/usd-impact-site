@@ -309,11 +309,46 @@ dcomp=uuid.UUID(r[1]['lease_id'])
 check("cannot confirm before post-Auth read",
  q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))[0]=="ERR")
 time.sleep(.03)
+# A generic owner clearance and three TRUE booleans cannot bypass the
+# private post-Auth merchant receipt. Distinct store/customer scope is HOLD.
+rawpost=q("postgres",
+ "SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp(),'synthetic-owner')",
+ (d,"p1-"+d.hex[:12]+"-generic-post"))
+check("generic post-Auth clearance exists but has no inventory",rawpost[0]=="OK")
+check("generic post-Auth clearance denied despite all booleans",
+ q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
+ (d,td,rawpost[1],"p1-"+d.hex[:12]))[0]=="ERR")
+wrongstore=q("postgres",
+ "SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp(),'synthetic-owner')",
+ (d,"p1-"+d.hex[:12]+"-wrong-store"))
+check("different merchant store owner receipt can be recorded",
+ attest(d,"wrong-store",wrongstore[1],"post_auth",store="42")[0]=="OK")
+check("post-Auth merchant store mismatch rejected",
+ q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
+ (d,td,wrongstore[1],"p1-"+d.hex[:12]))[0]=="ERR")
+wrongcustomer=q("postgres",
+ "SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp(),'synthetic-owner')",
+ (d,"p1-"+d.hex[:12]+"-wrong-customer"))
+check("different customer digest owner receipt can be recorded",
+ attest(d,"wrong-customer",wrongcustomer[1],"post_auth",customer_digest="b"*64)[0]=="OK")
+check("post-Auth canonical customer mismatch rejected",
+ q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
+ (d,td,wrongcustomer[1],"p1-"+d.hex[:12]))[0]=="ERR")
 post_d=clear(d,"syn-astrict-dpost-"+d.hex[:12],"post_auth")
 check("clean post-Auth evidence",post_d[0]=="OK")
 check("owner explicitly marks all merchant paths as reviewed",
  q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
  (d,td,post_d[1],"p1-"+d.hex[:12]))==("OK",True))
+# The post-Auth evidence can expire even after owner accepted it. Both
+# confirm and finish enforce the same candidate 15-minute threshold.
+synthetic_age_immutable_observation([post_d[1]])
+check("D3 expired post-Auth evidence prevents SQL/notification completion",
+ q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))[0]=="ERR")
+post_retry=clear(d,"syn-astrict-dpost-fresh-"+d.hex[:12],"post_auth")
+check("owner re-read creates new post-Auth immutable receipt",post_retry[0]=="OK")
+check("owner explicitly replaces stale post-Auth attestation",
+ q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
+ (d,td,post_retry[1],"p1-"+d.hex[:12]))==("OK",True))
 confirmed=q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))
 check("clean post-Auth barrier passes",confirmed[0]=="OK" and confirmed[1]['phase']=='auth_confirmed')
 key="notification:v1:"+hashlib.sha256(("astrict-"+str(d)).encode()).hexdigest()
@@ -426,4 +461,55 @@ check("D3 freshness expiring after fence prevents Auth-attempt intent",
  q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(g,tg,lg))[0]=="ERR")
 check("D3 after-fence expiry leaves Auth intact",db("SELECT count(*) FROM auth.users WHERE id=%s",(g,))==1)
 check("D3 after-fence expiry leaves no final email",sendable(g)==0)
+
+# Evidence custody rejects test mode, unscanned pages, unknown provider status,
+# raw customer metadata, and any service_role attempt to create owner receipts.
+h=new_account()
+raw=q("postgres","SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp(),'synthetic-owner')",
+ (h,"p1-"+h.hex[:12]+"-only-clearance"))
+check("generic clearance lacks account/case merchant inventory",raw[0]=="OK")
+check("generic owner clearance cannot authorize A-strict Phase A",start(h,raw[1])[0]=="ERR")
+hv=db("SELECT verified_at FROM public.research_billing_clearances WHERE id=%s",(raw[1],))
+complete_doc=evidence(h,"synthetic-h",hv)
+check("service_role cannot forge owner merchant receipt",
+ q("service_role","SELECT public.a_strict_owner_record_merchant_receipt(%s,%s,%s,%s,%s)",
+ (h,"p1-"+h.hex[:12],raw[1],"pre_auth",Jsonb(complete_doc)))[0]=="ERR")
+for label,patch in [
+ ("test-mode",{"mode":"test"}),
+ ("bad-product",{"product_key":"library-pass"}),
+ ("unscanned-orders",{"order_pages":0}),
+ ("unscanned-invoices",{"invoice_pages":0}),
+ ("pending-provider-retry",{"no_retries":False}),
+ ("unknown-provider-objects",{"no_unknown_provider_objects":False}),
+ ("raw-customer-PII",{"customer_email":"synthetic@example.invalid"}),
+ ("malformed-digest",{"customer_scope_digest":"abc"}),
+]:
+    invalid=dict(complete_doc,**patch)
+    rejected=q("postgres","SELECT public.a_strict_owner_record_merchant_receipt(%s,%s,%s,%s,%s)",
+      (h,"p1-"+h.hex[:12],raw[1],"pre_auth",Jsonb(invalid)))
+    check("merchant inventory denies "+label,rejected[0]=="ERR",rejected)
+valid=attest(h,"synthetic-h",raw[1])
+check("one properly scoped owner merchant receipt admitted",valid[0]=="OK",valid)
+check("append-only receipt cannot be rewritten",
+ q("postgres","UPDATE research_lifecycle_private.a_strict_merchant_receipts SET merchant_store_id='42' WHERE clearance_id=%s RETURNING id",
+  (raw[1],))[0]=="ERR")
+hr=start(h,raw[1])
+check("valid owner-scoped merchant packet authorizes case",hr[0]=="OK")
+th=hr[1]
+check("owner Phase A may run once",phase(h,th)[0]=="OK")
+db("""UPDATE research_lifecycle_private.a_strict_cases SET expires_at=clock_timestamp()-interval '1 second'
+ WHERE account_id=%s""",(h,))
+check("expired owner case cannot lease/Auth/complete",lease(h,th,'auth')[0]=="ERR")
+check("expired case leaves Auth and privacy pending",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(h,))==1 and privacy_open(h)>=1)
+hnew=clear(h,"p1-"+h.hex[:12]+"-new-owner-read")
+check("fresh owner inventory exists for session recovery",hnew[0]=="OK")
+hrot=q("postgres","SELECT public.a_strict_owner_rotate(%s,%s,%s,%s,clock_timestamp()+interval '45 minutes')",
+  (h,"p1-"+h.hex[:12],hnew[1],"synthetic-owner"))
+check("owner-only session rotation after clean expiry",hrot[0]=="OK" and hrot[1]!=th,hrot)
+check("expired token never regains authority",lease(h,th,'auth')[0]=="ERR")
+check("new owner session may claim single held Auth identity",
+ lease(h,hrot[1],'auth')[0]=="OK")
+check("session renewal does not itself delete Auth",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(h,))==1)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

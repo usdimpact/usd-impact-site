@@ -205,4 +205,84 @@ check("renewal preserves one-time Auth DELETE ban",
    (b,newcap,uuid.UUID(newlease[1]['lease_id'])))[0]=="ERR")
 check("renewal never recovers Auth identity",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==1)
+# Deterministic race: signed charge after the SQL fence, before the external
+# Auth call. The mark attempt rechecks under profile lock and must refuse.
+c=new_account()
+cp=clear(c,"syn-astrict-cpre-"+c.hex[:12])
+cr=start(c,cp[1])
+check("race account owner authorization",cr[0]=="OK")
+tc=cr[1]
+check("race account Phase A",phase(c,tc)[0]=="OK")
+lcrow=lease(c,tc,'auth')
+check("race account Auth lease",lcrow[0]=="OK")
+lc=uuid.UUID(lcrow[1]['lease_id'])
+check("race account post-Phase-A owner clearance",
+ clear(c,"syn-astrict-cfresh-"+c.hex[:12])[0]=="OK")
+check("race SQL fence passes before a late charge",fence(c,tc,lc)==("OK",True))
+paid_c=q("service_role","SELECT public.record_research_paid_binding_refusal('lemon-squeezy',%s,%s,%s,%s)",
+ ("syn-astrict-cpaid-"+c.hex[:12],c,"syn-astrict-ck-"+c.hex[:12],"SIGNED_PAID_BINDING_REFUSED"))
+check("late signed charge after fence is durable",paid_c[0]=="OK" and inc(c)=="open")
+check("mark Auth attempt refuses intervening paid event",
+ q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(c,tc,lc))[0]=="ERR")
+check("Auth remains intact when payment commits before intent",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(c,))==1)
+check("no completion email on refused post-fence payment",sendable(c)==0)
+
+# Clean synthetic positive path and real outbox trigger behaviour: both
+# post-Auth SQL barriers run before staged email may become dispatchable.
+import hashlib
+d=new_account()
+dp=clear(d,"syn-astrict-dpre-"+d.hex[:12])
+dr=start(d,dp[1])
+check("clean path owner authorization",dr[0]=="OK")
+td=dr[1]
+check("clean Phase A",phase(d,td)[0]=="OK")
+dl=lease(d,td,'auth')
+check("clean Auth lease",dl[0]=="OK")
+ld=uuid.UUID(dl[1]['lease_id'])
+check("clean fresh pre-Auth clearance",clear(d,"syn-astrict-dfresh-"+d.hex[:12])[0]=="OK")
+check("clean Auth financial fence",fence(d,td,ld)==("OK",True))
+check("clean durable Auth intent",q("service_role",
+  "SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(d,td,ld))==("OK",True))
+# SIMULATE only the external Auth DELETE and positive GET in disposable PG17.
+db("DELETE FROM auth.users WHERE id=%s",(d,))
+observed=q("service_role","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(d,td,ld))
+check("clean Auth retirement observed; merchant still unverified",observed[0]=="OK")
+r=lease(d,td,'complete')
+check("clean completion lease",r[0]=="OK")
+dcomp=uuid.UUID(r[1]['lease_id'])
+check("cannot confirm before post-Auth read",
+ q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))[0]=="ERR")
+time.sleep(.03)
+post_d=clear(d,"syn-astrict-dpost-"+d.hex[:12])
+check("clean post-Auth evidence",post_d[0]=="OK")
+check("owner explicitly marks all merchant paths as reviewed",
+ q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
+ (d,td,post_d[1],"p1-"+d.hex[:12]))==("OK",True))
+confirmed=q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))
+check("clean post-Auth barrier passes",confirmed[0]=="OK" and confirmed[1]['phase']=='auth_confirmed')
+key="notification:v1:"+hashlib.sha256(("astrict-"+str(d)).encode()).hexdigest()
+outbox=db("""INSERT INTO public.notification_outbox(
+ idempotency_key,event_id,message_id,classification,business_object_type,
+ business_object_id,state_version,recipient_email_normalized,
+ template_id,template_version,provider,payload,status)
+ SELECT %s,%s,'account_deletion_completed','transactional_operational',
+ 'account_deletion_request',%s,floor(extract(epoch from q.deleted_at)/60)::integer,
+ lower(btrim(q.recipient_email)),
+ 'account_deletion_completed','v1','resend','{}'::jsonb,'queued'
+ FROM research_lifecycle_private.deletion_auth_cleanup q WHERE q.account_id=%s
+ RETURNING id""",(key,"synthetic-astrict-"+d.hex,str(d),d))
+check("clean email becomes staged, not immediately sendable",
+ outbox is not None and sendable(d)==0)
+check("direct service_role cannot bypass staged email",
+ q("service_role","UPDATE public.notification_outbox SET status='queued' WHERE id=%s RETURNING id",(outbox,))[0]=="ERR")
+check("wrong outbox receipt cannot finish",
+ q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
+ (d,td,dcomp,uuid.uuid4()))[0]=="ERR")
+finish=q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
+ (d,td,dcomp,outbox))
+check("staged email and privacy completion released atomically",finish==("OK",True),finish)
+check("clean released outbox now sendable after both barriers",sendable(d)==1)
+check("clean custody scrubs duplicate email",
+ state(d)['phase']=='email_enqueued' and state(d)['recipient_email'] is None)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

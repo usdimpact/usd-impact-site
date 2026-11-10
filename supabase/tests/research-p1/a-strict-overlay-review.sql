@@ -207,6 +207,10 @@ $receipt_valid$;
 revoke all on function research_lifecycle_private.a_strict_receipt_valid(uuid,text,uuid,text,uuid)
  from public,anon,authenticated,service_role;
 
+-- D1 owner custody: no web/service_role can execute database Phase A,
+-- authorize an Auth DELETE intent or attest a successful Admin GET. These
+-- steps require the SQL owner in a deliberately supervised session; the
+-- synthetic JS module is not wired to such an owner connection.
 -- SQL owner issues one opaque, expiring, case-bound capability. NEVER callable
 -- from PostgREST service_role, anon or authenticated. No re-issuance after Phase A
 -- in this conservative candidate; crash/recovery requires owner incident review.
@@ -339,7 +343,6 @@ end;
 $phase$;
 revoke all on function public.a_strict_phase_a(uuid,uuid)
  from public,anon,authenticated,service_role;
-grant execute on function public.a_strict_phase_a(uuid,uuid) to service_role;
 
 create function public.a_strict_claim(
  p_account uuid,p_authorization uuid,p_purpose text
@@ -451,7 +454,6 @@ end;
 $mark$;
 revoke all on function public.a_strict_mark_auth_attempt(uuid,uuid,uuid)
  from public,anon,authenticated,service_role;
-grant execute on function public.a_strict_mark_auth_attempt(uuid,uuid,uuid) to service_role;
 
 -- Caller must independently perform authenticated Admin GET. SQL cannot
 -- attest an external Auth outcome. A GET error MUST leave this phase held.
@@ -490,7 +492,6 @@ end;
 $obs$;
 revoke all on function public.a_strict_record_auth_observed(uuid,uuid,uuid)
  from public,anon,authenticated,service_role;
-grant execute on function public.a_strict_record_auth_observed(uuid,uuid,uuid) to service_role;
 
 -- Provider read is external, case-specific, owner-custodied and explicitly
 -- attested; none of these booleans makes remote merchant behaviour atomic.

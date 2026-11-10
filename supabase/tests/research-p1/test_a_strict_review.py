@@ -579,4 +579,4 @@ check("paid-period hold preserves existing Research entitlement",
  db("""SELECT count(*) FROM public.entitlements WHERE account_id=%s
       AND product_id='research-membership' AND state='active'
       AND ends_at>clock_timestamp()""",(k,))==1)
-print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)
+print(f"[A-STRICT] {count} executable disposable PostgreSQL {db('SHOW server_version')} checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

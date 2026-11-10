@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 """E3 exact source-proven invoice custody negatives on disposable PG17 ONLY."""
 import uuid
+
+import hashlib,hmac
+from datetime import datetime,timezone
+_SYNTHETIC_INGRESS_KEY=b'offline-only-replay-test-signing-key'
+def _ingress_proof(sid,ek,pid,name,when,metadata):
+    m=getattr(metadata,'obj',metadata)
+    dt=when if isinstance(when,datetime) else datetime.fromisoformat(str(when).replace('Z','+00:00'))
+    iso=dt.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00','Z')
+    fields=['research-invoice-ingress-v1',str(sid).lower(),ek,pid,name,iso,
+      m.get('lemonEventName'),m.get('lemonDataType'),m.get('lemonDataId'),
+      m.get('lemonStatus'),m.get('lemonBillingReason'),m.get('testMode'),
+      m.get('replayFingerprintVersion'),m.get('replayFingerprint'),m.get('invoiceFinancialDigest')]
+    msg=':'.join('~' if value is None else str(value).lower().encode('utf8').hex()
+       if isinstance(value,bool) else str(value).encode('utf8').hex() for value in fields)
+    return hmac.new(_SYNTHETIC_INGRESS_KEY,msg.encode('utf8'),hashlib.sha256).hexdigest()
 import psycopg
 from psycopg.types.json import Jsonb
 N=0
@@ -15,7 +30,24 @@ def owner(sql,args=()):
     r=call('postgres',sql,args)
     if r[0]!='OK': raise AssertionError('synthetic setup failure '+str(r))
     return r[1]
-def svc(sql,args=()): return call('service_role',sql,args)
+def svc(sql,args=()):
+    # Preserve the original call sites while routing through proved public
+    # wrappers. Direct service_role invocation of either legacy RPC is DENIED.
+    if 'public.record_research_signed_invoice_receipt(' in sql:
+        sid,ek,pid,when,meta=args
+        proof=_ingress_proof(sid,ek,pid,'subscription_payment_success',when,meta)
+        guarded=sql.replace('record_research_signed_invoice_receipt(','record_research_signed_invoice_receipt_guarded(')
+        guarded=guarded[:-1]+',%s)'
+        return call('service_role',guarded,args+(proof,))
+    if 'public.record_research_signed_invoice_conflict(' in sql:
+        sid,ek,pid,fp,fin=args
+        incoming={**getattr(md,'obj',md),
+                  'replayFingerprint':fp,'invoiceFinancialDigest':fin}
+        proof=_ingress_proof(sid,ek,pid,'subscription_payment_success',obs,incoming)
+        guarded=sql.replace('record_research_signed_invoice_conflict(','record_research_signed_invoice_conflict_guarded(')
+        guarded=guarded[:-1]+',%s,%s,%s::jsonb,%s)'
+        return call('service_role',guarded,args+('subscription_payment_success',obs,Jsonb(incoming),proof))
+    return call('service_role',sql,args)
 def check(label,ok,x=None):
     global N
     N+=1
@@ -102,7 +134,7 @@ count=owner("SELECT count(*) FROM research_lifecycle_private.a_strict_invoice_co
 check('E3 4c two distinct conflicting financial claims retained',count==2,count)
 
 # Client roles cannot inspect or forge private immutable conflict custody.
-fn='public.record_research_signed_invoice_conflict(uuid,text,text,text,text)'
+fn='public.record_research_signed_invoice_conflict_guarded(uuid,text,text,text,text,text,timestamptz,jsonb,text)'
 grants=[owner("SELECT has_function_privilege(%s,%s,'EXECUTE')",(r,fn))
   for r in ('anon','authenticated','service_role')]
 check('conflict RPC EXECUTE restricted to service_role',grants==[False,False,True],grants)
@@ -130,6 +162,15 @@ v=svc(tr,(sid,'e3-refund-'+psub,'e3-refund-provider-'+psub,psub,'active','refund
 check('invoice chronology does not suppress legitimate terminal refund',v[0]=='OK' and v[1]['action']=='applied',v)
 s=owner("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))
 check('terminal refund state preserved',s=='refunded',s)
-grant=[owner("SELECT has_function_privilege(%s,'public.record_research_signed_invoice_receipt(uuid,text,text,text,timestamptz,jsonb)','execute')",(u,)) for u in ('anon','authenticated','service_role')]
+grant=[owner("SELECT has_function_privilege(%s,'public.record_research_signed_invoice_receipt_guarded(uuid,text,text,text,timestamptz,jsonb,text)','execute')",(u,)) for u in ('anon','authenticated','service_role')]
 check('RPC only executable by service_role',grant==[False,False,True],grant)
+# With only a leaked service_role token, no signed provider event may be preclaimed.
+legacy=call('service_role',rpc,(sid,ek,pid,obs,md))
+check('raw invoice receipt RPC revoked from service_role',legacy==('ERR','42501'),legacy)
+forged=call('service_role',"SELECT public.record_research_signed_invoice_receipt_guarded(%s,%s,%s,'subscription_payment_success',%s,%s::jsonb,%s)",
+ (sid,'lemon-squeezy:forge-proof','forge-proof',obs,md,'0'*64))
+check('forged invoice ingress HMAC rejected',forged==('ERR','42501'),forged)
+raw_conflict=call('service_role',"SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",
+ (sid,ek,pid,'f'*64,'e'*64))
+check('unproved invoice-conflict RPC revoked from service_role',raw_conflict==('ERR','42501'),raw_conflict)
 print(f'[E3-OVERLAY] {N} disposable PG17 checks PASS; DRAFT HOLD',flush=True)

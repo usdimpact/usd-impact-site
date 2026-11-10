@@ -99,18 +99,20 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       ctx.quarantines.push(evidence);
       return quarantineReply ? quarantineReply(ctx, json) : json('99999999-9999-4999-8999-999999999999');
     }
-    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_conflict') {
+    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_conflict_guarded') {
       const conflict = JSON.parse(init.body);
+      assert.match(conflict.p_ingress_proof,/^[0-9a-f]{64}$/);
       assert.match(conflict.p_incoming_financial_digest, /^[0-9a-f]{64}$/);
       ctx.invoiceConflictAttempts.push(conflict);
       if (conflictReply) return conflictReply(ctx, json, conflict);
       ctx.invoiceConflicts.push(conflict);
       return json({ action: 'conflict_quarantined', event_key: conflict.p_event_key });
     }
-    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_receipt') {
+    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_receipt_guarded') {
       assert.equal(init.method, 'POST');
       const receipt = JSON.parse(init.body);
       assert.equal(receipt.p_subscription_id, subscriptionId);
+      assert.match(receipt.p_ingress_proof,/^[0-9a-f]{64}$/);
       assert.equal(receipt.p_event_key.startsWith('lemon-squeezy:'), true);
       assert.equal(receipt.p_metadata.lemonDataType, 'subscription-invoices');
       assert.equal(receipt.p_metadata.replayFingerprintVersion, 1);
@@ -608,7 +610,7 @@ await test('lost invoice receipt response after durable insert is resolved by ex
   assert.equal(result.action, 'duplicate', 'only committed exact-key signed evidence may be acknowledged');
   assert.equal(ctx.rows.length, 1);
   assert.equal(ctx.writes.length, 0);
-  assert.equal(ctx.calls.filter(c => c.path === '/rest/v1/rpc/record_research_signed_invoice_receipt').length, 1);
+  assert.equal(ctx.calls.filter(c => c.path === '/rest/v1/rpc/record_research_signed_invoice_receipt_guarded').length, 1);
 });
 for (const [label, reply] of [
   ['false 2xx action', (_c, json, receipt) => json({ action: 'ignored', event_key: receipt.p_event_key })],

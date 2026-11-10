@@ -1724,3 +1724,126 @@ revoke all on function public.record_research_signed_invoice_conflict(uuid,text,
  from public,anon,authenticated,service_role;
 grant execute on function public.record_research_signed_invoice_conflict(uuid,text,text,text,text)
  to service_role;
+
+-- E3 6b residual risk: service_role alone must NOT preclaim signed invoices
+-- through an elevated RPC. This is an isolated, uninstalled PG17 proposal.
+-- Review fixture keys below are public NON-CREDENTIALS, never for use in a
+-- real Supabase project. Production Vault/key-custody approval is outstanding.
+do $only_ci$ begin
+ if pg_catalog.current_database()<>'ci_review' then
+  raise exception using errcode='42501',message='cannot install synthetic HMAC keys outside disposable ci_review';
+ end if;
+end; $only_ci$;
+create table research_lifecycle_private.a_strict_invoice_ingress_review_keys (
+ key_id text primary key,proof_key text not null check(length(proof_key)>=16)
+);
+alter table research_lifecycle_private.a_strict_invoice_ingress_review_keys enable row level security;
+alter table research_lifecycle_private.a_strict_invoice_ingress_review_keys force row level security;
+revoke all on research_lifecycle_private.a_strict_invoice_ingress_review_keys from public,anon,authenticated,service_role;
+insert into research_lifecycle_private.a_strict_invoice_ingress_review_keys
+(key_id,proof_key) values
+('author-synthetic','offline-only-replay-test-signing-key'),
+('reviewer-synthetic','synthetic-e3-review-signing-key-01');
+
+create function research_lifecycle_private.a_strict_invoice_ingress_message(
+ p_subscription uuid,p_event_key text,p_provider_event_id text,p_event_name text,
+ p_occurred_at timestamptz,p_metadata jsonb
+) returns text language sql stable set search_path='' as $message$
+select pg_catalog.string_agg(
+ case when x.val is null then '~'
+ else pg_catalog.encode(pg_catalog.convert_to(x.val,'UTF8'),'hex') end,
+ ':' order by x.idx)
+from pg_catalog.unnest(array[
+ 'research-invoice-ingress-v1'::text,p_subscription::text,
+ p_event_key,p_provider_event_id,p_event_name,
+ pg_catalog.to_char(p_occurred_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+ p_metadata->>'lemonEventName',p_metadata->>'lemonDataType',
+ p_metadata->>'lemonDataId',p_metadata->>'lemonStatus',
+ p_metadata->>'lemonBillingReason',p_metadata->>'testMode',
+ p_metadata->>'replayFingerprintVersion',p_metadata->>'replayFingerprint',
+ p_metadata->>'invoiceFinancialDigest'
+]) with ordinality as x(val,idx);
+$message$;
+revoke all on function research_lifecycle_private.a_strict_invoice_ingress_message(
+ uuid,text,text,text,timestamptz,jsonb) from public,anon,authenticated,service_role;
+
+create function research_lifecycle_private.a_strict_verify_invoice_ingress(
+ p_subscription uuid,p_event_key text,p_provider_event_id text,p_event_name text,
+ p_occurred_at timestamptz,p_metadata jsonb,p_proof text
+) returns void language plpgsql security definer set search_path='' as $verify$
+declare v_msg text;
+begin
+ if p_subscription is null or p_event_key is null or p_provider_event_id is null
+  or p_event_name not in ('subscription_payment_success','subscription_payment_refunded')
+  or p_occurred_at is null or p_metadata is null
+  or pg_catalog.jsonb_typeof(p_metadata)<>'object'
+  or coalesce(p_proof,'') !~ '^[0-9a-f]{64}$' then
+  raise exception using errcode='42501',message='signed invoice ingress proof missing';
+ end if;
+ v_msg:=research_lifecycle_private.a_strict_invoice_ingress_message(
+  p_subscription,p_event_key,p_provider_event_id,p_event_name,p_occurred_at,p_metadata);
+ if not exists (
+  select 1 from research_lifecycle_private.a_strict_invoice_ingress_review_keys k
+  where pg_catalog.encode(extensions.hmac(
+    pg_catalog.convert_to(v_msg,'UTF8'),
+    pg_catalog.convert_to(k.proof_key,'UTF8'),'sha256'),'hex')=p_proof
+ ) then
+  raise exception using errcode='42501',message='signed invoice ingress proof invalid';
+ end if;
+end;
+$verify$;
+revoke all on function research_lifecycle_private.a_strict_verify_invoice_ingress(
+ uuid,text,text,text,timestamptz,jsonb,text) from public,anon,authenticated,service_role;
+
+revoke all on function public.record_research_signed_invoice_receipt(
+ uuid,text,text,text,timestamptz,jsonb) from service_role;
+revoke all on function public.record_research_signed_invoice_conflict(
+ uuid,text,text,text,text) from service_role;
+
+create function public.record_research_signed_invoice_receipt_guarded(
+ p_subscription_id uuid,p_event_key text,p_provider_event_id text,
+ p_event_name text,p_occurred_at timestamptz,p_metadata jsonb,p_ingress_proof text
+) returns jsonb language plpgsql security definer set search_path='' as $receipt_guard$
+begin
+ perform research_lifecycle_private.a_strict_verify_invoice_ingress(
+  p_subscription_id,p_event_key,p_provider_event_id,p_event_name,
+  p_occurred_at,p_metadata,p_ingress_proof);
+ return public.record_research_signed_invoice_receipt(
+  p_subscription_id,p_event_key,p_provider_event_id,p_event_name,p_occurred_at,p_metadata);
+end;
+$receipt_guard$;
+revoke all on function public.record_research_signed_invoice_receipt_guarded(
+ uuid,text,text,text,timestamptz,jsonb,text) from public,anon,authenticated,service_role;
+grant execute on function public.record_research_signed_invoice_receipt_guarded(
+ uuid,text,text,text,timestamptz,jsonb,text) to service_role;
+
+create function public.record_research_signed_invoice_conflict_guarded(
+ p_subscription uuid,p_event_key text,p_provider_event_id text,
+ p_incoming_fingerprint text,p_incoming_financial_digest text,
+ p_event_name text,p_occurred_at timestamptz,p_incoming_metadata jsonb,
+ p_ingress_proof text
+) returns jsonb language plpgsql security definer set search_path='' as $conflict_guard$
+declare v_prior public.subscription_events;
+begin
+ if p_incoming_metadata->>'replayFingerprint' is distinct from p_incoming_fingerprint
+   or p_incoming_metadata->>'invoiceFinancialDigest' is distinct from p_incoming_financial_digest
+   or p_incoming_metadata->>'lemonEventName' is distinct from p_event_name then
+   raise exception using errcode='42501',message='signed conflict metadata mismatch';
+ end if;
+ perform research_lifecycle_private.a_strict_verify_invoice_ingress(
+  p_subscription,p_event_key,p_provider_event_id,p_event_name,p_occurred_at,
+  p_incoming_metadata,p_ingress_proof);
+ select e.* into v_prior from public.subscription_events e
+  where e.event_key=p_event_key for share;
+ if v_prior.id is null or v_prior.occurred_at is distinct from p_occurred_at
+   or v_prior.reason is distinct from p_event_name then
+   raise exception using errcode='42501',message='signed conflict original invoice mismatch';
+ end if;
+ return public.record_research_signed_invoice_conflict(
+  p_subscription,p_event_key,p_provider_event_id,p_incoming_fingerprint,p_incoming_financial_digest);
+end;
+$conflict_guard$;
+revoke all on function public.record_research_signed_invoice_conflict_guarded(
+ uuid,text,text,text,text,text,timestamptz,jsonb,text) from public,anon,authenticated,service_role;
+grant execute on function public.record_research_signed_invoice_conflict_guarded(
+ uuid,text,text,text,text,text,timestamptz,jsonb,text) to service_role;

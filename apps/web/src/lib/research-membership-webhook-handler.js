@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import {
   inspectLemonSqueezyResearchMembershipWebhook,
@@ -350,6 +351,24 @@ async function quarantineRejectedSignedBoundEvent({
 }
 
 
+
+// Disposable-review ingress proof. Unlike a service_role token, the merchant
+// webhook secret is held by the verified ingress, not the database API caller.
+// Release storage/custody is not approved; SQL below uses INERT synthetic keys.
+function invoiceIngressProof({config, subscriptionId, eventKey, inspected}) {
+  const md=inspected.metadata;
+  const fields=[
+    'research-invoice-ingress-v1',subscriptionId.toLowerCase(),eventKey,
+    inspected.providerEventId,inspected.eventName,
+    new Date(inspected.occurredAt).toISOString(),
+    md.lemonEventName,md.lemonDataType,md.lemonDataId,md.lemonStatus,
+    md.lemonBillingReason,md.testMode,md.replayFingerprintVersion,
+    md.replayFingerprint,md.invoiceFinancialDigest,
+  ];
+  const message=fields.map(v=>v==null?'~':Buffer.from(String(v),'utf8').toString('hex')).join(':');
+  return createHmac('sha256',config.secret).update(message,'utf8').digest('hex');
+}
+
 // A verified Lemon Squeezy invoice can be financially relevant without
 // authorizing a subscription/entitlement transition. Persist the signed fact
 // before responding 2xx, including normal payment_success, partial refund,
@@ -360,7 +379,7 @@ async function recordSignedNonAppliedInvoice({
   let response;
   try {
     response = await fetchImpl(
-      config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_receipt', {
+      config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_receipt_guarded', {
         method: 'POST',
         headers: { ...headers(config.supabaseSecret), 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -370,6 +389,7 @@ async function recordSignedNonAppliedInvoice({
           p_event_name: inspected.eventName,
           p_occurred_at: inspected.occurredAt,
           p_metadata: inspected.metadata,
+          p_ingress_proof: invoiceIngressProof({config, subscriptionId, eventKey, inspected}),
         }),
       },
     );
@@ -392,17 +412,20 @@ async function recordSignedNonAppliedInvoice({
 // Record a distinct signed claim whose fingerprint conflicts with the already
 // immutable invoice receipt. Store digests only; always return non-2xx to the
 // provider because the conflicting payment must not be accepted as resolved.
-async function custodyConflictingSignedInvoice({ config, subscriptionId, eventKey,
-  providerEventId, incomingFingerprint, incomingFinancialDigest, fetchImpl }) {
+async function custodyConflictingSignedInvoice({ config, subscriptionId, eventKey, inspected, fetchImpl }) {
   let response;
   try {
-    response = await fetchImpl(config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_conflict', {
+    response = await fetchImpl(config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_conflict_guarded', {
       method: 'POST',
       headers: { ...headers(config.supabaseSecret), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         p_subscription: subscriptionId, p_event_key: eventKey,
-        p_provider_event_id: providerEventId, p_incoming_fingerprint: incomingFingerprint,
-        p_incoming_financial_digest: incomingFinancialDigest,
+        p_provider_event_id: inspected.providerEventId,
+        p_incoming_fingerprint: inspected.metadata.replayFingerprint,
+        p_incoming_financial_digest: inspected.metadata.invoiceFinancialDigest,
+        p_event_name: inspected.eventName,p_occurred_at: inspected.occurredAt,
+        p_incoming_metadata: inspected.metadata,
+        p_ingress_proof: invoiceIngressProof({config,subscriptionId,eventKey,inspected}),
       }),
     });
   } catch {
@@ -469,10 +492,7 @@ export async function processResearchMembershipWebhook({
           && (stored.replayFingerprint !== inspected.metadata.replayFingerprint
             || stored.invoiceFinancialDigest !== inspected.metadata.invoiceFinancialDigest)) {
         await custodyConflictingSignedInvoice({
-          config, subscriptionId: existingSubscription.id, eventKey,
-          providerEventId: inspected.providerEventId,
-          incomingFingerprint: inspected.metadata.replayFingerprint,
-          incomingFinancialDigest: inspected.metadata.invoiceFinancialDigest, fetchImpl,
+          config, subscriptionId: existingSubscription.id, eventKey, inspected, fetchImpl,
         });
       }
       throw error;

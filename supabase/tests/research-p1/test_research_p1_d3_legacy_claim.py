@@ -33,14 +33,25 @@ q("""UPDATE public.profiles SET deletion_due_at=now()-interval '1 minute',
  deletion_requested_at=now()-interval '31 days' WHERE account_id=%s""",(a,))
 r=q("SELECT public.finalize_deletion_and_queue_auth_cleanup(%s)",(a,),role="service_role")
 check("synthetic Phase A created held Auth queue",r and r[0][0]["phase"]=="auth_pending")
-# Test-only synthetic time-warp of a single local row; no production records.
-q("""UPDATE research_lifecycle_private.deletion_auth_cleanup
+# Synthetic time-warp only: assert the setup actually updated exactly
+# one row and created a valid, non-null held state before drawing conclusions.
+# An unnoticed 0-row update is a false-positive stale-clearance "witness".
+updated=q("""UPDATE research_lifecycle_private.deletion_auth_cleanup
  SET started_at=clock_timestamp()-interval '25 minutes',
      next_attempt_at=clock_timestamp()-interval '5 years',
      financial_hold_first_at=now()-interval '21 minutes',
      financial_hold_at=now()-interval '21 minutes',
      financial_hold_class='auth_intact_cessation_unverified'
- WHERE account_id=%s""",(a,))
+ WHERE account_id=%s
+ RETURNING account_id,financial_hold_first_at,financial_hold_at,
+           financial_hold_class,phase""",(a,))
+check("held-row fixture UPDATE matched exactly the intended account",
+      len(updated)==1 and updated[0][0]==a,updated)
+check("held-row timestamps are monotonic, non-null and account is pending",
+      updated[0][1] is not None and updated[0][1]==updated[0][2]
+      and updated[0][3]=="auth_intact_cessation_unverified"
+      and updated[0][4]=="auth_pending",updated)
+
 clear=q("""SELECT public.record_research_billing_clearance(
  %s,'provider_api',%s,clock_timestamp()-interval '20 minutes','synthetic-owner')""",
  (a,"p1-"+a.hex[:12]+"-age20"))

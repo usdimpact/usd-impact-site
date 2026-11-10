@@ -375,6 +375,22 @@ check("staged email and privacy completion released atomically",finish==("OK",Tr
 check("clean released outbox now sendable after both barriers",sendable(d)==1)
 check("clean custody scrubs duplicate email",
  state(d)['phase']=='email_enqueued' and state(d)['recipient_email'] is None)
+# N3: actual service_role cannot rewrite completion identity after release.
+# N2 direct staged-to-queued bypass is separately covered above.
+check("N3a queued completion recipient rewrite denied under service_role",
+  q("service_role","UPDATE public.notification_outbox SET recipient_email_normalized=%s WHERE id=%s RETURNING id",
+  ("redirected@invalid.example",outbox))[0]=="ERR")
+check("N3b queued completion account rewrite denied under service_role",
+  q("service_role","UPDATE public.notification_outbox SET business_object_id=%s WHERE id=%s RETURNING id",
+  (str(uuid.uuid4()),outbox))[0]=="ERR")
+check("N3c queued completion message rewrite denied under service_role",
+  q("service_role","UPDATE public.notification_outbox SET message_id='other_message' WHERE id=%s RETURNING id",
+  (outbox,))[0]=="ERR")
+delivery=q("service_role",
+  "UPDATE public.notification_outbox SET status='sending' WHERE id=%s RETURNING status",
+  (outbox,))
+check("legitimate completion delivery status update still permitted",
+  delivery==("OK","sending"),delivery)
 # Actual TWO-CONNECTION synthetic worker contention. Both callers race to
 # lease one account; profile/q locks must permit only one unexpired lease.
 from concurrent.futures import ThreadPoolExecutor

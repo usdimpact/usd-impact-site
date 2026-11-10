@@ -135,6 +135,29 @@ target=scalar("""SELECT id FROM public.notification_outbox
  WHERE message_id='account_deletion_completed' AND status='queued'
  ORDER BY created_at DESC LIMIT 1""")
 check("previous positive A-strict suite left queued synthetic completion",target is not None)
+# Provider-accepted means the external mail service took custody: requeue is
+# also a duplicate-send hazard. Isolate the positive setup in a rolled-back
+# transaction, preserving the queued fixture for the delivered path below.
+accepted_rearm=None
+with c(autocommit=False) as tx:
+    tx.execute("SET ROLE service_role")
+    state=tx.execute("""UPDATE public.notification_outbox
+      SET status='accepted',accepted_at=clock_timestamp(),updated_at=clock_timestamp()
+      WHERE id=%s RETURNING status""",(target,)).fetchone()
+    check("queued completion may record legitimate provider acceptance",
+          state==("accepted",),state)
+    try:
+        tx.execute("""UPDATE public.notification_outbox
+          SET status='queued',updated_at=clock_timestamp()
+          WHERE id=%s RETURNING status""",(target,))
+        accepted_rearm="PERMITTED"
+    except psycopg.Error as e:
+        accepted_rearm=e.sqlstate
+    finally:
+        tx.rollback()
+check("accepted completion cannot be requeued for duplicate send",accepted_rearm=="42501",accepted_rearm)
+check("rolled-back acceptance fixture leaves original completion queued",
+ scalar("SELECT status FROM public.notification_outbox WHERE id=%s",(target,))=="queued")
 r=call("""UPDATE public.notification_outbox SET status='delivered',
  updated_at=clock_timestamp() WHERE id=%s RETURNING status""",(target,),role="service_role")
 check("legitimate service_role queued-to-delivered transition",r==("OK",[("delivered",)]),r)

@@ -54,9 +54,9 @@ function archived(value = payload(), subscription = base) {
     actor_type: 'provider_webhook', occurred_at: e.occurredAt, metadata: { ...e.metadata },
   };
 }
-function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply } = {}) {
+function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply, invoiceReply, conflictReply } = {}) {
   const originalLibrary = Object.freeze({ product_id: 'read-the-dollar-first-guided-interactive-edition', state: 'active' });
-  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], ledgerReads: 0, library: originalLibrary };
+  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], invoiceReceipts: [], invoiceConflicts: [], invoiceConflictAttempts: [], ledgerReads: 0, library: originalLibrary };
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
   ctx.fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -98,6 +98,40 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       });
       ctx.quarantines.push(evidence);
       return quarantineReply ? quarantineReply(ctx, json) : json('99999999-9999-4999-8999-999999999999');
+    }
+    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_conflict_guarded') {
+      const conflict = JSON.parse(init.body);
+      assert.match(conflict.p_ingress_proof,/^[0-9a-f]{64}$/);
+      assert.match(conflict.p_incoming_financial_digest, /^[0-9a-f]{64}$/);
+      ctx.invoiceConflictAttempts.push(conflict);
+      if (conflictReply) return conflictReply(ctx, json, conflict);
+      ctx.invoiceConflicts.push(conflict);
+      return json({ action: 'conflict_quarantined', event_key: conflict.p_event_key });
+    }
+    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_receipt_guarded') {
+      assert.equal(init.method, 'POST');
+      const receipt = JSON.parse(init.body);
+      assert.equal(receipt.p_subscription_id, subscriptionId);
+      assert.match(receipt.p_ingress_proof,/^[0-9a-f]{64}$/);
+      assert.equal(receipt.p_event_key.startsWith('lemon-squeezy:'), true);
+      assert.equal(receipt.p_metadata.lemonDataType, 'subscription-invoices');
+      assert.equal(receipt.p_metadata.replayFingerprintVersion, 1);
+      assert.match(receipt.p_metadata.invoiceFinancialDigest, /^[0-9a-f]{64}$/);
+      if (invoiceReply) return invoiceReply(ctx, json, receipt);
+      if (ctx.rows.some(r => r.event_key === receipt.p_event_key)) {
+        return json({ action: 'duplicate', event_key: receipt.p_event_key });
+      }
+      ctx.invoiceReceipts.push(receipt);
+      ctx.rows.push({
+        event_key: receipt.p_event_key, subscription_id: subscriptionId,
+        account_id: accountId, product_id: 'research-membership',
+        provider_event_id: receipt.p_provider_event_id,
+        from_state: ctx.current.state, to_state: ctx.current.state,
+        reason: receipt.p_event_name, actor_type: 'provider_webhook',
+        occurred_at: receipt.p_occurred_at,
+        metadata: { ...receipt.p_metadata, researchP1InvoiceReceipt: true },
+      });
+      return json({ action: 'invoice_recorded', event_key: receipt.p_event_key });
     }
     assert.equal(u.pathname, '/rest/v1/rpc/apply_research_membership_transition', 'no other surface may be accessed');
     assert.equal(init.method, 'POST');
@@ -456,11 +490,62 @@ for (const [eventName, fromState, attributes] of [
     });
   }
 }
-await test('ordinary payment success remains ignored, without persisting a fake renewal', async () => {
-  const value = payload(); value.meta.event_name = 'subscription_payment_success';
-  value.data.type = 'subscription-invoices'; value.data.id = 'invoice_fixture';
-  value.data.attributes.subscription_id = 'sub_fixture'; value.data.attributes.status = 'paid';
-  const ctx = fixture(); assert.equal((await ctx.run(value)).action, 'ignored'); ctx.assertReadOnly();
+function invoicePayload(name = 'subscription_payment_success') {
+  const value = payload();
+  value.meta.event_name = name;
+  value.data.type = 'subscription-invoices';
+  value.data.id = 'invoice_fixture';
+  value.data.attributes.subscription_id = 'sub_fixture';
+  value.data.attributes.status = 'paid';
+  return value;
+}
+for (const state of ['active', 'cancelled', 'refunded']) {
+  await test(`signed payment-success after ${state} is a durable non-granting invoice receipt`, async () => {
+    const value = invoicePayload();
+    const ctx = fixture({ state });
+    const before = structuredClone(ctx.current);
+    assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+    assert.equal(ctx.invoiceReceipts.length, 1);
+    assert.equal(ctx.writes.length, 0, 'no subscription/entitlement transition');
+    assert.deepEqual(ctx.current, before);
+    assert.equal(ctx.rows.length, 1);
+    assert.equal(ctx.rows[0].metadata.researchP1InvoiceReceipt, true);
+    assert.equal(ctx.rows[0].from_state, ctx.rows[0].to_state);
+    assert.equal((await ctx.run(value)).action, 'duplicate');
+    assert.equal(ctx.invoiceReceipts.length, 1, 'identical delivery is idempotent');
+  });
+}
+await test('signed partial invoice refund is recorded without prematurely revoking entitlement', async () => {
+  const value = invoicePayload('subscription_payment_refunded');
+  Object.assign(value.data.attributes, {
+    status: 'partial_refund', refunded: false, total: 1000,
+    refunded_amount: 300, refunded_at: null,
+  });
+  const ctx = fixture();
+  assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+  assert.equal(ctx.invoiceReceipts.length, 1);
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.current.state, 'active');
+});
+await test('historical full refund is captured even when current period is later', async () => {
+  const value = invoicePayload('subscription_payment_refunded');
+  Object.assign(value.data.attributes, {
+    status: 'refunded', refunded: true, total: 1000,
+    refunded_amount: 1000, refunded_at: '2026-10-01T00:00:00.000Z',
+    created_at: '2026-08-01T00:00:00.000Z',
+  });
+  const ctx = fixture();
+  assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.invoiceReceipts.length, 1);
+});
+await test('invoice persistence failure is retryable, never falsely acknowledged', async () => {
+  const ctx = fixture({ state: 'cancelled', invoiceReply: (_ctx, json) =>
+    json({ code: '55000' }, 503) });
+  await assert.rejects(() => ctx.run(invoicePayload()),
+    { code: 'RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', status: 503 });
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.rows.length, 0);
 });
 await test('legacy evidence missing required fields is rejected rather than guessed', async () => {
   const row = archived(); row.metadata = { lemonEventName: 'subscription_updated' };
@@ -473,3 +558,89 @@ await test('later billing periods do not contaminate duplicate classification', 
   ctx.current.currentPeriodEnd = '2027-06-01T00:00:00.000Z';
   assert.equal((await ctx.run()).action, 'duplicate'); ctx.assertReadOnly();
 });
+
+await test('different signed invoice fingerprint is durably quarantined and never acknowledged', async () => {
+  const original = invoicePayload();
+  const ctx = fixture();
+  const initial = await ctx.run(original);
+  assert.equal(initial.action, 'invoice_recorded');
+  const conflict = structuredClone(original);
+  // Both v1 replay and independent amount-digest mismatches are now captured.
+  conflict.data.attributes.billing_reason = 'updated';
+  conflict.data.attributes.total = 2000;
+  await assert.rejects(() => ctx.run(conflict), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status: 409 });
+  assert.equal(ctx.invoiceConflicts.length, 1);
+  assert.equal(ctx.rows.length, 1, 'the original signed receipt remains immutable');
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.invoiceReceipts.length, 1);
+});
+
+await test('amount-only signed invoice conflict retained without changing historical v1 replay identity', async () => {
+  const value = invoicePayload();
+  const ctx = fixture();
+  assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+  const modified = structuredClone(value);
+  modified.data.attributes.total = 2000;
+  await assert.rejects(() => ctx.run(modified),
+    { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status: 409 });
+  assert.equal(ctx.rows.length, 1);
+  assert.equal(ctx.invoiceConflicts.length, 1);
+  assert.equal(ctx.invoiceConflicts[0].p_incoming_fingerprint,
+    ctx.rows[0].metadata.replayFingerprint);
+  assert.notEqual(ctx.invoiceConflicts[0].p_incoming_financial_digest,
+    ctx.rows[0].metadata.invoiceFinancialDigest);
+  assert.equal(ctx.invoiceReceipts.length, 1);
+  assert.equal(ctx.current.state, 'active');
+});
+
+await test('lost invoice receipt response after durable insert is resolved by exact-key read', async () => {
+  const ctx = fixture({ invoiceReply: (c, _json, receipt) => {
+    c.rows.push({
+      event_key: receipt.p_event_key, subscription_id: subscriptionId,
+      account_id: accountId, product_id: 'research-membership',
+      provider_event_id: receipt.p_provider_event_id,
+      from_state: c.current.state, to_state: c.current.state,
+      reason: receipt.p_event_name, actor_type: 'provider_webhook',
+      occurred_at: receipt.p_occurred_at,
+      metadata: { ...receipt.p_metadata, researchP1InvoiceReceipt: true },
+    });
+    throw new Error('synthetic SQL committed, transport response lost');
+  } });
+  const result = await ctx.run(invoicePayload());
+  assert.equal(result.action, 'duplicate', 'only committed exact-key signed evidence may be acknowledged');
+  assert.equal(ctx.rows.length, 1);
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.calls.filter(c => c.path === '/rest/v1/rpc/record_research_signed_invoice_receipt_guarded').length, 1);
+});
+for (const [label, reply] of [
+  ['false 2xx action', (_c, json, receipt) => json({ action: 'ignored', event_key: receipt.p_event_key })],
+  ['wrong event identity', (_c, json, receipt) => json({ action: 'invoice_recorded', event_key: receipt.p_event_key + '-wrong' })],
+]) {
+  await test('signed invoice '+label+' cannot be acknowledged without committed proof', async () => {
+    const ctx = fixture({ invoiceReply: reply });
+    await assert.rejects(() => ctx.run(invoicePayload()),
+      { code: 'RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', status: 503 });
+    assert.equal(ctx.rows.length, 0);
+    assert.equal(ctx.writes.length, 0);
+  });
+}
+for (const [label, callback] of [
+  ['RPC outage', (_c, json) => json({ error: 'synthetic DB outage' }, 503)],
+  ['false 2xx event identity', (_c, json, conflict) => json({ action: 'conflict_quarantined', event_key: conflict.p_event_key + '-wrong' })],
+]) {
+  await test('signed conflicting invoice '+label+' remains unacknowledged', async () => {
+    const ctx = fixture({ conflictReply: callback });
+    const value = invoicePayload();
+    assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+    const changed = structuredClone(value);
+    changed.data.attributes.total = 2000;
+    await assert.rejects(() => ctx.run(changed),
+      { code: 'RESEARCH_WEBHOOK_INVOICE_CONFLICT_CUSTODY_UNAVAILABLE', status: 503 });
+    assert.equal(ctx.invoiceConflictAttempts.length, 1);
+    assert.equal(ctx.invoiceConflicts.length, 0, 'no simulated committed conflict');
+    assert.equal(ctx.rows.length, 1, 'original signed evidence is not overwritten');
+    assert.equal(ctx.invoiceReceipts.length, 1);
+    assert.equal(ctx.writes.length, 0);
+    assert.equal(ctx.current.state, 'active');
+  });
+}

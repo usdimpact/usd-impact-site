@@ -383,6 +383,22 @@ export function inspectLemonSqueezyResearchMembershipWebhook({
     : {};
   // Preserve only a digest of the binding and transition-driving signed fields.
   // Formatting and expiring delivery URLs are deliberately not event identity.
+  // Independent signed invoice financial digest v1; the existing replayFingerprint
+  // v1 remains byte-identical for all historical event/transition identities.
+  const invoiceFinancialDigest = isSubscriptionObject ? null : createHash('sha256')
+    .update(JSON.stringify({
+      version: 1, invoiceId: metadata.lemonDataId, subscriptionId: providerSubscriptionId,
+      eventName, status: metadata.lemonStatus, billingReason: metadata.lemonBillingReason,
+      total: attributes.total == null ? null : positiveInteger(attributes.total,'total'),
+      refundedAmount: attributes.refunded_amount == null ? null : (() => {
+        const value = Number(attributes.refunded_amount);
+        if (!Number.isSafeInteger(value) || value < 0) throw new TypeError('Invoice refunded amount invalid.');
+        return value;
+      })(),
+      refunded: attributes.refunded === true,
+      refundedAt: optionalIsoTimestamp(attributes.refunded_at,'refunded_at'),
+      currency: text(attributes.currency) || null,
+    })).digest('hex');
   const replayFingerprint = createHash('sha256').update(JSON.stringify({
     version: 1,
     ...identity,
@@ -399,7 +415,10 @@ export function inspectLemonSqueezyResearchMembershipWebhook({
   })).digest('hex');
   return Object.freeze({
     ...identity, eventName, data, attributes, subscription, isSubscriptionObject,
-    metadata: Object.freeze({ ...metadata, replayFingerprintVersion: 1, replayFingerprint }),
+    metadata: Object.freeze({
+      ...metadata, replayFingerprintVersion: 1, replayFingerprint,
+      ...(isSubscriptionObject ? {} : { invoiceFinancialDigest }),
+    }),
   });
 }
 

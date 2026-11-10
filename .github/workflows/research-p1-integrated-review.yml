@@ -11,6 +11,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
+      - 'docs/operations/research-p1-two-phase/**'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'
@@ -19,6 +20,9 @@ on:
       - 'apps/web/api/account.js'
       - 'apps/web/scripts/test-account-deletion-two-phase-preflight.mjs'
       - 'apps/web/scripts/test-account-deletion-two-phase-worker-review.mjs'
+      - 'apps/web/scripts/test-account-deletion-a-strict-route-hold.mjs'
+      - 'apps/web/src/lib/account-deletion-a-strict-review.js'
+      - 'apps/web/scripts/test-account-deletion-a-strict-review.mjs'
       - 'apps/web/scripts/test-account-deletion-two-phase-review.mjs'
       - 'apps/web/scripts/test-research-p1-billing-safe-deletion.mjs'
       - '.github/workflows/research-p1-integrated-review.yml'
@@ -77,6 +81,9 @@ jobs:
           node scripts/test-account-deletion-two-phase-preflight.mjs
           node --check src/lib/account-deletion-two-phase-worker-review.js
           node scripts/test-account-deletion-two-phase-worker-review.mjs
+          node scripts/test-account-deletion-a-strict-route-hold.mjs
+          node --check src/lib/account-deletion-a-strict-review.js
+          node scripts/test-account-deletion-a-strict-review.mjs
           node scripts/test-research-p1-billing-safe-deletion.mjs
       - name: Replay every migration as non-superuser owner, then run the PG17 lifecycle matrix
         run: |
@@ -86,3 +93,16 @@ jobs:
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"
+          # Uninstalled A-strict review overlay: only isolated job-local PG17,
+          # after baseline tests so old candidate expectations remain separate.
+          python3 - <<'PY'
+          from pathlib import Path
+          import psycopg
+          with psycopg.connect(dbname='ci_review',autocommit=True) as c:
+              c.execute('SET ROLE postgres')
+              c.execute(Path('supabase/tests/research-p1/a-strict-overlay-review.sql').read_text())
+              print('A-STRICT disposable SQL overlay parsed and installed (job-local only)')
+          PY
+          python3 supabase/tests/research-p1/test_a_strict_review.py
+          python3 supabase/tests/research-p1/test_invoice_receipt_overlay.py
+          python3 supabase/tests/research-p1/test_incident_custody_owner_boundary.py

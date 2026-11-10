@@ -77,6 +77,14 @@ def clear(a,tag,stage="pre_auth"):
     if att[0]!="OK": return att
     return receipt
 
+def delivery_reconcile(a,token,clearance,tag,*,provider_count=0,provider_only=0,
+                       transport_unknown=0,role="postgres"):
+    digest=db("SELECT receipt_digest FROM research_lifecycle_private.a_strict_merchant_receipts WHERE clearance_id=%s",(clearance,))
+    return q(role,"SELECT public.a_strict_owner_record_delivery_reconciliation(%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp())",
+      (a,token,clearance,"p1-gap-"+hashlib.sha256(tag.encode()).hexdigest()[:24],
+       provider_count,provider_only,transport_unknown,
+       hashlib.sha256((tag+"-audit").encode()).hexdigest(),digest))
+
 def start(a,ref):
     return q("postgres","SELECT public.a_strict_authorize(%s,%s,%s,'synthetic-owner',clock_timestamp()+interval '40 minutes')",(a,"p1-"+a.hex[:12],ref))
 
@@ -339,6 +347,17 @@ check("clean post-Auth evidence",post_d[0]=="OK")
 check("owner explicitly marks all merchant paths as reviewed",
  q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
  (d,td,post_d[1],"p1-"+d.hex[:12]))==("OK",True))
+check("E3-5 outage without signed delivery-gap reconciliation blocks completion",
+  q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))[0]=="ERR")
+check("E3-5 service_role cannot forge owner reconciliation",
+  delivery_reconcile(d,td,post_d[1],"service-"+d.hex[:12],role="service_role")[0]=="ERR")
+check("E3-5 unresolved webhook transport outage refuses owner reconciliation",
+  delivery_reconcile(d,td,post_d[1],"transport-"+d.hex[:12],transport_unknown=1)[0]=="ERR")
+check("E3-5 provider-only invoice not in database refuses reconciliation",
+  delivery_reconcile(d,td,post_d[1],"provider-"+d.hex[:12],provider_count=1,provider_only=1)[0]=="ERR")
+check("E3-5 owner holds matching zero-gap delivery inventory for one clearance",
+  delivery_reconcile(d,td,post_d[1],"clean-"+d.hex[:12])==("OK",True))
+
 # The post-Auth evidence can expire even after owner accepted it. Both
 # confirm and finish enforce the same candidate 15-minute threshold.
 synthetic_age_immutable_observation([post_d[1]])
@@ -349,6 +368,11 @@ check("owner re-read creates new post-Auth immutable receipt",post_retry[0]=="OK
 check("owner explicitly replaces stale post-Auth attestation",
  q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
  (d,td,post_retry[1],"p1-"+d.hex[:12]))==("OK",True))
+check("E3-5 stale delivery reconciliation never re-arms a fresh clearance",
+  q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))[0]=="ERR")
+check("E3-5 renewed independent owner delivery inventory",
+  delivery_reconcile(d,td,post_retry[1],"renewed-"+d.hex[:12])==("OK",True))
+
 confirmed=q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))
 check("clean post-Auth barrier passes",confirmed[0]=="OK" and confirmed[1]['phase']=='auth_confirmed')
 key="notification:v1:"+hashlib.sha256(("astrict-"+str(d)).encode()).hexdigest()

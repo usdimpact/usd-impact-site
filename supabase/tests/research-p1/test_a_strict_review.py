@@ -443,6 +443,33 @@ with ThreadPoolExecutor(max_workers=2) as pool:
 check("two concurrent deletion workers share exactly one valid lease",
   sorted(r[0] for r in wins)==['ERR','OK'],wins)
 check("competing workers never retire Auth",db("SELECT count(*) FROM auth.users WHERE id=%s",(e,))==1)
+# Second witness holds the actual row lock before admitting a worker SQL
+# request; pg_stat_activity must observe a Lock wait on that request.
+e2=new_account()
+e2pre=clear(e2,'syn-e2pre-'+e2.hex[:12])
+e2auth=start(e2,e2pre[1])[1]
+check('lease-overlap witness Phase A',phase(e2,e2auth)[0]=='OK')
+claim_started=Event()
+def claim_waiter():
+    claim_started.set()
+    return lease(e2,e2auth,'auth')
+with ThreadPoolExecutor(max_workers=1) as p2:
+    with conn(autocommit=False) as claim_lock:
+        claim_lock.execute('SET ROLE postgres')
+        claim_lock.execute('SELECT 1 FROM public.profiles WHERE account_id=%s FOR UPDATE',(e2,))
+        waiting=p2.submit(claim_waiter)
+        claim_started.wait(timeout=5)
+        seen=False
+        for _ in range(60):
+            seen=db("SELECT count(*) FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE %s",('%a_strict_claim%',))>0
+            if seen: break
+            time.sleep(.02)
+        check('concurrent supervised lease really waited under owner row lock',
+          seen and not waiting.done())
+        claim_lock.commit()
+    acquired=waiting.result(timeout=10)
+check('blocked supervised claim acquires only after commit',acquired[0]=='OK',acquired)
+check('second live lease refused after real overlap',lease(e2,e2auth,'auth')[0]=='ERR')
 
 # Signed payment writer waits on the same account lock while Phase A commits.
 # That delivery MUST be persisted *after* Phase A as an unresolved incident,
@@ -463,7 +490,15 @@ with ThreadPoolExecutor(max_workers=1) as pool:
         locked.execute("SELECT 1 FROM public.profiles WHERE account_id=%s FOR UPDATE",(f,))
         future=pool.submit(signed_writer)
         started.wait(timeout=5)
-        time.sleep(.03)  # writer cannot pass the held profile lock
+        # Prove the actual query reached a PostgreSQL lock wait, not merely
+        # that the worker thread emitted a pre-query event.
+        blocked=False
+        for _ in range(60):
+            blocked=db("SELECT count(*) FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE %s",('%record_research_paid_binding_refusal%',))>0
+            if blocked: break
+            time.sleep(.02)
+        check('signed payment query observably waits on Phase A profile lock',
+          blocked and not future.done())
         # SQL-owner Phase A only, while the signed service-role payment worker waits.
         phase_receipt=locked.execute("SELECT public.a_strict_phase_a(%s,%s)",(f,tf)).fetchone()[0]
         locked.commit()

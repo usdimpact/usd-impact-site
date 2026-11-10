@@ -374,10 +374,12 @@ check("direct service_role cannot bypass staged email",
 check("wrong outbox receipt cannot finish",
  q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
  (d,td,dcomp,uuid.uuid4()))[0]=="ERR")
+# Capture the durable privacy request IDs BEFORE finalization may scrub custody.
+clean_ids=(state(d) or {}).get('privacy_request_ids',[])
 finish=q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
  (d,td,dcomp,outbox))
 check("staged email and privacy completion released atomically",finish==("OK",True),finish)
-clean_ids=(state(d) or {}).get('privacy_request_ids',[])
+
 check('O0 all privacy requests completed after final barrier',
  bool(clean_ids) and db("SELECT count(*) FROM public.privacy_requests WHERE id=ANY(%s::uuid[]) AND status='completed' AND completed_at IS NOT NULL",(clean_ids,))==len(clean_ids))
 check('O0 A-strict case completed_at persisted after final barrier',

@@ -720,11 +720,11 @@ resume_r=q('postgres',
  'SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)',
  (r,'p1-'+r.hex[:12],post_r[1],'p1-decision-retired-'+r.hex[:12],
   'p1-d2-retired-'+r.hex[:12],'p1-d4-retired-'+r.hex[:12],'resume'))
-check('A2 owner can now reconcile but not send completion email',
- resume_r==('OK','resume') and inc(r)=='resolved'
+check('A2 unremedied signed payment remains held even after Auth retirement',
+ resume_r[0]=='ERR' and inc(r)=='open'
  and privacy_open(r)>=1 and sendable(r)==0,resume_r)
 
-# B3: payment before any Auth DELETE intent must be financially adjudicated
+# B3: a non-payment unknown-event HOLD before any Auth intent is adjudicated
 # without falsely recording Auth retirement or silently issuing a DELETE.
 s=new_account()
 sp=clear(s,'syn-astrict-spre-'+s.hex[:12])
@@ -733,11 +733,10 @@ check('B3 Phase A',phase(s,st)[0]=='OK')
 sl=uuid.UUID(lease(s,st,'auth')[1]['lease_id'])
 check('B3 owner pre-fence read',clear(s,'syn-astrict-sfresh-'+s.hex[:12])[0]=='OK')
 check('B3 fence before payment',fence(s,st,sl)==('OK',True))
-pay_s=q('service_role',
- 'SELECT public.record_research_paid_binding_refusal(\'lemon-squeezy\',%s,%s,%s,%s)',
- ('syn-spaid-'+s.hex[:12],s,'syn-sck-'+s.hex[:12],'SIGNED_PAID_BINDING_REFUSED'))
-check('B3 payment before intent creates incident',pay_s[0]=='OK' and inc(s)=='open')
-check('B3 new Auth intent denied after payment',q('postgres',
+pay_s=q('service_role','SELECT public.a_strict_hold(%s,%s,%s,%s)',
+ (s,st,sl,'unknown_payment'))
+check('B3 pre-intent owner-review HOLD creates incident',pay_s[0]=='OK' and inc(s)=='open')
+check('B3 new Auth intent denied during incident',q('postgres',
  'SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)',(s,st,sl))[0]=='ERR')
 db("UPDATE research_lifecycle_private.deletion_auth_cleanup SET next_attempt_at=clock_timestamp()-interval '1 second' WHERE account_id=%s",(s,))
 sr=clear(s,'syn-astrict-safterhold-'+s.hex[:12])

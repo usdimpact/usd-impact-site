@@ -136,8 +136,10 @@ def do_status():
         AND business_object_id=%s AND status IN ('queued','sending','accepted','delivered')""",(str(a),)),
       "pendingPrivacyCount":first("""SELECT count(*) FROM public.privacy_requests pr
          WHERE pr.request_type='deletion' AND pr.status='in_progress'
-         AND pr.id=ANY((SELECT privacy_request_ids FROM research_lifecycle_private.deletion_auth_cleanup
-           WHERE account_id=%s))""",(a,)),
+         AND EXISTS (
+           SELECT 1 FROM research_lifecycle_private.deletion_auth_cleanup q
+            WHERE q.account_id=%s AND pr.id=ANY(q.privacy_request_ids)
+         )""",(a,)),
       "queuePhase":q,
     }
 

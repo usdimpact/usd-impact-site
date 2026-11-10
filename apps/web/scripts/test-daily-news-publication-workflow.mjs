@@ -191,8 +191,7 @@ const preflightCases = [
 ];
 
 const preflightTemp = await mkdtemp(join(tmpdir(), 'usd-daily-preflight-offline-'));
-const preflightShell = preflightStep[1].split('\n')
-  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+
 try {
   for (const scenario of preflightCases) {
     const outPath = join(preflightTemp, 'outputs');

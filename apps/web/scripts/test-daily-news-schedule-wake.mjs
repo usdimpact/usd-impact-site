@@ -227,8 +227,10 @@ elif [[ "$args" == *"--include --silent"* ]]; then
     transport) exit 1 ;;
     *) echo 'HTTP/2 404 Not Found'; exit 1 ;;
   esac
-elif [[ "$args" == pr\\ list* ]]; then
-  if [ "$SCENARIO" = closed-pr ]; then printf '900\\tCLOSED\\thttps://github.com/usdimpact/usd-impact-site/pull/900\\n'; fi
+elif [[ "$args" == *'pulls?state=all&base=main&per_page=100&page='* ]]; then
+  if [ "$SCENARIO" = closed-pr ]; then
+    printf '%s\\n' '[{"number":900,"title":"Publish Daily USD Impact \u2014 2026-10-19","head":{"ref":"automation/daily-usd-impact-2026-10-19-fixture"},"state":"closed","html_url":"https://github.com/usdimpact/usd-impact-site/pull/900"}]'
+  else printf '[]\\n'; fi
 elif [[ "$args" == *'daily-news.yml/runs?per_page=30'* ]]; then
   case "$SCENARIO" in
     active) echo '{"workflow_runs":[{"created_at":"2026-10-19T09:31:00Z","status":"in_progress","event":"schedule"}]}' ;;
@@ -281,6 +283,19 @@ for (let i = 0; i < args.length; i++) {
   else if (!args[i].startsWith('-')) query = args[i];
 }
 const data = JSON.parse(readFileSync(0, 'utf8'));
+if (Array.isArray(data)) {
+  if (query.includes('if type == "array" and length <= 100')) {
+    if (data.length > 100) process.exit(2);
+    console.log(data.length); process.exit(0);
+  }
+  if (query.includes('(.head.ref // "")') && query.includes('@tsv')) {
+    const matched = data.find(pr => pr.title === vars.title &&
+      String(pr.head?.ref || '').startsWith(vars.prefix));
+    if (matched) console.log([matched.number, matched.state, matched.html_url].join(String.fromCharCode(9)));
+    process.exit(0);
+  }
+  process.exit(2);
+}
 const runs = data.workflow_runs;
 if (!Array.isArray(runs)) process.exit(2);
 if (query.includes('.total_count ==')) {

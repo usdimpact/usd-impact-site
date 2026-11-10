@@ -711,3 +711,56 @@ grant execute on function public.a_strict_hold(uuid,uuid,uuid,text) to service_r
 -- The owner-only reconciliation decision is intentionally *not* implemented
 -- in this first review overlay. A financial incident is permanently held
 -- pending a separate D2/D4/D5 decision. No automatic resume after payment.
+
+
+-- ---------------------------------------------------------------------------
+-- P1-C nonauthor finding: shared service_role table-wide UPDATE privilege may
+-- rewrite a queued/retrying completion email or reclassify an existing queued
+-- unrelated row. This synthetic-only overlay protects the immutable outbound
+-- identity, recipient, template and payload on ALL UPDATE statuses, rather
+-- than only the old.status='deletion_staged' status transition in Part 10.
+--
+-- Preserve legitimate delivery-status/attempt/error/provider-response updates.
+-- This guard changes neither the general outbox grants nor any other
+-- notification type. A future releasable cutover must reconcile all other
+-- outbox triggers, their order and the UI02/UI03 schema in a separate Draft.
+-- ---------------------------------------------------------------------------
+create or replace function research_lifecycle_private.a_strict_completion_email_identity_guard()
+returns trigger language plpgsql security definer set search_path='' as $immutable$
+begin
+ if tg_op <> 'UPDATE' then return new; end if;
+ if old.message_id is distinct from 'account_deletion_completed'
+    and new.message_id is distinct from 'account_deletion_completed' then
+   return new;
+ end if;
+ -- A once-completed row may not change its notification identity, even when
+ -- already queued, retried, delivered, cancelled or in an error state.
+ -- An unrelated queued row may never be repurposed to completed deletion.
+ if new.id is distinct from old.id
+    or new.idempotency_key is distinct from old.idempotency_key
+    or new.event_id is distinct from old.event_id
+    or new.message_id is distinct from old.message_id
+    or new.classification is distinct from old.classification
+    or new.business_object_type is distinct from old.business_object_type
+    or new.business_object_id is distinct from old.business_object_id
+    or new.state_version is distinct from old.state_version
+    or new.recipient_email_normalized is distinct from old.recipient_email_normalized
+    or new.template_id is distinct from old.template_id
+    or new.template_version is distinct from old.template_version
+    or new.provider is distinct from old.provider
+    or new.payload is distinct from old.payload
+ then
+   raise exception using errcode='42501',
+     message='completion email identity, recipient, template and payload are immutable';
+ end if;
+ return new;
+end;
+$immutable$;
+revoke all on function research_lifecycle_private.a_strict_completion_email_identity_guard()
+ from public,anon,authenticated,service_role;
+drop trigger if exists research_p1_a_strict_completion_email_identity_guard
+ on public.notification_outbox;
+create trigger research_p1_a_strict_completion_email_identity_guard
+ before update on public.notification_outbox
+ for each row execute function
+ research_lifecycle_private.a_strict_completion_email_identity_guard();

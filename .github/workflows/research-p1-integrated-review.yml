@@ -116,3 +116,74 @@ jobs:
               print('A-STRICT owner recovery review overlay applied to disposable PG17 only')
           PY
           python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+
+  ui02-ui03-a-strict-recovery-combined:
+    name: UI02/UI03 plus Research A-strict/Recovery, all synthetic PG17
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    services:
+      pg:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+      PGDATABASE: ci_review
+    steps:
+      - name: Checkout exact stacked Draft source without saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Checkout immutable UI02/UI03 reference sources (never deploy)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: usdimpact/usd-impact-site
+          ref: '7005aa0585301892c96490d341c3c5645a616890'
+          path: ui02_ui03_original_source
+          sparse-checkout: |
+            supabase/migrations
+          persist-credentials: false
+      - name: Select reviewed Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+      - name: Replay pinned UI source plus Research P1 against separate synthetic PG17
+        run: |
+          python3 -m pip install --break-system-packages "psycopg[binary]==3.2.10"
+          python3 supabase/tests/research-p1/owner_model_replay_f3_review.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"
+          python3 supabase/tests/research-p1/test_f3_catalog_query_pack.py
+          python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
+          python3 supabase/tests/research-p1/test_research_p1_two_phase.py
+          python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
+          # Exercise real UI02/UI03 RLS, account_export, outbox denial,
+          # two-user negative cases and Phase A deletion on pinned migrations.
+          python3 supabase/tests/research-p1/test_research_p1_ui_locale_combined.py
+          python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"
+          # Only AFTER original UI02/UI03 + parent P1 tests, overlay A-strict.
+          # Source-only review SQL; not normal migrations nor hosted Supabase.
+          python3 - <<'PY'
+          from pathlib import Path
+          import psycopg
+          with psycopg.connect(dbname='ci_review',autocommit=True) as c:
+              c.execute('SET ROLE postgres')
+              for name in (
+                'a-strict-overlay-review.sql',
+                'a-strict-owner-recovery-review.sql',
+              ):
+                  c.execute(Path('supabase/tests/research-p1',name).read_text())
+                  print('F3-STACK isolated disposable PG17 installed '+name)
+          PY
+          python3 supabase/tests/research-p1/test_a_strict_review.py
+          python3 supabase/tests/research-p1/test_a_strict_outbox_immutability.py
+          python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+

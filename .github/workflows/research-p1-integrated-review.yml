@@ -130,6 +130,7 @@ jobs:
               print('A-STRICT owner recovery review overlay applied to disposable PG17 only')
           PY
           python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+          python3 supabase/tests/research-p1/test_r1_r2_composite_review.py
           # Real signed webhook handler -> disposable service-role SQL RPC,
           # after durable A-strict Auth intent. No outside network is opened.
           node apps/web/scripts/test-research-bound-invoice-after-auth-intent.mjs
@@ -210,6 +211,7 @@ jobs:
           python3 supabase/tests/research-p1/test_a_strict_review.py
           python3 supabase/tests/research-p1/test_a_strict_outbox_immutability.py
           python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+          python3 supabase/tests/research-p1/test_r1_r2_composite_review.py
           # Real signed webhook handler -> disposable service-role SQL RPC,
           # after durable A-strict Auth intent. No outside network is opened.
           node apps/web/scripts/test-research-bound-invoice-after-auth-intent.mjs

@@ -183,4 +183,26 @@ check("reclaimed lease cannot authorize second Auth DELETE",
    (b,tb,uuid.UUID(again[1]['lease_id'])))[0]=="ERR")
 check("Auth still intact after ambiguous retry",db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==1)
 check("no silently restored entitlements or email",sendable(b)==0)
+# A supervised account may outlive a session. Only the SQL owner can
+# rotate the opaque capability; never reset the one-time Auth attempt.
+check("service_role denied owner capability renewal",
+ q("service_role","SELECT public.a_strict_owner_rotate(%s,%s,%s,%s,clock_timestamp()+interval '45 minutes')",
+  (b,"p1-"+b.hex[:12],pr[1],"spoof"))[0]=="ERR")
+db("""UPDATE research_lifecycle_private.deletion_auth_cleanup
+ SET next_attempt_at=clock_timestamp()-interval '1 second' WHERE account_id=%s""",(b,))
+rotclear=clear(b,"syn-astrict-rotate-"+b.hex[:12])
+check("fresh per-account owner evidence available before rotation",rotclear[0]=="OK")
+rot=q("postgres","SELECT public.a_strict_owner_rotate(%s,%s,%s,%s,clock_timestamp()+interval '45 minutes')",
+  (b,"p1-"+b.hex[:12],rotclear[1],"synthetic-owner"))
+check("owner alone rotates case capability",rot[0]=="OK" and rot[1]!=tb,rot)
+newcap=rot[1]
+check("old owner capability invalidated immediately",lease(b,tb,'auth')[0]=="ERR")
+newlease=lease(b,newcap,'auth')
+check("new capability leases only that single account",
+ newlease[0]=="OK" and newlease[1]['prior_auth_attempt'] is True,newlease)
+check("renewal preserves one-time Auth DELETE ban",
+ q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",
+   (b,newcap,uuid.UUID(newlease[1]['lease_id'])))[0]=="ERR")
+check("renewal never recovers Auth identity",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==1)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

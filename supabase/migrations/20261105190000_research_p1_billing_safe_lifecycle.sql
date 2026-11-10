@@ -162,16 +162,18 @@ begin
     raise exception 'subscription state drift: expected %, found %', p_expected_from_state, v_subscription.state;
   end if;
 
-  -- Under the subscription row lock, never let an older or same-timestamp
-  -- distinct signed event overwrite a newer provider state. Retain the signed
-  -- fact as a non-applied event; webhook replay verifies its original request.
-  -- The database event's created_at (not backdated occurred_at) invalidates
-  -- earlier merchant clearances until manual reconciliation.
+  -- Only APPLIED provider transitions establish state chronology. Signed
+  -- invoice receipts, stale holds and nonactive holds are financial evidence,
+  -- not state mutations: including them would suppress a legitimate renewal
+  -- or cancellation arriving after a same-second payment/refund receipt.
+  -- Financial deletion holds independently include ALL event created_at rows.
   select max(ev.occurred_at) into v_last_provider_at
   from public.subscription_events ev
   where ev.subscription_id=p_subscription_id
     and ev.actor_type='provider_webhook'
-    and ev.metadata ->> 'researchP1StaleHeld' is distinct from 'true';
+    and ev.metadata ->> 'researchP1StaleHeld' is distinct from 'true'
+    and ev.metadata ->> 'researchP1NonactiveHeld' is distinct from 'true'
+    and ev.metadata ->> 'researchP1InvoiceReceipt' is distinct from 'true';
   if v_profile_status<>'deleted' and v_last_provider_at is not null
      and p_occurred_at<=v_last_provider_at then
     insert into public.subscription_events
@@ -2162,13 +2164,16 @@ grant execute on function public.finalize_deletion_and_queue_auth_cleanup(uuid)
 -- Phase B lease: SKIP LOCKED prevents two workers from deleting the same Auth
 -- identity concurrently; expiry permits recovery when a worker crashes after
 -- DB commit or midway through the Auth HTTP operation.
+-- One invocation may reserve exactly ONE Auth identity; batch/retry worker
+-- concurrency remains a separately held release decision. This does not
+-- authorize the legacy Auth-first runtime.
 create or replace function public.claim_deletion_auth_cleanup_batch(p_limit integer)
 returns table (account_id uuid, phase text, lease_id uuid, attempt_count integer)
 language plpgsql security definer set search_path='' as $claim$
 declare v_item record; v_now timestamptz:=pg_catalog.clock_timestamp();
 begin
-  if p_limit is null or p_limit<1 or p_limit>25 then
-    raise exception using errcode='22023', message='Auth cleanup batch must be between 1 and 25';
+  if p_limit is distinct from 1 then
+    raise exception using errcode='22023', message='Auth cleanup claim must lease exactly one account';
   end if;
   for v_item in
     select q.account_id from research_lifecycle_private.deletion_auth_cleanup q
@@ -2610,7 +2615,13 @@ revoke all on function public.prepare_account_deletion_auth_removal(uuid)
   from public, anon, authenticated, service_role;
 revoke all on function public.finalize_account_deletion(uuid)
   from public, anon, authenticated, service_role;
-
+-- Fail closed BEFORE any legacy Auth-first worker can initiate Auth DELETE.
+-- These older SECURITY DEFINER readiness/escalation routes are not allowed
+-- to bypass the owner-supervised deletion candidate.
+revoke all on function public.check_research_deletion_billing_readiness(uuid)
+  from public, anon, authenticated, service_role;
+revoke all on function public.mark_research_deletion_hold_escalated(uuid,text)
+  from public, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- Part 12. A retired account can retain a still-valid pre-deletion JWT.

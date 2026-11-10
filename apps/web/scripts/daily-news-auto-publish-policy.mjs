@@ -94,6 +94,22 @@ export function isTrustedBackstop(backstops, run) {
   );
 }
 
+// GitHub may have more than 100 unrelated open PRs. Scope the API request
+// to the immutable source-run branch rather than truncating a repository-wide
+// listing. The full PR identity and source commit are verified separately.
+export function exactDailyPrQuery(run) {
+  if (!run || typeof run.created_at !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}T/.test(run.created_at)
+      || !Number.isSafeInteger(run.id) || run.id < 1) {
+    throw new Error('invalid-daily-pr-query-source');
+  }
+  const day = run.created_at.slice(0, 10);
+  const branch = 'automation/daily-usd-impact-' + day + '-' + run.id;
+  const owner = REPOSITORY.split('/')[0];
+  return 'pulls?state=open&base=main&head='
+    + encodeURIComponent(owner + ':' + branch) + '&per_page=100';
+}
+
 export function selectExactDailyPr(pulls, run, mainSha) {
   if (!Array.isArray(pulls) || pulls.length >= 100) throw new Error('open-pr-evidence-incomplete');
   const day = run.created_at.slice(0, 10);

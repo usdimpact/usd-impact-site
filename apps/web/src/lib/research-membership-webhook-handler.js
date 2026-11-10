@@ -386,6 +386,35 @@ async function recordSignedNonAppliedInvoice({
   return payload.action;
 }
 
+
+// Record a distinct signed claim whose fingerprint conflicts with the already
+// immutable invoice receipt. Store digests only; always return non-2xx to the
+// provider because the conflicting payment must not be accepted as resolved.
+async function custodyConflictingSignedInvoice({ config, subscriptionId, eventKey,
+  providerEventId, incomingFingerprint, fetchImpl }) {
+  let response;
+  try {
+    response = await fetchImpl(config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_conflict', {
+      method: 'POST',
+      headers: { ...headers(config.supabaseSecret), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        p_subscription: subscriptionId, p_event_key: eventKey,
+        p_provider_event_id: providerEventId, p_incoming_fingerprint: incomingFingerprint,
+      }),
+    });
+  } catch {
+    throw replayError('RESEARCH_WEBHOOK_INVOICE_CONFLICT_CUSTODY_UNAVAILABLE', 503);
+  }
+  let record;
+  try { record = await readJson(response); } catch {
+    throw replayError('RESEARCH_WEBHOOK_INVOICE_CONFLICT_CUSTODY_UNAVAILABLE', 503);
+  }
+  if (!response?.ok || record?.action !== 'conflict_quarantined'
+      || record.event_key !== eventKey) {
+    throw replayError('RESEARCH_WEBHOOK_INVOICE_CONFLICT_CUSTODY_UNAVAILABLE', 503);
+  }
+}
+
 export async function processResearchMembershipWebhook({
   rawBody,
   signature,
@@ -415,8 +444,35 @@ export async function processResearchMembershipWebhook({
   const eventKey = researchMembershipEventKey(inspected.provider, inspected.providerEventId);
   const replayContext = { inspected, options, eventKey };
   const readEvent = () => loadProcessedEvent({ config, eventKey, fetchImpl });
+  const verifyPrior = async (row) => {
+    try {
+      return verifiedDuplicate(row, replayContext);
+    } catch (error) {
+      const stored = row?.metadata;
+      // Only quarantine a genuinely changed, signed invoice fingerprint for
+      // the SAME verified subscription/account/event; never mutate prior proof.
+      if (error?.code === 'RESEARCH_WEBHOOK_REPLAY_CONFLICT'
+          && !inspected.isSubscriptionObject
+          && ['subscription_payment_success','subscription_payment_refunded'].includes(inspected.eventName)
+          && row?.event_key === eventKey
+          && row?.subscription_id === existingSubscription.id
+          && row?.account_id === existingSubscription.accountId
+          && row?.provider_event_id === inspected.providerEventId
+          && stored?.researchP1InvoiceReceipt === true
+          && /^[0-9a-f]{64}$/.test(stored.replayFingerprint || '')
+          && /^[0-9a-f]{64}$/.test(inspected.metadata.replayFingerprint || '')
+          && stored.replayFingerprint !== inspected.metadata.replayFingerprint) {
+        await custodyConflictingSignedInvoice({
+          config, subscriptionId: existingSubscription.id, eventKey,
+          providerEventId: inspected.providerEventId,
+          incomingFingerprint: inspected.metadata.replayFingerprint, fetchImpl,
+        });
+      }
+      throw error;
+    }
+  };
   const previous = await readEvent();
-  if (previous) return verifiedDuplicate(previous, replayContext);
+  if (previous) return verifyPrior(previous);
 
   let plan;
   try {
@@ -424,7 +480,7 @@ export async function processResearchMembershipWebhook({
   } catch (error) {
     if (error?.code === 'RESEARCH_MEMBERSHIP_INVALID_TRANSITION') {
       const concurrent = await readEvent();
-      if (concurrent) return verifiedDuplicate(concurrent, replayContext);
+      if (concurrent) return verifyPrior(concurrent);
       await quarantineRejectedSignedBoundEvent({
         config, existingSubscription, fetchImpl,
       });
@@ -445,12 +501,12 @@ export async function processResearchMembershipWebhook({
       // The response could have been lost after the DB insert. Read back the
       // globally unique event key once; never drop signed billing evidence.
       const alreadyCommitted = await readEvent();
-      if (alreadyCommitted) return verifiedDuplicate(alreadyCommitted, replayContext);
+      if (alreadyCommitted) return verifyPrior(alreadyCommitted);
       throw error;
     }
     const committed = await readEvent();
     if (!committed) throw replayError('RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', 503);
-    verifiedDuplicate(committed, replayContext);
+    await verifyPrior(committed);
     return Object.freeze({
       action: recorded === 'invoice_recorded' ? 'invoice_recorded' : 'duplicate',
       eventKey, providerSubscriptionId: existingSubscription.providerSubscriptionId,
@@ -469,13 +525,13 @@ export async function processResearchMembershipWebhook({
     // The response may be lost after commit, or another delivery may have won.
     // Reconcile by one read only; never resubmit the RPC or loosen state guards.
     const concurrent = await readEvent();
-    if (concurrent) return verifiedDuplicate(concurrent, replayContext);
+    if (concurrent) return verifyPrior(concurrent);
     throw error;
   }
   if (['duplicate', 'held_stale', 'held_nonactive'].includes(persisted.action)) {
     const concurrent = await readEvent();
     if (!concurrent) throw replayError();
-    const verified = verifiedDuplicate(concurrent, replayContext);
+    const verified = await verifyPrior(concurrent);
     if (persisted.action !== 'duplicate' && verified.action !== persisted.action) throw replayError();
     return verified;
   }

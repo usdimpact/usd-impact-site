@@ -56,7 +56,7 @@ function archived(value = payload(), subscription = base) {
 }
 function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply, invoiceReply } = {}) {
   const originalLibrary = Object.freeze({ product_id: 'read-the-dollar-first-guided-interactive-edition', state: 'active' });
-  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], invoiceReceipts: [], ledgerReads: 0, library: originalLibrary };
+  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], invoiceReceipts: [], invoiceConflicts: [], ledgerReads: 0, library: originalLibrary };
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
   ctx.fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -98,6 +98,11 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       });
       ctx.quarantines.push(evidence);
       return quarantineReply ? quarantineReply(ctx, json) : json('99999999-9999-4999-8999-999999999999');
+    }
+    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_conflict') {
+      const conflict = JSON.parse(init.body);
+      ctx.invoiceConflicts.push(conflict);
+      return json({ action: 'conflict_quarantined', event_key: conflict.p_event_key });
     }
     if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_receipt') {
       assert.equal(init.method, 'POST');
@@ -546,4 +551,18 @@ await test('later billing periods do not contaminate duplicate classification', 
   ctx.current.currentPeriodStart = '2027-05-01T00:00:00.000Z';
   ctx.current.currentPeriodEnd = '2027-06-01T00:00:00.000Z';
   assert.equal((await ctx.run()).action, 'duplicate'); ctx.assertReadOnly();
+});
+
+await test('different signed invoice fingerprint is durably quarantined and never acknowledged', async () => {
+  const original = invoicePayload();
+  const ctx = fixture();
+  const initial = await ctx.run(original);
+  assert.equal(initial.action, 'invoice_recorded');
+  const conflict = structuredClone(original);
+  conflict.data.attributes.total = 2000;
+  await assert.rejects(() => ctx.run(conflict), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status: 409 });
+  assert.equal(ctx.invoiceConflicts.length, 1);
+  assert.equal(ctx.rows.length, 1, 'the original signed receipt remains immutable');
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.invoiceReceipts.length, 1);
 });

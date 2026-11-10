@@ -73,6 +73,15 @@ conflict=svc(rpc,(sid,ek,pid,obs,Jsonb({'lemonEventName':'subscription_payment_s
 check('conflicting signed fingerprint refused',conflict==('ERR','23505'),conflict)
 original=owner("SELECT metadata->>'replayFingerprint' FROM public.subscription_events WHERE event_key=%s",(ek,))
 check('stored fingerprint remains intact',original=='a'*64,original)
+conf=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s)",(sid,ek,pid,'b'*64))
+check('E3 4c conflicting signed invoice stored with digest-only custody',
+  conf[0]=='OK' and conf[1]['action']=='conflict_quarantined',conf)
+quarantine=owner("SELECT count(*) FROM public.research_paid_binding_quarantine WHERE claimed_account_id=%s",(a,))
+check('E3 4c signed conflict also creates durable financial quarantine',quarantine==1,quarantine)
+minimal=owner("SELECT count(*) FROM research_lifecycle_private.a_strict_invoice_conflicts WHERE account_id=%s AND conflicting_fingerprint=%s",(a,'b'*64))
+check('E3 4c original+incoming fingerprint audit retained',minimal==1,minimal)
+check('E3 4c conflicting event does not revoke paid Research access',owner("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))=='active')
+
 v=svc(tr,(sid,'e3-refund-'+psub,'e3-refund-provider-'+psub,psub,'active','refunded','refunded',owner("SELECT now()+interval '1 second'")))
 check('invoice chronology does not suppress legitimate terminal refund',v[0]=='OK' and v[1]['action']=='applied',v)
 s=owner("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))

@@ -1593,3 +1593,75 @@ grant execute on function public.apply_research_membership_transition(
   timestamptz,timestamptz,boolean,public.entitlement_state,timestamptz,timestamptz,
   text,timestamptz,jsonb) to service_role;
 revoke insert on table public.subscription_events from service_role;
+
+-- E3-4c minimal-data custody of an independently signed invoice conflict.
+-- This RPC trusts the separately verified webhook handler; SQL cannot itself
+-- verify Lemon Squeezy HMAC. Remains disposable-only / DRAFT / NO-GO.
+create table research_lifecycle_private.a_strict_invoice_conflicts (
+ id uuid primary key default pg_catalog.gen_random_uuid(),
+ account_id uuid not null references public.profiles(account_id) on delete restrict,
+ subscription_id uuid not null references public.subscriptions(id) on delete restrict,
+ event_key text not null,
+ provider_event_id text not null,
+ original_fingerprint text not null check(original_fingerprint ~ '^[0-9a-f]{64}$'),
+ conflicting_fingerprint text not null check(conflicting_fingerprint ~ '^[0-9a-f]{64}$'),
+ observed_at timestamptz not null default pg_catalog.clock_timestamp(),
+ unique(account_id,event_key,conflicting_fingerprint)
+);
+alter table research_lifecycle_private.a_strict_invoice_conflicts enable row level security;
+alter table research_lifecycle_private.a_strict_invoice_conflicts force row level security;
+revoke all on research_lifecycle_private.a_strict_invoice_conflicts from public,anon,authenticated,service_role;
+create trigger a_strict_invoice_conflicts_append_only before update or delete
+ on research_lifecycle_private.a_strict_invoice_conflicts
+ for each row execute function research_lifecycle_private.reject_append_only_change();
+create trigger a_strict_invoice_conflicts_no_truncate before truncate
+ on research_lifecycle_private.a_strict_invoice_conflicts
+ for each statement execute function research_lifecycle_private.reject_append_only_change();
+
+create function public.record_research_signed_invoice_conflict(
+ p_subscription uuid,p_event_key text,p_provider_event_id text,p_incoming_fingerprint text
+) returns jsonb language plpgsql security definer set search_path='' as $invoice_conflict$
+declare v_account uuid;v_sub public.subscriptions;v_old public.subscription_events;
+begin
+ if p_subscription is null or p_event_key is null or p_provider_event_id is null
+    or p_event_key is distinct from 'lemon-squeezy:'||p_provider_event_id
+    or p_incoming_fingerprint is null
+    or p_incoming_fingerprint !~ '^[0-9a-f]{64}$' then
+   raise exception using errcode='22023',message='invoice conflict custody invalid';
+ end if;
+ select account_id into v_account from public.subscriptions where id=p_subscription;
+ if not found then raise exception using errcode='P0002',message='invoice subscription not found';end if;
+ perform research_lifecycle_private.lock_account_profile(v_account);
+ select s.* into v_sub from public.subscriptions s where s.id=p_subscription for update;
+ select e.* into v_old from public.subscription_events e
+   where e.event_key=p_event_key for share;
+ if v_sub.id is null or v_sub.account_id is distinct from v_account
+    or v_sub.provider<>'lemon-squeezy' or v_sub.product_id<>'research-membership'
+    or v_old.id is null or v_old.subscription_id<>p_subscription
+    or v_old.account_id<>v_account
+    or v_old.provider_event_id is distinct from p_provider_event_id
+    or v_old.metadata->>'researchP1InvoiceReceipt' is distinct from 'true'
+    or v_old.metadata->>'replayFingerprint' !~ '^[0-9a-f]{64}$'
+    or v_old.metadata->>'replayFingerprint' is not distinct from p_incoming_fingerprint
+ then raise exception using errcode='55000',message='signed invoice conflict not bound to original custody';
+ end if;
+ insert into research_lifecycle_private.a_strict_invoice_conflicts(
+   account_id,subscription_id,event_key,provider_event_id,
+   original_fingerprint,conflicting_fingerprint
+ ) values (
+   v_account,p_subscription,p_event_key,p_provider_event_id,
+   v_old.metadata->>'replayFingerprint',p_incoming_fingerprint
+ ) on conflict (account_id,event_key,conflicting_fingerprint) do nothing;
+ -- The existing provider/account quarantine also triggers durable post-Phase-A
+ -- financial incident custody. Do not overwrite the signed original row.
+ perform public.record_research_paid_binding_refusal(
+   'lemon-squeezy',v_sub.provider_subscription_id,v_account,null,
+   'SIGNED_BOUND_INVOICE_CONFLICT'
+ );
+ return pg_catalog.jsonb_build_object('action','conflict_quarantined','event_key',p_event_key);
+end;
+$invoice_conflict$;
+revoke all on function public.record_research_signed_invoice_conflict(uuid,text,text,text)
+ from public,anon,authenticated,service_role;
+grant execute on function public.record_research_signed_invoice_conflict(uuid,text,text,text)
+ to service_role;

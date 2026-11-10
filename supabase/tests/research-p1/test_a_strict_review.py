@@ -151,6 +151,8 @@ check("owner single-account capability issued",r[0]=="OK",r)
 token=r[1]
 check("owner case cannot silently reauthorize",start(a,pre)[0]=="ERR")
 check("wrong account capability fails",phase(a,uuid.uuid4())[0]=="ERR")
+check("even with correct capability service_role cannot enter owner Phase A",
+ q("service_role","SELECT public.a_strict_phase_a(%s,%s)",(a,token))[0]=="ERR")
 check("Phase A creates durable custody",phase(a,token)[0]=="OK")
 check("Phase A leaves Auth intact",db("SELECT count(*) FROM auth.users WHERE id=%s",(a,))==1)
 check("Phase A does not mark privacy completed",privacy_open(a)>=1)
@@ -164,6 +166,8 @@ check("pre-Phase-A clearance alone does not pass fence",fence(a,token,l)[0]=="ER
 check("no deletion attempt recorded by refused fence",state(a)['financial_fence_passed_at'] is None)
 check("owner fresh post-Phase-A clearance recorded",clear(a,"syn-astrict-fresh-"+a.hex[:12])[0]=="OK")
 check("fence passes after current provider receipt",fence(a,token,l)==("OK",True))
+check("service_role cannot create supervised Auth DELETE intent",
+ q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(a,token,l))[0]=="ERR")
 check("Auth DELETE intent can be recorded once",
  q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(a,token,l))==("OK",True))
 check("repeated Auth intent DENIED",
@@ -174,6 +178,8 @@ check("no implicit Auth deletion",db("SELECT count(*) FROM auth.users WHERE id=%
 
 # Synthetic external Auth retirement: no network; explicitly model deleted user.
 db("DELETE FROM auth.users WHERE id=%s",(a,))
+check("service_role cannot attest an external Auth Admin GET",
+ q("service_role","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(a,token,l))[0]=="ERR")
 r=q("postgres","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(a,token,l))
 check("account-bound Auth GET attestation stored",r[0]=="OK" and r[1]['post_auth_merchant_verified'] is False,r)
 check("Auth observed but no email dispatch",sendable(a)==0)

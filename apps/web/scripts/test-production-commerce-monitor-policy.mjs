@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { FREE_CORE_PUBLIC_RELEASE_COMMITTED, NEW_LIBRARY_PASS_SALES_PAUSED } from '../src/lib/learning-offer-commerce-policy.js';
 import { LIBRARY_SALES_PAUSED_MESSAGE, libraryPassCommerceMonitorFailures } from './production-commerce-monitor-policy.mjs';
 
@@ -49,4 +50,14 @@ for (const badFlag of [undefined, null, 'true', 1]) {
 }
 assert.equal(NEW_LIBRARY_PASS_SALES_PAUSED, true, 'Do not enable new sales during monitor remediation.');
 assert.equal(FREE_CORE_PUBLIC_RELEASE_COMMITTED, false, 'Do not claim a public free-core launch.');
-console.log('Production security monitor Library Pass pause: 8 paused negative cases, 2 Live negative cases, 4 invalid flag cases PASS.');
+// Contract proof: the scheduled monitor really consumes the source-committed
+// flag and this tested helper. A pure-helper test must not silently pass if a
+// later refactor reintroduces the obsolete hardcoded 'active' expectation.
+const monitorSource = readFileSync(new URL('./check-production-security-posture.mjs', import.meta.url), 'utf8');
+assert.match(monitorSource, /libraryPassCommerceMonitorFailures\(commerce, librarySalesPaused\)/);
+assert.match(monitorSource, /NEW_LIBRARY_PASS_SALES_PAUSED\s*\|\|\s*FREE_CORE_PUBLIC_RELEASE_COMMITTED/);
+assert.match(monitorSource, /verifySecurityHeaders\(readiness, 'Commerce readiness'\)/);
+assert.match(monitorSource, /commerce\?\.providerConfigured !== true/);
+assert.match(monitorSource, /commerce\?\.disclosuresComplete !== true/);
+assert.doesNotMatch(monitorSource, /commerce\?\.state !== 'active'/);
+console.log('Production security monitor Library Pass pause: 8 paused negative cases, 2 Live negative cases, 4 invalid flag cases and 6 integration assertions PASS.');

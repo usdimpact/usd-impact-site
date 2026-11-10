@@ -1,3 +1,10 @@
+import {
+  FREE_CORE_PUBLIC_RELEASE_COMMITTED,
+  NEW_LIBRARY_PASS_SALES_PAUSED,
+} from '../src/lib/learning-offer-commerce-policy.js';
+import { libraryPassCommerceMonitorFailures } from './production-commerce-monitor-policy.mjs';
+
+const librarySalesPaused = NEW_LIBRARY_PASS_SALES_PAUSED || FREE_CORE_PUBLIC_RELEASE_COMMITTED;
 const baseUrl = (process.env.USD_IMPACT_BASE_URL || 'https://www.usd-impact.com').replace(/\/$/, '');
 const failures = [];
 
@@ -66,12 +73,11 @@ try {
   const readinessBody = await readiness.json();
   const commerce = readinessBody?.commerce;
   if (readinessBody?.ok !== true) fail('Commerce readiness must return ok=true.');
-  if (commerce?.state !== 'active') fail(`Commerce readiness state drifted: ${commerce?.state}`);
+  for (const reason of libraryPassCommerceMonitorFailures(commerce, librarySalesPaused)) fail(reason);
   if (commerce?.mode !== 'live') fail(`Commerce mode drifted: ${commerce?.mode}`);
   if (commerce?.provider !== 'lemon-squeezy') fail(`Commerce provider drifted: ${commerce?.provider}`);
   if (commerce?.providerConfigured !== true) fail('providerConfigured must remain true for the approved Live provider.');
   if (commerce?.disclosuresComplete !== true) fail('Buyer-facing seller disclosures must remain complete for Live checkout.');
-  if (commerce?.checkoutEnabled !== true) fail('checkoutEnabled must remain true for the approved Live release.');
 
   const protectedAudiobook = await fetchWithTimeout('/guided-edition/audiobook/');
   if (protectedAudiobook.status !== 200) fail(`Protected audiobook boundary returned ${protectedAudiobook.status}, expected secure sign-in page 200.`);

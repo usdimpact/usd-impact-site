@@ -559,6 +559,9 @@ await test('different signed invoice fingerprint is durably quarantined and neve
   const initial = await ctx.run(original);
   assert.equal(initial.action, 'invoice_recorded');
   const conflict = structuredClone(original);
+  // billing_reason is a fingerprinted signed field; total-only differences
+  // currently need separate financial-payload versioning review.
+  conflict.data.attributes.billing_reason = 'updated';
   conflict.data.attributes.total = 2000;
   await assert.rejects(() => ctx.run(conflict), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status: 409 });
   assert.equal(ctx.invoiceConflicts.length, 1);

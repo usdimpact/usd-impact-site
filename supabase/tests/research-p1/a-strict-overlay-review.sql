@@ -178,6 +178,35 @@ $merchant$;
 revoke all on function public.a_strict_owner_record_merchant_receipt(uuid,text,uuid,text,jsonb)
  from public,anon,authenticated,service_role;
 
+-- Immutable receipt predicate. Pre/post reads must retain the same live
+-- merchant store, Research product and canonical customer scope digest.
+-- Never mistake a fresh generic clearance row for provider inventory.
+create function research_lifecycle_private.a_strict_receipt_valid(
+ p_account uuid,p_case text,p_clearance uuid,p_stage text,p_pre_scope_clearance uuid
+) returns boolean language sql security definer set search_path='' as $receipt_valid$
+ select exists (
+   select 1
+   from research_lifecycle_private.a_strict_merchant_receipts r
+   join public.research_billing_clearances c
+     on c.id=r.clearance_id and c.account_id=r.account_id
+   join research_lifecycle_private.a_strict_merchant_receipts r0
+     on r0.clearance_id=p_pre_scope_clearance
+     and r0.account_id=r.account_id and r0.case_ref=r.case_ref
+     and r0.stage='pre_auth'
+   where r.account_id=p_account and r.case_ref=p_case
+     and r.clearance_id=p_clearance and r.stage=p_stage
+     and r.read_observed_at=c.verified_at
+     and r.read_observed_at<=pg_catalog.clock_timestamp()
+     and r.read_observed_at>=pg_catalog.clock_timestamp()-interval '15 minutes'
+     and r.merchant_store_id=r0.merchant_store_id
+     and r.product_key=r0.product_key
+     and r.merchant_mode=r0.merchant_mode
+     and r.customer_scope_digest=r0.customer_scope_digest
+ );
+$receipt_valid$;
+revoke all on function research_lifecycle_private.a_strict_receipt_valid(uuid,text,uuid,text,uuid)
+ from public,anon,authenticated,service_role;
+
 -- SQL owner issues one opaque, expiring, case-bound capability. NEVER callable
 -- from PostgREST service_role, anon or authenticated. No re-issuance after Phase A
 -- in this conservative candidate; crash/recovery requires owner incident review.

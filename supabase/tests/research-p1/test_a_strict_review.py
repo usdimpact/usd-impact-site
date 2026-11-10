@@ -80,6 +80,21 @@ def clear(a,tag,stage="pre_auth"):
 def start(a,ref):
     return q("postgres","SELECT public.a_strict_authorize(%s,%s,%s,'synthetic-owner',clock_timestamp()+interval '40 minutes')",(a,"p1-"+a.hex[:12],ref))
 
+def synthetic_age_immutable_observation(clearance_ids):
+    # Disposable CI ONLY: simulate passage of 16 minutes without sleeping.
+    # Disable append-only triggers under job-local superuser inside a single
+    # transaction ONLY to backdate synthetic observation facts. Normal
+    # transactions and all product code remain unable to modify such facts.
+    with conn(autocommit=False) as c:
+        c.execute("SET LOCAL session_replication_role = 'replica'")
+        stamp=c.execute("SELECT clock_timestamp()-interval '16 minutes'").fetchone()[0]
+        c.execute("""UPDATE public.research_billing_clearances
+            SET verified_at=%s WHERE id=ANY(%s::uuid[])""",(stamp,clearance_ids))
+        c.execute("""UPDATE research_lifecycle_private.a_strict_merchant_receipts
+            SET read_observed_at=%s WHERE clearance_id=ANY(%s::uuid[])""",(stamp,clearance_ids))
+        c.execute("SET LOCAL session_replication_role = 'origin'")
+        c.commit()
+
 def phase(a,token):
     return q("service_role","SELECT public.a_strict_phase_a(%s,%s)",(a,token))
 
@@ -392,9 +407,7 @@ db("""UPDATE research_lifecycle_private.a_strict_cases SET phase_a_at=clock_time
  WHERE account_id=%s""",(g,))
 db("""UPDATE research_lifecycle_private.deletion_auth_cleanup
  SET started_at=clock_timestamp()-interval '2 hours' WHERE account_id=%s""",(g,))
-for cid in [gpre[1],gfresh[1]]:
-    db("""UPDATE public.research_billing_clearances
-          SET verified_at=clock_timestamp()-interval '16 minutes' WHERE id=%s""",(cid,))
+synthetic_age_immutable_observation([gpre[1],gfresh[1]])
 grow=lease(g,tg,'auth')
 check("D3 account obtains synthetic single lease",grow[0]=="OK")
 lg=uuid.UUID(grow[1]['lease_id'])
@@ -402,8 +415,7 @@ check("D3 16-minute post-Phase-A receipt refused at SQL fence",fence(g,tg,lg)[0]
 newpost=clear(g,"p1-"+g.hex[:12]+"-current")
 check("D3 15-minute current receipt recorded",newpost[0]=="OK")
 check("D3 current receipt passes SQL fence",fence(g,tg,lg)==("OK",True))
-db("""UPDATE public.research_billing_clearances
- SET verified_at=clock_timestamp()-interval '16 minutes' WHERE id=%s""",(newpost[1],))
+synthetic_age_immutable_observation([newpost[1]])
 check("D3 freshness expiring after fence prevents Auth-attempt intent",
  q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(g,tg,lg))[0]=="ERR")
 check("D3 after-fence expiry leaves Auth intact",db("SELECT count(*) FROM auth.users WHERE id=%s",(g,))==1)

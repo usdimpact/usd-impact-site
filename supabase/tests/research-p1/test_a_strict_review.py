@@ -338,4 +338,40 @@ check("concurrent signed payment persists after Phase A",
 check("post-finalization incident blocks subsequent worker lease",lease(f,tf,'auth')[0]=='ERR')
 check("concurrent paid delivery never deletes Auth",db("SELECT count(*) FROM auth.users WHERE id=%s",(f,))==1)
 check("no concurrent payment completion email",sendable(f)==0)
+
+# D3 15-minute clearance is a source-only PROPOSAL. Test each independent
+# boundary: authorization, post-Phase-A SQL fence and final Auth-attempt intent.
+g=new_account()
+# Deliberately pass a syntactically valid account+reference, but 16-min evidence.
+# A fresh owner case is mandatory and no Auth operation occurs.
+gpre=q("postgres","SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp()-interval '16 minutes','synthetic-owner')",
+ (g,"p1-"+g.hex[:12]+"-stale"))
+check("D3 16-minute owner clearance can be recorded for evidence",gpre[0]=="OK",gpre)
+check("D3 16-minute pre-Auth case authorization refused",start(g,gpre[1])[0]=="ERR")
+check("D3 stale case refusal preserves Auth identity",db("SELECT count(*) FROM auth.users WHERE id=%s",(g,))==1)
+gfresh=clear(g,"p1-"+g.hex[:12]+"-fresh")
+gr=start(g,gfresh[1])
+check("D3 fresh owner case authorized",gr[0]=="OK")
+tg=gr[1]
+check("D3 Phase A for SQL-fence witness",phase(g,tg)[0]=="OK")
+db("""UPDATE research_lifecycle_private.a_strict_cases SET phase_a_at=clock_timestamp()-interval '2 hours'
+ WHERE account_id=%s""",(g,))
+db("""UPDATE research_lifecycle_private.deletion_auth_cleanup
+ SET started_at=clock_timestamp()-interval '2 hours' WHERE account_id=%s""",(g,))
+for cid in [gpre[1],gfresh[1]]:
+    db("""UPDATE public.research_billing_clearances
+          SET verified_at=clock_timestamp()-interval '16 minutes' WHERE id=%s""",(cid,))
+grow=lease(g,tg,'auth')
+check("D3 account obtains synthetic single lease",grow[0]=="OK")
+lg=uuid.UUID(grow[1]['lease_id'])
+check("D3 16-minute post-Phase-A receipt refused at SQL fence",fence(g,tg,lg)[0]=="ERR")
+newpost=clear(g,"p1-"+g.hex[:12]+"-current")
+check("D3 15-minute current receipt recorded",newpost[0]=="OK")
+check("D3 current receipt passes SQL fence",fence(g,tg,lg)==("OK",True))
+db("""UPDATE public.research_billing_clearances
+ SET verified_at=clock_timestamp()-interval '16 minutes' WHERE id=%s""",(newpost[1],))
+check("D3 freshness expiring after fence prevents Auth-attempt intent",
+ q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(g,tg,lg))[0]=="ERR")
+check("D3 after-fence expiry leaves Auth intact",db("SELECT count(*) FROM auth.users WHERE id=%s",(g,))==1)
+check("D3 after-fence expiry leaves no final email",sendable(g)==0)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

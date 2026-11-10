@@ -922,10 +922,24 @@ begin
       or old.state_version is distinct from new.state_version
       or old.recipient_email_normalized is distinct from new.recipient_email_normalized
       or old.template_id is distinct from new.template_id
-      or old.template_version is distinct from new.template_version then
+      or old.template_version is distinct from new.template_version
+       or old.provider is distinct from new.provider
+       or old.payload is distinct from new.payload
+       or old.consent_required is distinct from new.consent_required
+       or old.consent_record_id is distinct from new.consent_record_id
+       or old.consent_purpose is distinct from new.consent_purpose
+       or old.consent_checked_at is distinct from new.consent_checked_at
+       or old.created_at is distinct from new.created_at then
       raise exception using errcode='42501',
         message='account deletion completion identity cannot change after insert';
     end if;
+  end if;
+  if old.message_id='account_deletion_completed'
+     and old.status in ('delivered','terminal_failed','hard_bounced',
+                        'complained','suppressed','cancelled')
+     and old.status is distinct from new.status then
+    raise exception using errcode='42501',
+      message='terminal completion notification cannot be requeued';
   end if;
   return new;
 end;
@@ -936,3 +950,12 @@ create trigger a_strict_completion_identity_immutable
  before update on public.notification_outbox
  for each row execute function
    research_lifecycle_private.a_strict_completion_identity_immutable();
+
+-- P2 disposable-overlay privilege correction. Keep SELECT and INSERT; replace
+-- the later table-wide service_role UPDATE with delivery-status columns only.
+-- Do not copy into a live migration until all outbox writers are reconciled.
+revoke update on table public.notification_outbox from service_role;
+grant update (
+  status,attempt_count,next_attempt_at,provider_message_ref,error_code,
+  accepted_at,delivered_at,failed_at,updated_at
+) on table public.notification_outbox to service_role;

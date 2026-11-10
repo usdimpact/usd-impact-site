@@ -79,6 +79,17 @@ export async function handleDraftTwoPhaseWorker(
     return send(response, 503, { ok: false, code: 'TWO_PHASE_REVIEW_CONFIG_HOLD' });
   }
 
+  // A-strict D1 is a proposal, NOT an accepted owner policy. The actual
+  // route's default runner must never perform automatic database Phase A or
+  // external Auth retirement. Only injected synthetic runners may exercise
+  // the older author-side review contract; no web caller can inject one.
+  if (runImpl === runDraftTwoPhaseReviewCycle) {
+    return send(response, 423, {
+      ok: false, code: 'TWO_PHASE_A_STRICT_SUPERVISION_REQUIRED',
+      deletionExecuted: false, releaseApproved: false,
+    });
+  }
+
   // Only bounded, fair atomic-DB-first -> leased Auth operations exist inside
   // this reviewed library. No old Auth-first function, cron or direct legacy
   // RPC is called here. Tests inject a mock runner; never contact live data.

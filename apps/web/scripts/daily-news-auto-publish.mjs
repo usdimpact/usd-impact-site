@@ -5,7 +5,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.mjs';
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
-  selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
+  exactDailyPrQuery, selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
   dispatchSourceRunId, isAuthenticatedBotDispatch,
   classifyPreMergeReadiness, waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
@@ -167,7 +167,7 @@ async function run() {
     }
   }
 
-  const pulls = api('pulls?state=open&base=main&per_page=100');
+  const pulls = api(exactDailyPrQuery(source));
   const { prNumber, branch, headSha } = selectExactDailyPr(pulls, source, mainSha);
   const pr = api('pulls/' + prNumber);
   if (pr.head.sha !== headSha || pr.base.sha !== mainSha || pr.draft || pr.state !== 'open'

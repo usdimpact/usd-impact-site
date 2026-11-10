@@ -62,8 +62,14 @@ def state(a):
     return db("SELECT to_jsonb(q) FROM research_lifecycle_private.deletion_auth_cleanup q WHERE account_id=%s",(a,))
 
 def privacy_open(a):
+    # The existing Phase A intentionally detaches privacy_requests.account_id.
+    # Check the durable, private recorded request IDs; never look up by the
+    # nullable account_id after SQL finalization.
+    ids=(state(a) or {}).get("privacy_request_ids",[])
+    if not ids: return 0
     return db("""SELECT count(*) FROM public.privacy_requests
-      WHERE account_id=%s AND status='in_progress' AND completed_at IS NULL""",(a,))
+      WHERE id=ANY(%s::uuid[]) AND status='in_progress'
+       AND completed_at IS NULL""",(ids,))
 
 def sendable(a):
     return db("""SELECT count(*) FROM public.notification_outbox WHERE business_object_id=%s

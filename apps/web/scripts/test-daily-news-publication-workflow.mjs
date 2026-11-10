@@ -209,8 +209,10 @@ try {
         GH_TOKEN: 'offline-fixture-not-a-real-token',
       },
     });
-    assert.equal(test.status, scenario.exit,
+    if (scenario.exit === 0) assert.equal(test.status, 0,
       scenario.label + ': unexpected preflight exit ' + test.stderr);
+    else assert.notEqual(test.status, 0,
+      scenario.label + ': uncertainty must fail closed: ' + test.stderr);
     const evidence = await readFile(outPath, 'utf8');
     if (scenario.expected) assert.ok(evidence.includes(scenario.expected),
       scenario.label + ': ' + scenario.expected + ' not found in ' + evidence);
@@ -253,8 +255,10 @@ try {
         GH_TOKEN: 'offline-fixture-not-a-real-token',
       },
     });
-    assert.equal(test.status, scenario.exit,
+    if (scenario.exit === 0) assert.equal(test.status, 0,
       'backstop ' + scenario.label + ': ' + test.stderr);
+    else assert.notEqual(test.status, 0,
+      'backstop ' + scenario.label + ': uncertainty must fail closed: ' + test.stderr);
     const evidence = await readFile(outPath, 'utf8');
     if (scenario.expected === 'reason=publication-pr-exists') {
       assert.match(evidence, /publication PR already exists/,

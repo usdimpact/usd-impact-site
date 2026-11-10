@@ -91,7 +91,7 @@ with connection() as c:
        ) VALUES(
          %s,%s,'synthetic_ordinary_notification','operational',
          'account_deletion_request',%s,%s,
-         'synthetic@invalid.example','waitlist_confirmation','v1',
+         'synthetic@invalid.example','support_case_received','v1',
          'resend','{}'::jsonb,'queued'
        ) RETURNING id
     """,("notification:v1:"+uuid.uuid4().hex+uuid.uuid4().hex,"synthetic-spoof-"+uuid.uuid4().hex,

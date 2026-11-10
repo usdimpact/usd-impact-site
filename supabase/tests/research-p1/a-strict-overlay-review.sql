@@ -915,6 +915,67 @@ $reconcile$;
 revoke all on function public.a_strict_owner_reconcile(
  uuid,text,uuid,text,text,text,text) from public,anon,authenticated,service_role;
 
+-- Synthetic owner-only attestation: Auth is ALREADY absent despite open
+-- financial incident. This NEVER issues or authorizes another DELETE.
+create table research_lifecycle_private.a_strict_retirement_observations (
+  account_id uuid primary key references public.profiles(account_id) on delete restrict,
+  case_ref text not null, observation_ref text not null unique,
+  observed_at timestamptz not null, actor_session_role text not null,
+  recorded_at timestamptz not null default pg_catalog.clock_timestamp());
+alter table research_lifecycle_private.a_strict_retirement_observations enable row level security;
+alter table research_lifecycle_private.a_strict_retirement_observations force row level security;
+revoke all on research_lifecycle_private.a_strict_retirement_observations
+ from public,anon,authenticated,service_role;
+create trigger a_strict_retirement_observations_append_only before update or delete
+ on research_lifecycle_private.a_strict_retirement_observations
+ for each row execute function research_lifecycle_private.reject_append_only_change();
+create function public.a_strict_owner_attest_retired_under_incident(
+ p_account uuid,p_case text,p_observation_ref text,p_observed_at timestamptz)
+ returns boolean language plpgsql security definer set search_path='' as $retired_hold$
+declare
+ v_a research_lifecycle_private.a_strict_cases;
+ v_q research_lifecycle_private.deletion_auth_cleanup;
+ v_i research_lifecycle_private.deletion_billing_incidents;
+ v_now timestamptz:=pg_catalog.clock_timestamp();
+begin
+ if p_account is null or p_case is null or p_observation_ref is null
+    or pg_catalog.left(p_observation_ref,3)<>'p1-'
+    or pg_catalog.length(p_observation_ref) not between 16 and 90
+    or p_observed_at is null then
+   raise exception using errcode='22023',message='owner Auth observation reference required';
+ end if;
+ perform 1 from public.profiles p where p.account_id=p_account for update;
+ select a.* into v_a from research_lifecycle_private.a_strict_cases a
+   where a.account_id=p_account for update;
+ select q.* into v_q from research_lifecycle_private.deletion_auth_cleanup q
+   where q.account_id=p_account for update;
+ select i.* into v_i from research_lifecycle_private.deletion_billing_incidents i
+   where i.account_id=p_account for update;
+ if v_a.account_id is null or v_q.account_id is null or v_i.account_id is null
+    or v_a.case_ref<>p_case or v_a.auth_attempt_at is null
+    or v_a.auth_observed_at is not null or v_q.phase<>'auth_pending'
+    or v_i.status<>'open' or p_observed_at<=v_i.last_observed_at
+    or p_observed_at<=v_a.auth_attempt_at or p_observed_at>v_now
+    or p_observed_at<v_now-interval '15 minutes'
+    or exists(select 1 from auth.users u where u.id=p_account) then
+   raise exception using errcode='55000',message='Auth retirement under incident unverified';
+ end if;
+ insert into research_lifecycle_private.a_strict_retirement_observations
+   (account_id,case_ref,observation_ref,observed_at,actor_session_role)
+ values(p_account,p_case,p_observation_ref,p_observed_at,session_user);
+ update research_lifecycle_private.deletion_auth_cleanup q
+ set phase='auth_confirmed',auth_confirmed_at=coalesce(q.auth_confirmed_at,v_now),
+     auth_retired_observed_at=coalesce(q.auth_retired_observed_at,v_now),
+     lease_id=null,next_attempt_at=v_now where q.account_id=p_account;
+ update research_lifecycle_private.a_strict_cases a
+ set auth_observed_at=coalesce(a.auth_observed_at,v_now),
+     post_clearance_id=null,post_recorded_at=null where a.account_id=p_account;
+ return true;
+end;
+$retired_hold$;
+revoke all on function public.a_strict_owner_attest_retired_under_incident(
+ uuid,text,text,timestamptz) from public,anon,authenticated,service_role;
+
 -- P1-A remains a separate HOLD: no reattempt gate is introduced here.
 -- An Auth GET showing 'active' cannot prove the prior DELETE request is final.
 -- All SQL above remains uninstalled, synthetic-only, and unapproved D2/D4/D5.

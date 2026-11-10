@@ -708,6 +708,155 @@ revoke all on function public.a_strict_hold(uuid,uuid,uuid,text)
  from public,anon,authenticated,service_role;
 grant execute on function public.a_strict_hold(uuid,uuid,uuid,text) to service_role;
 
--- The owner-only reconciliation decision is intentionally *not* implemented
--- in this first review overlay. A financial incident is permanently held
--- pending a separate D2/D4/D5 decision. No automatic resume after payment.
+-- D2/D4/D5 owner decision is a proposal for disposable review only.
+-- Decisions are append-only and case+incident-generation bound. This does not
+-- prove remote merchant finality or create any permission for a live customer.
+create table research_lifecycle_private.a_strict_owner_resolutions (
+  decision_ref text primary key check(decision_ref ~ '^p1-[a-z0-9-]{12,80}
+),
+  account_id uuid not null references public.profiles(account_id) on delete restrict,
+  case_ref text not null check(case_ref ~ '^p1-[0-9a-f]{12,40}
+),
+  d2_privacy_ref text not null check(d2_privacy_ref ~ '^p1-[a-z0-9-]{12,80}
+),
+  d4_remedy_ref text not null check(d4_remedy_ref ~ '^p1-[a-z0-9-]{12,80}
+),
+  disposition text not null check(disposition in ('resume','terminal_hold')),
+  clearance_id uuid references public.research_billing_clearances(id),
+  incident_last_observed_at timestamptz not null,
+  financial_hold_at timestamptz,
+  actor_session_role text not null,
+  decided_at timestamptz not null default pg_catalog.clock_timestamp(),
+  unique(account_id,case_ref,incident_last_observed_at)
+);
+alter table research_lifecycle_private.a_strict_owner_resolutions enable row level security;
+alter table research_lifecycle_private.a_strict_owner_resolutions force row level security;
+revoke all on research_lifecycle_private.a_strict_owner_resolutions
+  from public,anon,authenticated,service_role;
+create trigger a_strict_owner_resolutions_append_only before update or delete
+ on research_lifecycle_private.a_strict_owner_resolutions
+ for each row execute function research_lifecycle_private.reject_append_only_change();
+create trigger a_strict_owner_resolutions_no_truncate before truncate
+ on research_lifecycle_private.a_strict_owner_resolutions
+ for each statement execute function research_lifecycle_private.reject_append_only_change();
+
+-- Owner SQL session ONLY. The worker, service_role and web client cannot call
+-- this entry point. An owner-chosen terminal_hold is a non-destructive legal
+-- record: it DOES NOT clear the incident, perform Auth deletion, mark privacy
+-- complete, or cause an email. Resume only after an independently attested
+-- post-incident merchant read and confirmed Auth retirement.
+create function public.a_strict_owner_reconcile(
+  p_account uuid,p_case text,p_clearance uuid,p_decision_ref text,
+  p_d2_privacy_ref text,p_d4_remedy_ref text,p_disposition text
+) returns text language plpgsql security definer set search_path='' as $reconcile$
+declare
+  v_a research_lifecycle_private.a_strict_cases;
+  v_q research_lifecycle_private.deletion_auth_cleanup;
+  v_i research_lifecycle_private.deletion_billing_incidents;
+  v_r research_lifecycle_private.a_strict_merchant_receipts;
+  v_c public.research_billing_clearances;
+  v_existing research_lifecycle_private.a_strict_owner_resolutions;
+  v_now timestamptz:=pg_catalog.clock_timestamp();
+begin
+  if p_account is null or p_case !~ '^p1-[0-9a-f]{12,40}
+
+     or p_decision_ref !~ '^p1-[a-z0-9-]{12,80}
+
+     or p_d2_privacy_ref !~ '^p1-[a-z0-9-]{12,80}
+
+     or p_d4_remedy_ref !~ '^p1-[a-z0-9-]{12,80}
+
+     or p_disposition not in ('resume','terminal_hold') then
+    raise exception using errcode='22023',message='owner decision identifiers or disposition invalid';
+  end if;
+  -- Same order as restrictive hold: profile, case, queue, incident.
+  perform 1 from public.profiles p where p.account_id=p_account for update;
+  select a.* into v_a from research_lifecycle_private.a_strict_cases a
+    where a.account_id=p_account for update;
+  select q.* into v_q from research_lifecycle_private.deletion_auth_cleanup q
+    where q.account_id=p_account for update;
+  select i.* into v_i from research_lifecycle_private.deletion_billing_incidents i
+    where i.account_id=p_account for update;
+  if v_a.account_id is null or v_q.account_id is null
+     or v_i.account_id is null or v_a.case_ref<>p_case
+     or v_a.phase_a_at is null or v_a.completed_at is not null then
+    raise exception using errcode='55000',message='no reviewable supervised financial incident';
+  end if;
+  select d.* into v_existing from research_lifecycle_private.a_strict_owner_resolutions d
+    where d.decision_ref=p_decision_ref for share;
+  if found then
+    if v_existing.account_id=p_account and v_existing.case_ref=p_case
+      and v_existing.disposition=p_disposition
+      and v_existing.clearance_id is not distinct from p_clearance
+      and v_existing.d2_privacy_ref=p_d2_privacy_ref
+      and v_existing.d4_remedy_ref=p_d4_remedy_ref
+      and v_existing.incident_last_observed_at=v_i.last_observed_at
+      and (p_disposition='terminal_hold' or v_i.status='resolved') then
+      return p_disposition; -- idempotent same exact owner decision
+    end if;
+    raise exception using errcode='55000',message='conflicting or superseded owner decision';
+  end if;
+  if exists(select 1 from research_lifecycle_private.a_strict_owner_resolutions d
+       where d.account_id=p_account and d.case_ref=p_case
+         and d.incident_last_observed_at=v_i.last_observed_at) then
+    raise exception using errcode='55000',message='incident generation already adjudicated';
+  end if;
+  if v_i.status<>'open' then
+    raise exception using errcode='55000',message='incident is no longer open';
+  end if;
+  if p_disposition='resume' then
+    if p_clearance is null or v_q.phase<>'auth_confirmed'
+       or v_a.auth_attempt_at is null or v_a.auth_observed_at is null
+       or (v_q.lease_id is not null and v_q.next_attempt_at>v_now)
+       or research_lifecycle_private.a_strict_unsettled_rights(p_account) then
+      raise exception using errcode='55000',message='Auth/rights/lease state forbids resumed deletion';
+    end if;
+    select c.* into v_c from public.research_billing_clearances c
+      where c.id=p_clearance and c.account_id=p_account for share;
+    select r.* into v_r from research_lifecycle_private.a_strict_merchant_receipts r
+      where r.clearance_id=p_clearance and r.account_id=p_account
+        and r.case_ref=p_case and r.stage='post_auth' for share;
+    if v_c.id is null or v_r.id is null
+       or v_r.read_observed_at is distinct from v_c.verified_at
+       or v_r.read_observed_at<=v_i.last_observed_at
+       or (v_q.financial_hold_at is not null
+           and v_r.read_observed_at<=v_q.financial_hold_at)
+       or v_r.read_observed_at<=v_a.auth_observed_at
+       or v_r.read_observed_at>v_now
+       or v_r.read_observed_at<v_now-interval '15 minutes'
+       or not research_lifecycle_private.a_strict_receipt_valid(
+         p_account,p_case,p_clearance,'post_auth',v_a.pre_clearance_id) then
+      raise exception using errcode='55000',message='post-incident provider evidence invalid or stale';
+    end if;
+    if not public.resolve_research_deletion_billing_incident(
+      p_account,p_clearance,p_decision_ref) then
+      raise exception using errcode='55000',message='source incident resolver refused';
+    end if;
+    -- Sole writer to reconciled_hold_at. Never reset Auth DELETE intent.
+    update research_lifecycle_private.a_strict_cases a
+      set reconciled_hold_at=v_now,
+          post_clearance_id=null,post_recorded_at=null
+      where a.account_id=p_account;
+  else
+    -- A documented D2/D4 terminal decision still leaves financial/identity
+    -- custody and the privacy request on HOLD for an external lawful response.
+    if p_clearance is not null then
+      raise exception using errcode='55000',message='terminal decision cannot certify merchant cessation';
+    end if;
+  end if;
+  insert into research_lifecycle_private.a_strict_owner_resolutions
+    (decision_ref,account_id,case_ref,d2_privacy_ref,d4_remedy_ref,
+     disposition,clearance_id,incident_last_observed_at,financial_hold_at,
+     actor_session_role)
+  values(p_decision_ref,p_account,p_case,p_d2_privacy_ref,p_d4_remedy_ref,
+    p_disposition,p_clearance,v_i.last_observed_at,v_q.financial_hold_at,
+    pg_catalog.session_user);
+  return p_disposition;
+end;
+$reconcile$;
+revoke all on function public.a_strict_owner_reconcile(
+ uuid,text,uuid,text,text,text,text) from public,anon,authenticated,service_role;
+
+-- P1-A remains a separate HOLD: no reattempt gate is introduced here.
+-- An Auth GET showing 'active' cannot prove the prior DELETE request is final.
+-- All SQL above remains uninstalled, synthetic-only, and unapproved D2/D4/D5.

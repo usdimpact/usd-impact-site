@@ -80,6 +80,16 @@ matched=scalar("""SELECT count(*) FROM research_lifecycle_private.a_strict_owner
   AND f.clearance_id=d.clearance_id AND f.resolution_ref=d.decision_ref
  WHERE d.disposition='resume'""")
 check("every resume is bound to the exact account/case/timestamp/count ledger",matched==resumes,(matched,resumes))
+resolved=scalar("""SELECT i.account_id FROM research_lifecycle_private.deletion_billing_incidents i
+ WHERE i.status='resolved' AND EXISTS (
+  SELECT 1 FROM research_lifecycle_private.a_strict_owner_generation_decisions d
+  WHERE d.account_id=i.account_id AND d.incident_observation_count=i.observation_count
+ ) LIMIT 1""")
+same=call("""UPDATE research_lifecycle_private.deletion_billing_incidents
+ SET status='open',resolved_at=NULL,resolution_reference=NULL,
+ resolution_clearance_id=NULL WHERE account_id=%s RETURNING account_id""",(resolved,))
+check("resolved incident cannot reopen without a new signed observation generation",
+ same==("ERR","42501"),same)
 newer=scalar("""SELECT count(*) FROM research_lifecycle_private.deletion_billing_incidents i
  WHERE i.status='open' AND EXISTS (
   SELECT 1 FROM research_lifecycle_private.a_strict_owner_generation_decisions d

@@ -285,4 +285,57 @@ check("staged email and privacy completion released atomically",finish==("OK",Tr
 check("clean released outbox now sendable after both barriers",sendable(d)==1)
 check("clean custody scrubs duplicate email",
  state(d)['phase']=='email_enqueued' and state(d)['recipient_email'] is None)
+# Actual TWO-CONNECTION synthetic worker contention. Both callers race to
+# lease one account; profile/q locks must permit only one unexpired lease.
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier, Event
+e=new_account()
+ep=clear(e,"syn-astrict-epre-"+e.hex[:12])
+er=start(e,ep[1])
+check("concurrent worker account authorized",er[0]=="OK")
+te=er[1]
+check("concurrent worker account Phase A",phase(e,te)[0]=="OK")
+barrier=Barrier(3)
+def competing_claim():
+    barrier.wait(timeout=5)
+    return lease(e,te,'auth')
+with ThreadPoolExecutor(max_workers=2) as pool:
+    first=pool.submit(competing_claim);second=pool.submit(competing_claim)
+    barrier.wait(timeout=5)
+    wins=[first.result(timeout=10),second.result(timeout=10)]
+check("two concurrent deletion workers share exactly one valid lease",
+  sorted(r[0] for r in wins)==['ERR','OK'],wins)
+check("competing workers never retire Auth",db("SELECT count(*) FROM auth.users WHERE id=%s",(e,))==1)
+
+# Signed payment writer waits on the same account lock while Phase A commits.
+# That delivery MUST be persisted *after* Phase A as an unresolved incident,
+# never be dropped merely because the original identity was finalized.
+f=new_account()
+fp=clear(f,"syn-astrict-fpre-"+f.hex[:12])
+fr=start(f,fp[1])
+check("concurrent payment account authorized",fr[0]=="OK")
+tf=fr[1]
+started=Event()
+def signed_writer():
+    started.set()
+    return q("service_role","SELECT public.record_research_paid_binding_refusal('lemon-squeezy',%s,%s,%s,%s)",
+      ("syn-astrict-fpaid-"+f.hex[:12],f,"syn-astrict-fck-"+f.hex[:12],"SIGNED_PAID_BINDING_REFUSED"))
+with ThreadPoolExecutor(max_workers=1) as pool:
+    with conn(autocommit=False) as locked:
+        locked.execute("SET ROLE postgres")
+        locked.execute("SELECT 1 FROM public.profiles WHERE account_id=%s FOR UPDATE",(f,))
+        future=pool.submit(signed_writer)
+        started.wait(timeout=5)
+        time.sleep(.03)  # writer cannot pass the held profile lock
+        locked.execute("SET ROLE service_role")
+        phase_receipt=locked.execute("SELECT public.a_strict_phase_a(%s,%s)",(f,tf)).fetchone()[0]
+        locked.commit()
+    payment_receipt=future.result(timeout=10)
+check("Phase A won account lock before signed payment",
+ phase_receipt['phase']=='auth_pending')
+check("concurrent signed payment persists after Phase A",
+ payment_receipt[0]=='OK' and inc(f)=='open',payment_receipt)
+check("post-finalization incident blocks subsequent worker lease",lease(f,tf,'auth')[0]=='ERR')
+check("concurrent paid delivery never deletes Auth",db("SELECT count(*) FROM auth.users WHERE id=%s",(f,))==1)
+check("no concurrent payment completion email",sendable(f)==0)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

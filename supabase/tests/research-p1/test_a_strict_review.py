@@ -96,7 +96,7 @@ def synthetic_age_immutable_observation(clearance_ids):
         c.commit()
 
 def phase(a,token):
-    return q("service_role","SELECT public.a_strict_phase_a(%s,%s)",(a,token))
+    return q("postgres","SELECT public.a_strict_phase_a(%s,%s)",(a,token))
 
 def lease(a,token,purpose):
     return q("service_role","SELECT public.a_strict_claim(%s,%s,%s)",(a,token,purpose))
@@ -165,16 +165,16 @@ check("no deletion attempt recorded by refused fence",state(a)['financial_fence_
 check("owner fresh post-Phase-A clearance recorded",clear(a,"syn-astrict-fresh-"+a.hex[:12])[0]=="OK")
 check("fence passes after current provider receipt",fence(a,token,l)==("OK",True))
 check("Auth DELETE intent can be recorded once",
- q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(a,token,l))==("OK",True))
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(a,token,l))==("OK",True))
 check("repeated Auth intent DENIED",
- q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(a,token,l))[0]=="ERR")
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(a,token,l))[0]=="ERR")
 check("new fence denied after attempted Auth",
  fence(a,token,l)[0]=="ERR")
 check("no implicit Auth deletion",db("SELECT count(*) FROM auth.users WHERE id=%s",(a,))==1)
 
 # Synthetic external Auth retirement: no network; explicitly model deleted user.
 db("DELETE FROM auth.users WHERE id=%s",(a,))
-r=q("service_role","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(a,token,l))
+r=q("postgres","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(a,token,l))
 check("account-bound Auth GET attestation stored",r[0]=="OK" and r[1]['post_auth_merchant_verified'] is False,r)
 check("Auth observed but no email dispatch",sendable(a)==0)
 r=lease(a,token,'complete')
@@ -221,14 +221,14 @@ check("independent claim",rb[0]=="OK")
 lb=uuid.UUID(rb[1]['lease_id'])
 check("fresh authority after Phase A",clear(b,"syn-astrict-bfresh-"+b.hex[:12])[0]=="OK")
 check("fresh fence on second account",fence(b,tb,lb)==("OK",True))
-check("record possible irreversible Auth attempt",q("service_role",
+check("record possible irreversible Auth attempt",q("postgres",
   "SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(b,tb,lb))==("OK",True))
 db("""UPDATE research_lifecycle_private.deletion_auth_cleanup SET
   next_attempt_at=clock_timestamp()-interval '1 second' WHERE account_id=%s""",(b,))
 again=lease(b,tb,'auth')
 check("expired lease may be reclaimed only explicitly",again[0]=="OK" and again[1]['prior_auth_attempt'] is True,again)
 check("reclaimed lease cannot authorize second Auth DELETE",
- q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",
    (b,tb,uuid.UUID(again[1]['lease_id'])))[0]=="ERR")
 check("Auth still intact after ambiguous retry",db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==1)
 check("no silently restored entitlements or email",sendable(b)==0)
@@ -250,7 +250,7 @@ newlease=lease(b,newcap,'auth')
 check("new capability leases only that single account",
  newlease[0]=="OK" and newlease[1]['prior_auth_attempt'] is True,newlease)
 check("renewal preserves one-time Auth DELETE ban",
- q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",
    (b,newcap,uuid.UUID(newlease[1]['lease_id'])))[0]=="ERR")
 check("renewal never recovers Auth identity",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==1)
@@ -272,7 +272,7 @@ paid_c=q("service_role","SELECT public.record_research_paid_binding_refusal('lem
  ("syn-astrict-cpaid-"+c.hex[:12],c,"syn-astrict-ck-"+c.hex[:12],"SIGNED_PAID_BINDING_REFUSED"))
 check("late signed charge after fence is durable",paid_c[0]=="OK" and inc(c)=="open")
 check("mark Auth attempt refuses intervening paid event",
- q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(c,tc,lc))[0]=="ERR")
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(c,tc,lc))[0]=="ERR")
 check("Auth remains intact when payment commits before intent",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(c,))==1)
 check("no completion email on refused post-fence payment",sendable(c)==0)
@@ -291,11 +291,11 @@ check("clean Auth lease",dl[0]=="OK")
 ld=uuid.UUID(dl[1]['lease_id'])
 check("clean fresh pre-Auth clearance",clear(d,"syn-astrict-dfresh-"+d.hex[:12])[0]=="OK")
 check("clean Auth financial fence",fence(d,td,ld)==("OK",True))
-check("clean durable Auth intent",q("service_role",
+check("clean durable Auth intent",q("postgres",
   "SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(d,td,ld))==("OK",True))
 # SIMULATE only the external Auth DELETE and positive GET in disposable PG17.
 db("DELETE FROM auth.users WHERE id=%s",(d,))
-observed=q("service_role","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(d,td,ld))
+observed=q("postgres","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(d,td,ld))
 check("clean Auth retirement observed; merchant still unverified",observed[0]=="OK")
 r=lease(d,td,'complete')
 check("clean completion lease",r[0]=="OK")
@@ -376,7 +376,7 @@ with ThreadPoolExecutor(max_workers=1) as pool:
         future=pool.submit(signed_writer)
         started.wait(timeout=5)
         time.sleep(.03)  # writer cannot pass the held profile lock
-        locked.execute("SET ROLE service_role")
+        # SQL-owner Phase A only, while the signed service-role payment worker waits.
         phase_receipt=locked.execute("SELECT public.a_strict_phase_a(%s,%s)",(f,tf)).fetchone()[0]
         locked.commit()
     payment_receipt=future.result(timeout=10)
@@ -417,7 +417,7 @@ check("D3 15-minute current receipt recorded",newpost[0]=="OK")
 check("D3 current receipt passes SQL fence",fence(g,tg,lg)==("OK",True))
 synthetic_age_immutable_observation([newpost[1]])
 check("D3 freshness expiring after fence prevents Auth-attempt intent",
- q("service_role","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(g,tg,lg))[0]=="ERR")
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(g,tg,lg))[0]=="ERR")
 check("D3 after-fence expiry leaves Auth intact",db("SELECT count(*) FROM auth.users WHERE id=%s",(g,))==1)
 check("D3 after-fence expiry leaves no final email",sendable(g)==0)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

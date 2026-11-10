@@ -47,7 +47,7 @@ function failuresForCandidate(source, { routeExists = false } = {}) {
   const requireSource = (ok, reason) => {
     if (!ok) failures.push(reason);
   };
-  requireSource(typeof source === 'string' && source.startsWith('<!-- DRAFT ONLY:'),
+  requireSource(typeof source === 'string' && source.includes('<!-- DRAFT ONLY:') && source.indexOf('<!-- DRAFT ONLY:') < 200,
     'Staged source must identify its Draft-only provenance.');
   if (typeof source !== 'string') return failures;
   requireSource(/<!doctype html>/i.test(source) && source.includes('<html lang="en">'),

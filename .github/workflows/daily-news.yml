@@ -61,14 +61,29 @@ jobs:
             exit 1
           fi
 
-          existing_pr="$(gh pr list \
-            --repo "$GITHUB_REPOSITORY" \
-            --state all \
-            --base main \
-            --limit 100 \
-            --json number,title,headRefName,state,url \
-            --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .state, .url] | @tsv" \
-            | head -n 1)"
+          # A partial 100-PR listing cannot prove absence, including closed
+          # editorial PRs. Traverse complete, bounded REST pages before
+          # permitting new paid generation or a recovery dispatch.
+          existing_pr=''
+          pr_scan_complete=false
+          for pr_page in $(seq 1 20); do
+            pr_page_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=all&base=main&per_page=100&page=$pr_page")"
+            pr_page_count="$(jq -er 'if type == "array" and length <= 100 then length else error("invalid-pull-page") end' <<< "$pr_page_json")"
+            existing_pr="$(jq -r --arg title "$expected_title" --arg prefix "$expected_head_prefix" \
+              '[.[] | select(.title == $title and ((.head.ref // "") | startswith($prefix))) | [.number, .state, .html_url] | @tsv] | .[0] // empty' \
+              <<< "$pr_page_json")"
+            if [ -n "$existing_pr" ]; then
+              break
+            fi
+            if [ "$pr_page_count" -lt 100 ]; then
+              pr_scan_complete=true
+              break
+            fi
+          done
+          if [ -z "$existing_pr" ] && [ "$pr_scan_complete" != true ]; then
+            echo "::error::Daily PR enumeration exceeded 20 full pages; HOLD without paid generation."
+            exit 1
+          fi
 
           if [ -n "$existing_pr" ]; then
             echo "needed=false" >> "$GITHUB_OUTPUT"

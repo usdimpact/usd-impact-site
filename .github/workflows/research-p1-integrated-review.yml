@@ -12,6 +12,10 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
       - 'docs/operations/research-p1-two-phase/**'
+      - 'apps/web/src/lib/**'
+      - 'apps/web/api/commerce.js'
+      - 'apps/web/scripts/test-research-membership-webhook-replay.mjs'
+      - 'apps/web/scripts/test-lemon-squeezy-research-membership-adapter.mjs'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'
@@ -69,6 +73,7 @@ jobs:
           node --check src/lib/account-deletion-finalizer.js
           node scripts/test-research-membership-first-purchase.mjs
           node scripts/test-research-membership-persistence.mjs
+          node scripts/test-lemon-squeezy-research-membership-adapter.mjs
           node scripts/test-research-membership-webhook-replay.mjs
           node scripts/test-account-deletion-finalizer.mjs
           node --check src/lib/account-deletion-two-phase-review.js
@@ -186,4 +191,10 @@ jobs:
           python3 supabase/tests/research-p1/test_a_strict_review.py
           python3 supabase/tests/research-p1/test_a_strict_outbox_immutability.py
           python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py
+      - name: Verify copied #1189 invoice webhook regression under UI02/UI03 combined job (offline Node)
+        working-directory: apps/web
+        run: |
+          node --check src/lib/research-membership-webhook-handler.js
+          node scripts/test-research-membership-webhook-replay.mjs
+          node scripts/test-lemon-squeezy-research-membership-adapter.mjs
 

@@ -38,7 +38,8 @@ q("""UPDATE research_lifecycle_private.deletion_auth_cleanup
  SET started_at=clock_timestamp()-interval '25 minutes',
      next_attempt_at=clock_timestamp()-interval '1 minute',
      financial_hold_first_at=clock_timestamp()-interval '21 minutes',
-     financial_hold_at=clock_timestamp()-interval '21 minutes'
+     financial_hold_at=clock_timestamp()-interval '21 minutes',
+     financial_hold_class='auth_intact_cessation_unverified'
  WHERE account_id=%s""",(a,))
 clear=q("""SELECT public.record_research_billing_clearance(
  %s,'provider_api',%s,clock_timestamp()-interval '20 minutes','synthetic-owner')""",

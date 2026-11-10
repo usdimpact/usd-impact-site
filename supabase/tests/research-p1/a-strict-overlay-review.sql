@@ -12,6 +12,13 @@ revoke all on function public.confirm_deletion_auth_cleanup(uuid,uuid)
   from public,anon,authenticated,service_role;
 revoke all on function public.finish_deletion_auth_cleanup(uuid,uuid)
   from public,anon,authenticated,service_role;
+-- Defense in depth for the older legacy Auth-first flow; the migration
+-- itself also revokes these, but overlay testing must prove no service_role
+-- pre-deletion readiness/escalation bypass survives the A-strict boundary.
+revoke all on function public.check_research_deletion_billing_readiness(uuid)
+  from public,anon,authenticated,service_role;
+revoke all on function public.mark_research_deletion_hold_escalated(uuid,text)
+  from public,anon,authenticated,service_role;
 
 create table research_lifecycle_private.a_strict_cases (
  account_id uuid primary key references public.profiles(account_id) on delete restrict,

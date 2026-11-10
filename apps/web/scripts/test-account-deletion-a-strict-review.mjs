@@ -105,9 +105,13 @@ for (const opts of [{getFails:true},{getUnknown:true},{getWrongId:true}]) {
 }
 { const h=make({getFails:true,holdFails:true});await denied(() => reviewSupervisedAuth(ctx,h.services),'ASTRICT_HOLD_PERSISTENCE_UNVERIFIED');n++; }
 { const h=make({prior:true});await denied(() => reviewSupervisedAuth(ctx,h.services),'ASTRICT_REPEAT_AUTH_FORBIDDEN');
+  assert.deepEqual(h.holds,['prior_auth_attempt_ambiguous']);
+  assert.equal(h.log.filter(x=>x==='FENCE').length,0);
   assert.equal(h.log.filter(x=>x==='AUTH_DELETE').length,0);n++; }
 { const h=make({prior:true,retired:true});const v=await reviewSupervisedAuth(ctx,h.services);
-  assert.equal(v.status,'awaiting_owner_post_auth_merchant_read');assert(!h.log.includes('AUTH_DELETE'));n++; }
+  assert.equal(v.status,'awaiting_owner_post_auth_merchant_read');
+  assert.equal(h.log.filter(x=>x==='FENCE').length,0);
+  assert.equal(h.log.filter(x=>x==='AUTH_DELETE').length,0);n++; }
 { const h=make({retired:true});await denied(() => reviewSupervisedAuth(ctx,h.services),'ASTRICT_AUTH_STATE_UNEXPECTED');
   assert(!h.log.includes('AUTH_DELETE'));n++; }
 { const h=make({markFails:true});await denied(() => reviewSupervisedAuth(ctx,h.services),'ASTRICT_AUTH_INTENT_UNVERIFIED');

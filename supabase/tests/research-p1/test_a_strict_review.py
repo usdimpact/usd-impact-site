@@ -678,4 +678,81 @@ check("Auth remains retired and cannot be retried from SQL owner",
   db("SELECT count(*) FROM auth.users WHERE id=%s",(n,))==0
   and q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(n,nt,ncl))[0]=="ERR")
 
+# A2: retirement already happened but a signed payment intervened after the
+# durable Auth intent. Only the owner can ATTEST an independently observed
+# retired identity; the financial incident remains open until D2/D4 review.
+r=new_account()
+rp=clear(r,'syn-astrict-rpre-'+r.hex[:12])
+rt=start(r,rp[1])[1]
+check('A2 Phase A',phase(r,rt)[0]=='OK')
+rl=uuid.UUID(lease(r,rt,'auth')[1]['lease_id'])
+check('A2 fresh pre-Auth receipt',clear(r,'syn-astrict-rfresh-'+r.hex[:12])[0]=='OK')
+check('A2 fence before DELETE intent',fence(r,rt,rl)==('OK',True))
+check('A2 durable intent before payment',q('postgres',
+  'SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)',(r,rt,rl))==('OK',True))
+paid_r=q('service_role',
+ 'SELECT public.record_research_paid_binding_refusal(\'lemon-squeezy\',%s,%s,%s,%s)',
+ ('syn-rpaid-'+r.hex[:12],r,'syn-rck-'+r.hex[:12],'SIGNED_PAID_BINDING_REFUSED'))
+check('A2 intervening signed payment creates incident',paid_r[0]=='OK' and inc(r)=='open')
+ra='p1-observed-retired-'+r.hex[:12]
+check('A2 owner cannot attest while Auth still exists',q('postgres',
+ 'SELECT public.a_strict_owner_attest_retired_under_incident(%s,%s,%s,clock_timestamp())',
+ (r,'p1-'+r.hex[:12],ra))[0]=='ERR')
+db('DELETE FROM auth.users WHERE id=%s',(r,))
+check('A2 ordinary Auth observation refuses while financial incident open',q('postgres',
+ 'SELECT public.a_strict_record_auth_observed(%s,%s,%s)',(r,rt,rl))[0]=='ERR')
+check('A2 worker cannot attest Auth retirement',q('service_role',
+ 'SELECT public.a_strict_owner_attest_retired_under_incident(%s,%s,%s,clock_timestamp())',
+ (r,'p1-'+r.hex[:12],ra))[0]=='ERR')
+at=q('postgres',
+ 'SELECT public.a_strict_owner_attest_retired_under_incident(%s,%s,%s,clock_timestamp())',
+ (r,'p1-'+r.hex[:12],ra))
+check('A2 owner may record already-retired Auth under incident',at==('OK',True),at)
+check('A2 retirement attestation does not clear payment or privacy HOLD',
+ state(r)['phase']=='auth_confirmed' and inc(r)=='open'
+ and privacy_open(r)>=1 and sendable(r)==0)
+check('A2 retirement attestation immutable',q('postgres',
+ 'UPDATE research_lifecycle_private.a_strict_retirement_observations SET observation_ref=%s WHERE account_id=%s RETURNING account_id',
+ ('p1-changed-retirement-'+r.hex[:12],r))[0]=='ERR')
+post_r=clear(r,'syn-astrict-rpostincident-'+r.hex[:12],'post_auth')
+check('A2 fresh post-retirement provider evidence',post_r[0]=='OK',post_r)
+resume_r=q('postgres',
+ 'SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)',
+ (r,'p1-'+r.hex[:12],post_r[1],'p1-decision-retired-'+r.hex[:12],
+  'p1-d2-retired-'+r.hex[:12],'p1-d4-retired-'+r.hex[:12],'resume'))
+check('A2 owner can now reconcile but not send completion email',
+ resume_r==('OK','resume') and inc(r)=='resolved'
+ and privacy_open(r)>=1 and sendable(r)==0,resume_r)
+
+# B3: payment before any Auth DELETE intent must be financially adjudicated
+# without falsely recording Auth retirement or silently issuing a DELETE.
+s=new_account()
+sp=clear(s,'syn-astrict-spre-'+s.hex[:12])
+st=start(s,sp[1])[1]
+check('B3 Phase A',phase(s,st)[0]=='OK')
+sl=uuid.UUID(lease(s,st,'auth')[1]['lease_id'])
+check('B3 owner pre-fence read',clear(s,'syn-astrict-sfresh-'+s.hex[:12])[0]=='OK')
+check('B3 fence before payment',fence(s,st,sl)==('OK',True))
+pay_s=q('service_role',
+ 'SELECT public.record_research_paid_binding_refusal(\'lemon-squeezy\',%s,%s,%s,%s)',
+ ('syn-spaid-'+s.hex[:12],s,'syn-sck-'+s.hex[:12],'SIGNED_PAID_BINDING_REFUSED'))
+check('B3 payment before intent creates incident',pay_s[0]=='OK' and inc(s)=='open')
+check('B3 new Auth intent denied after payment',q('postgres',
+ 'SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)',(s,st,sl))[0]=='ERR')
+db("UPDATE research_lifecycle_private.deletion_auth_cleanup SET next_attempt_at=clock_timestamp()-interval '1 second' WHERE account_id=%s",(s,))
+sr=clear(s,'syn-astrict-safterhold-'+s.hex[:12])
+check('B3 owner has fresh post-hold pre-Auth receipt',sr[0]=='OK',sr)
+res_s=q('postgres',
+ 'SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)',
+ (s,'p1-'+s.hex[:12],sr[1],'p1-decision-intact-'+s.hex[:12],
+  'p1-d2-intact-'+s.hex[:12],'p1-d4-intact-'+s.hex[:12],'resume'))
+check('B3 owner can reconcile incident without retiring intact Auth',
+ res_s==('OK','resume') and inc(s)=='resolved'
+ and db('SELECT count(*) FROM auth.users WHERE id=%s',(s,))==1,res_s)
+check('B3 no false email or privacy completion after recovery',
+ privacy_open(s)>=1 and sendable(s)==0)
+check('B3 renewed supervised lease remains possible without DELETE',
+ lease(s,st,'auth')[0]=='OK'
+ and db('SELECT count(*) FROM auth.users WHERE id=%s',(s,))==1)
+
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

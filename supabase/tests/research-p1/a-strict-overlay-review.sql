@@ -352,6 +352,7 @@ begin
     or v_a.auth_observed_at is null or v_c.id is null
     or v_c.verified_at<=v_a.auth_observed_at
     or v_c.verified_at>pg_catalog.clock_timestamp()
+    or v_c.verified_at<pg_catalog.clock_timestamp()-interval '15 minutes'
     or (v_q.financial_hold_at is not null and v_c.verified_at<=v_q.financial_hold_at)
     or (v_a.latest_exception_at is not null and v_c.verified_at<=v_a.latest_exception_at)
     or p_all_pages is not true or p_no_future_charge is not true
@@ -390,6 +391,7 @@ begin
  if v_q.phase<>'auth_confirmed' or v_a.auth_observed_at is null
    or v_a.post_recorded_at is null or v_c.id is null
    or v_c.verified_at<=v_a.auth_observed_at
+   or v_c.verified_at<pg_catalog.clock_timestamp()-interval '15 minutes'
    or (v_a.latest_exception_at is not null and v_c.verified_at<=v_a.latest_exception_at)
    or (v_q.financial_hold_at is not null and
       (v_c.verified_at<=v_q.financial_hold_at

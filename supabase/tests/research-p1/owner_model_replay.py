@@ -15,7 +15,7 @@ create role service_role nologin bypassrls; create role authenticator nologin no
 grant anon, authenticated, service_role to postgres;
 create schema extensions; create extension pgcrypto with schema extensions;
 create schema auth;
-create table auth.users(id uuid primary key,email text);
+create table auth.users(id uuid primary key,email text,deleted_at timestamptz);
 create function auth.uid() returns uuid language sql stable set search_path='' as $$
   select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 create schema storage;

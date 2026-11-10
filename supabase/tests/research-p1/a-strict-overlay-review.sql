@@ -211,6 +211,26 @@ revoke all on function research_lifecycle_private.a_strict_receipt_valid(uuid,te
 -- authorize an Auth DELETE intent or attest a successful Admin GET. These
 -- steps require the SQL owner in a deliberately supervised session; the
 -- synthetic JS module is not wired to such an owner connection.
+-- A fresh merchant attestation must not silently extinguish a still-valid
+-- locally known Research paid/complimentary period. This HOLD is independent
+-- of billing_hold_reasons() clearing stale local events via later clearances.
+-- Do not touch Library Pass or rewrite any historic subscription/entitlement.
+create function research_lifecycle_private.a_strict_unsettled_rights(p_account uuid)
+returns boolean language sql security definer set search_path='' as $rights$
+ select exists (
+   select 1 from public.entitlements e
+   where e.account_id=p_account and e.product_id='research-membership'
+     and e.state::text not in ('account_deleted','revoked')
+     and (e.ends_at is null or e.ends_at>pg_catalog.clock_timestamp())
+ ) or exists (
+   select 1 from public.subscriptions s
+   where s.account_id=p_account and s.product_id='research-membership'
+     and s.state::text not in ('expired','refunded','chargeback')
+ );
+$rights$;
+revoke all on function research_lifecycle_private.a_strict_unsettled_rights(uuid)
+ from public,anon,authenticated,service_role;
+
 -- SQL owner issues one opaque, expiring, case-bound capability. NEVER callable
 -- from PostgREST service_role, anon or authenticated. No re-issuance after Phase A
 -- in this conservative candidate; crash/recovery requires owner incident review.
@@ -240,8 +260,9 @@ begin
  if exists(select 1 from research_lifecycle_private.a_strict_cases a where a.account_id=p_account) then
    raise exception using errcode='55000',message='case already exists; manual recovery required';
  end if;
- if pg_catalog.cardinality(research_lifecycle_private.billing_hold_reasons(p_account))>0 then
-   raise exception using errcode='55000',message='financial hold before supervision';
+ if pg_catalog.cardinality(research_lifecycle_private.billing_hold_reasons(p_account))>0
+    or research_lifecycle_private.a_strict_unsettled_rights(p_account) then
+   raise exception using errcode='55000',message='financial hold or unexpired Research rights before supervision';
  end if;
  insert into research_lifecycle_private.a_strict_cases
    (account_id,case_ref,pre_clearance_id,owner_ref,expires_at)
@@ -330,6 +351,11 @@ begin
   where a.account_id=p_account for update;
  if v_a.phase_a_at is not null or v_a.auth_attempt_at is not null then
    raise exception using errcode='55000',message='Phase A already attempted';
+ end if;
+ -- Recheck under the profile lock before the irreversible SQL finalizer:
+ -- cancellation in grace or newly created paid rights cannot be overwritten.
+ if research_lifecycle_private.a_strict_unsettled_rights(p_account) then
+   raise exception using errcode='55000',message='Research paid period or historical right requires owner remedy';
  end if;
  v_receipt:=public.finalize_deletion_and_queue_auth_cleanup(p_account);
  if v_receipt->>'phase'<>'auth_pending' or v_receipt->>'account_id'<>p_account::text then

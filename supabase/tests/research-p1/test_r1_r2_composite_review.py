@@ -134,6 +134,10 @@ check("service_role cannot rearm delivered completion to queued",r==("ERR","4250
 r=call("""UPDATE public.notification_outbox SET status='sending',
  updated_at=clock_timestamp() WHERE id=%s RETURNING id""",(target,),role="service_role")
 check("service_role cannot rearm delivered completion to sending",r==("ERR","42501"),r)
+for outcome in ("hard_bounced","suppressed"):
+    r=call("""UPDATE public.notification_outbox SET status=%s,
+     updated_at=clock_timestamp() WHERE id=%s RETURNING status""",(outcome,target),role="service_role")
+    check(f"delivered completion cannot jump to {outcome} outside Resend planner",r==("ERR","42501"),r)
 r=call("""UPDATE public.notification_outbox SET status='complained',
  updated_at=clock_timestamp() WHERE id=%s RETURNING status""",(target,),role="service_role")
 check("actual service_role delivered-to-complained provider transition allowed",
@@ -157,7 +161,7 @@ for column in ("status","attempt_count","next_attempt_at","provider_message_ref"
     check("service_role retains legitimate delivery PATCH field "+column,p is True,p)
 check("staged-to-queued source release trigger still installed",
  scalar("""SELECT count(*) FROM pg_trigger WHERE tgrelid='public.notification_outbox'::regclass
- AND NOT tgisinternal AND tgname='research_p1_deletion_outbox_release_gate'""")>=0)
+ AND NOT tgisinternal AND tgname='research_p1_stage_deletion_completion_email'""")==1)
 check("Research non-dispatchable privacy holds remain not auto-completed",
  scalar("""SELECT count(*) FROM research_lifecycle_private.deletion_auth_cleanup
  WHERE financial_hold_at IS NOT NULL AND phase<>'email_enqueued'""")>=1)

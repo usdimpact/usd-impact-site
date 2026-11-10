@@ -54,9 +54,9 @@ function archived(value = payload(), subscription = base) {
     actor_type: 'provider_webhook', occurred_at: e.occurredAt, metadata: { ...e.metadata },
   };
 }
-function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply } = {}) {
+function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply, invoiceReply } = {}) {
   const originalLibrary = Object.freeze({ product_id: 'read-the-dollar-first-guided-interactive-edition', state: 'active' });
-  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], ledgerReads: 0, library: originalLibrary };
+  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], invoiceReceipts: [], ledgerReads: 0, library: originalLibrary };
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
   ctx.fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -98,6 +98,29 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       });
       ctx.quarantines.push(evidence);
       return quarantineReply ? quarantineReply(ctx, json) : json('99999999-9999-4999-8999-999999999999');
+    }
+    if (u.pathname === '/rest/v1/rpc/record_research_signed_invoice_receipt') {
+      assert.equal(init.method, 'POST');
+      const receipt = JSON.parse(init.body);
+      assert.equal(receipt.p_subscription_id, subscriptionId);
+      assert.equal(receipt.p_event_key.startsWith('lemon-squeezy:'), true);
+      assert.equal(receipt.p_metadata.lemonDataType, 'subscription-invoices');
+      assert.equal(receipt.p_metadata.replayFingerprintVersion, 1);
+      if (invoiceReply) return invoiceReply(ctx, json, receipt);
+      if (ctx.rows.some(r => r.event_key === receipt.p_event_key)) {
+        return json({ action: 'duplicate', event_key: receipt.p_event_key });
+      }
+      ctx.invoiceReceipts.push(receipt);
+      ctx.rows.push({
+        event_key: receipt.p_event_key, subscription_id: subscriptionId,
+        account_id: accountId, product_id: 'research-membership',
+        provider_event_id: receipt.p_provider_event_id,
+        from_state: ctx.current.state, to_state: ctx.current.state,
+        reason: receipt.p_event_name, actor_type: 'provider_webhook',
+        occurred_at: receipt.p_occurred_at,
+        metadata: { ...receipt.p_metadata, researchP1InvoiceReceipt: true },
+      });
+      return json({ action: 'invoice_recorded', event_key: receipt.p_event_key });
     }
     assert.equal(u.pathname, '/rest/v1/rpc/apply_research_membership_transition', 'no other surface may be accessed');
     assert.equal(init.method, 'POST');
@@ -456,11 +479,62 @@ for (const [eventName, fromState, attributes] of [
     });
   }
 }
-await test('ordinary payment success remains ignored, without persisting a fake renewal', async () => {
-  const value = payload(); value.meta.event_name = 'subscription_payment_success';
-  value.data.type = 'subscription-invoices'; value.data.id = 'invoice_fixture';
-  value.data.attributes.subscription_id = 'sub_fixture'; value.data.attributes.status = 'paid';
-  const ctx = fixture(); assert.equal((await ctx.run(value)).action, 'ignored'); ctx.assertReadOnly();
+function invoicePayload(name = 'subscription_payment_success') {
+  const value = payload();
+  value.meta.event_name = name;
+  value.data.type = 'subscription-invoices';
+  value.data.id = 'invoice_fixture';
+  value.data.attributes.subscription_id = 'sub_fixture';
+  value.data.attributes.status = 'paid';
+  return value;
+}
+for (const state of ['active', 'cancelled', 'refunded']) {
+  await test(`signed payment-success after ${state} is a durable non-granting invoice receipt`, async () => {
+    const value = invoicePayload();
+    const ctx = fixture({ state });
+    const before = structuredClone(ctx.current);
+    assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+    assert.equal(ctx.invoiceReceipts.length, 1);
+    assert.equal(ctx.writes.length, 0, 'no subscription/entitlement transition');
+    assert.deepEqual(ctx.current, before);
+    assert.equal(ctx.rows.length, 1);
+    assert.equal(ctx.rows[0].metadata.researchP1InvoiceReceipt, true);
+    assert.equal(ctx.rows[0].from_state, ctx.rows[0].to_state);
+    assert.equal((await ctx.run(value)).action, 'duplicate');
+    assert.equal(ctx.invoiceReceipts.length, 1, 'identical delivery is idempotent');
+  });
+}
+await test('signed partial invoice refund is recorded without prematurely revoking entitlement', async () => {
+  const value = invoicePayload('subscription_payment_refunded');
+  Object.assign(value.data.attributes, {
+    status: 'partial_refund', refunded: false, total: 1000,
+    refunded_amount: 300, refunded_at: null,
+  });
+  const ctx = fixture();
+  assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+  assert.equal(ctx.invoiceReceipts.length, 1);
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.current.state, 'active');
+});
+await test('historical full refund is captured even when current period is later', async () => {
+  const value = invoicePayload('subscription_payment_refunded');
+  Object.assign(value.data.attributes, {
+    status: 'refunded', refunded: true, total: 1000,
+    refunded_amount: 1000, refunded_at: '2026-10-01T00:00:00.000Z',
+    created_at: '2026-08-01T00:00:00.000Z',
+  });
+  const ctx = fixture();
+  assert.equal((await ctx.run(value)).action, 'invoice_recorded');
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.invoiceReceipts.length, 1);
+});
+await test('invoice persistence failure is retryable, never falsely acknowledged', async () => {
+  const ctx = fixture({ state: 'cancelled', invoiceReply: (_ctx, json) =>
+    json({ code: '55000' }, 503) });
+  await assert.rejects(() => ctx.run(invoicePayload()),
+    { code: 'RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', status: 503 });
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.rows.length, 0);
 });
 await test('legacy evidence missing required fields is rejected rather than guessed', async () => {
   const row = archived(); row.metadata = { lemonEventName: 'subscription_updated' };

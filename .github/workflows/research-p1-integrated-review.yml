@@ -99,7 +99,12 @@ jobs:
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"
-          python3 supabase/tests/research-p1/test_research_p1_d3_legacy_claim.py
+          # Reviewer C2: 10 fully independent synthetic account fixtures
+          # in each disposable PG17 model; enforce failed attempt => failed CI.
+          for attempt in $(seq 1 10); do
+            echo "D3_REPLAY attempt ${attempt}/10"
+            python3 supabase/tests/research-p1/test_research_p1_d3_legacy_claim.py
+          done
           # Uninstalled A-strict review overlay: only isolated job-local PG17,
           # after baseline tests so old candidate expectations remain separate.
           python3 - <<'PY'
@@ -179,7 +184,12 @@ jobs:
           # two-user negative cases and Phase A deletion on pinned migrations.
           python3 supabase/tests/research-p1/test_research_p1_ui_locale_combined.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"
-          python3 supabase/tests/research-p1/test_research_p1_d3_legacy_claim.py
+          # Reviewer C2: 10 fully independent synthetic account fixtures
+          # in each disposable PG17 model; enforce failed attempt => failed CI.
+          for attempt in $(seq 1 10); do
+            echo "D3_REPLAY attempt ${attempt}/10"
+            python3 supabase/tests/research-p1/test_research_p1_d3_legacy_claim.py
+          done
           # Only AFTER original UI02/UI03 + parent P1 tests, overlay A-strict.
           # Source-only review SQL; not normal migrations nor hosted Supabase.
           python3 - <<'PY'

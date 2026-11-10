@@ -36,7 +36,7 @@ check("synthetic Phase A created held Auth queue",r and r[0][0]["phase"]=="auth_
 # Test-only synthetic time-warp of a single local row; no production records.
 q("""UPDATE research_lifecycle_private.deletion_auth_cleanup
  SET started_at=clock_timestamp()-interval '25 minutes',
-     next_attempt_at=clock_timestamp()-interval '1 minute',
+     next_attempt_at=clock_timestamp()-interval '5 years',
      financial_hold_first_at=clock_timestamp()-interval '21 minutes',
      financial_hold_at=clock_timestamp()-interval '21 minutes',
      financial_hold_class='auth_intact_cessation_unverified'
@@ -56,11 +56,35 @@ check("both installed candidate routines contain no 24-hour cutoff",
  all("24 hours" not in str(x).lower() for x in func))
 check("both installed candidate routines carry 15-minute rule",
  all("15 minutes" in str(x).lower() for x in func))
-res=q("SELECT account_id,phase FROM public.claim_deletion_auth_cleanup_batch(25)")
-check("20-minute-old clearance cannot re-admit financial hold in legacy batch",
+# An invalid batch is rejected before returning even one account.
+for batch in (0,2,25):
+    try:
+        q("SELECT account_id FROM public.claim_deletion_auth_cleanup_batch(%s)",(batch,))
+        rejected=False
+    except psycopg.Error as exc:
+        rejected=exc.sqlstate=="22023"
+    check(f"legacy Auth-first claim requires exactly 1 (reject {batch})",rejected)
+res=q("SELECT account_id,phase FROM public.claim_deletion_auth_cleanup_batch(1)")
+check("20-minute-old clearance cannot re-admit financial hold in single-account claim",
  all(str(x[0])!=str(a) for x in res),res)
 check("stale rejected lease leaves synthetic Auth identity intact",
  q("SELECT count(*) FROM auth.users WHERE id=%s",(a,))[0][0]==1)
 check("stale rejected lease leaves Auth queue pending",
  q("SELECT phase FROM research_lifecycle_private.deletion_auth_cleanup WHERE account_id=%s",(a,))[0][0]=="auth_pending")
+# Non-vacuous positive control: independently reviewed 14-minute evidence,
+# newer than the 21-minute financial hold, MUST enable precisely this account's
+# ONE legacy claim. Owner-only historical path still remains release NO-GO.
+fresh=q("""SELECT public.record_research_billing_clearance(
+ %s,'provider_api',%s,clock_timestamp()-interval '14 minutes','synthetic-owner')""",
+ (a,"p1-"+a.hex[:12]+"-age14"))
+check("14-minute owner receipt exists",bool(fresh))
+now_clear=q("""SELECT research_lifecycle_private.auth_retirement_hold_reasons(
+ %s,clock_timestamp()-interval '25 minutes',clock_timestamp()-interval '21 minutes')""",(a,))
+check("14-minute clearance eliminates only provider cessation staleness",
+ 'provider_cessation_unverified' not in now_clear[0][0],now_clear[0][0])
+claimed=q("SELECT account_id,phase FROM public.claim_deletion_auth_cleanup_batch(1)")
+check("14-minute clearance admits exactly the single synthetic held account",
+ len(claimed)==1 and str(claimed[0][0])==str(a),claimed)
+check("single-account claim never retires Auth by itself",
+ q("SELECT count(*) FROM auth.users WHERE id=%s",(a,))[0][0]==1)
 print("[P1-D3] "+str(count)+" synthetic D3 legacy cutoff tests PASS; server_version="+str(q("SHOW server_version")[0][0]),flush=True)

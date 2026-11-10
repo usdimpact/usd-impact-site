@@ -88,3 +88,14 @@ jobs:
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"
+          # Uninstalled A-strict review overlay: only isolated job-local PG17,
+          # after baseline tests so old candidate expectations remain separate.
+          python3 - <<'PY'
+          from pathlib import Path
+          import psycopg
+          with psycopg.connect(dbname='ci_review',autocommit=True) as c:
+              c.execute('SET ROLE postgres')
+              c.execute(Path('supabase/tests/research-p1/a-strict-overlay-review.sql').read_text())
+              print('A-STRICT disposable SQL overlay parsed and installed (job-local only)')
+          PY
+          python3 supabase/tests/research-p1/test_a_strict_review.py

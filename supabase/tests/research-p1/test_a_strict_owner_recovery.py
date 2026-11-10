@@ -306,4 +306,4 @@ ok("new hold blocks completion and case rotation",
       (b,case(b),post2,"owner"))[0]=="ERR")
 ok("concurrent financial event never restores Auth or sends email",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==0 and emails(b)==0)
-print(f"[A-STRICT-RECOVERY] {N} disposable PG17 owner-only recovery tests PASS; no hosted operations.",flush=True)
+print(f"[A-STRICT-RECOVERY] {N} disposable PostgreSQL {db('SHOW server_version')} owner-only recovery tests PASS; no hosted operations.",flush=True)

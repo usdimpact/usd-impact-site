@@ -68,7 +68,7 @@ begin
        select 1 from public.research_billing_clearances c
         where c.id=p_clearance and c.account_id=p_account
           and c.verified_at<=v_now
-          and c.verified_at>=v_now-interval '24 hours'
+          and c.verified_at>=v_now-interval '15 minutes'
     ) then
   raise exception using errcode='55000',message='owner cessation custody or expiry invalid';
  end if;
@@ -125,7 +125,7 @@ begin
    or not exists(select 1 from public.research_billing_clearances c
       where c.id=p_clearance and c.account_id=p_account
         and c.verified_at>v_a.authorized_at
-        and c.verified_at<=v_now and c.verified_at>=v_now-interval '24 hours') then
+        and c.verified_at<=v_now and c.verified_at>=v_now-interval '15 minutes') then
   raise exception using errcode='55000',message='supervised case requires new owner reconciliation';
  end if;
  update research_lifecycle_private.a_strict_cases a set
@@ -236,6 +236,20 @@ begin
    and a.auth_attempt_at is null) then
   raise exception using errcode='42501',message='supervised lease mismatch or prior Auth attempt';
  end if;
+ -- D3 15-minute *proposal* in this uninstalled overlay, NOT owner acceptance.
+ -- Parent #1164 still admits 24h; test the stricter pre-Auth bound here.
+ if not exists (
+    select 1 from public.research_billing_clearances c
+    join research_lifecycle_private.a_strict_cases a on a.account_id=c.account_id
+    join research_lifecycle_private.deletion_auth_cleanup q on q.account_id=a.account_id
+    where a.account_id=p_account and a.authorization_id=p_authorization
+      and c.verified_at>=a.phase_a_at
+      and c.verified_at>=pg_catalog.clock_timestamp()-interval '15 minutes'
+      and c.verified_at<=pg_catalog.clock_timestamp()
+      and (q.financial_hold_at is null or c.verified_at>q.financial_hold_at)
+ ) then
+    raise exception using errcode='55000',message='A-strict D3 pre-Auth clearance stale';
+ end if;
  if public.check_deletion_auth_cleanup_billing_fence(p_account,p_lease) is not true then
   raise exception using errcode='55000',message='financial fence refused';
  end if;
@@ -261,6 +275,12 @@ begin
     where q.account_id=p_account and q.lease_id=p_lease
       and q.phase='auth_pending' and q.next_attempt_at>pg_catalog.clock_timestamp())
   and pg_catalog.cardinality(research_lifecycle_private.billing_hold_reasons(p_account))=0
+  -- Do not re-use a previously passed fence when 15 minutes have elapsed.
+  and exists (select 1 from public.research_billing_clearances c
+      where c.account_id=p_account
+        and c.verified_at>=a.phase_a_at
+        and c.verified_at>=pg_catalog.clock_timestamp()-interval '15 minutes'
+        and c.verified_at<=pg_catalog.clock_timestamp())
   and not exists(select 1 from research_lifecycle_private.deletion_billing_incidents i
        where i.account_id=p_account and i.status='open');
  if not found then raise exception using errcode='42501',message='Auth attempt denied'; end if;

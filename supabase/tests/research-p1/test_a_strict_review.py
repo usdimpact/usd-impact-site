@@ -352,16 +352,21 @@ check("owner explicitly replaces stale post-Auth attestation",
 confirmed=q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))
 check("clean post-Auth barrier passes",confirmed[0]=="OK" and confirmed[1]['phase']=='auth_confirmed')
 key="notification:v1:"+hashlib.sha256(("astrict-"+str(d)).encode()).hexdigest()
-outbox=db("""INSERT INTO public.notification_outbox(
+# Read staging inputs from private SQL owner custody, then INSERT using the
+# actual service_role. The completion trigger must stage, not send, this row.
+recipient=db("SELECT lower(btrim(recipient_email)) FROM research_lifecycle_private.deletion_auth_cleanup WHERE account_id=%s",(d,))
+version=db("SELECT floor(extract(epoch from deleted_at)/60)::integer FROM research_lifecycle_private.deletion_auth_cleanup WHERE account_id=%s",(d,))
+staged=q("service_role","""INSERT INTO public.notification_outbox(
  idempotency_key,event_id,message_id,classification,business_object_type,
  business_object_id,state_version,recipient_email_normalized,
  template_id,template_version,provider,payload,status)
- SELECT %s,%s,'account_deletion_completed','transactional_operational',
- 'account_deletion_request',%s,floor(extract(epoch from q.deleted_at)/60)::integer,
- lower(btrim(q.recipient_email)),
- 'account_deletion_completed','v1','resend','{}'::jsonb,'queued'
- FROM research_lifecycle_private.deletion_auth_cleanup q WHERE q.account_id=%s
- RETURNING id""",(key,"synthetic-astrict-"+d.hex,str(d),d))
+ VALUES (%s,%s,'account_deletion_completed','transactional_operational',
+ 'account_deletion_request',%s,%s,%s,
+ 'account_deletion_completed','v1','resend','{}'::jsonb,'queued')
+ RETURNING id""",(key,"synthetic-astrict-"+d.hex,str(d),version,recipient))
+outbox=staged[1] if staged[0]=="OK" else None
+check("O0 completion email INSERT as service_role succeeds only with staging",
+ staged[0]=="OK" and outbox is not None,staged)
 check("clean email becomes staged, not immediately sendable",
  outbox is not None and sendable(d)==0)
 check("direct service_role cannot bypass staged email",
@@ -372,6 +377,11 @@ check("wrong outbox receipt cannot finish",
 finish=q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
  (d,td,dcomp,outbox))
 check("staged email and privacy completion released atomically",finish==("OK",True),finish)
+clean_ids=(state(d) or {}).get('privacy_request_ids',[])
+check('O0 all privacy requests completed after final barrier',
+ bool(clean_ids) and db("SELECT count(*) FROM public.privacy_requests WHERE id=ANY(%s::uuid[]) AND status='completed' AND completed_at IS NOT NULL",(clean_ids,))==len(clean_ids))
+check('O0 A-strict case completed_at persisted after final barrier',
+ db('SELECT completed_at IS NOT NULL FROM research_lifecycle_private.a_strict_cases WHERE account_id=%s',(d,)) is True)
 check("clean released outbox now sendable after both barriers",sendable(d)==1)
 check("clean custody scrubs duplicate email",
  state(d)['phase']=='email_enqueued' and state(d)['recipient_email'] is None)

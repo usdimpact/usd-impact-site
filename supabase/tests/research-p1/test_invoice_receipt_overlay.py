@@ -143,7 +143,7 @@ table_grants=[owner("SELECT has_table_privilege(%s,'research_lifecycle_private.a
 check('no client/service direct conflict-ledger SELECT',table_grants==[False,False,False],table_grants)
 wrong_key=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",
  (sid,'lemon-squeezy:other-provider-id',pid,'b'*64,'d'*64))
-check('conflict custody rejects unrelated event identity',wrong_key==('ERR','22023'),wrong_key)
+check('guarded conflict custody rejects unrelated event before legacy validation',wrong_key==('ERR','42501'),wrong_key)
 wrong_sub=svc("SELECT public.record_research_signed_invoice_conflict(%s,%s,%s,%s,%s)",
  (uuid.uuid4(),ek,pid,'b'*64,'d'*64))
 check('conflict custody rejects absent subscription',wrong_sub==('ERR','P0002'),wrong_sub)

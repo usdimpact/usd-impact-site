@@ -314,13 +314,13 @@ begin
    raise exception using errcode='42501',
      message='completion email identity, original recipient and custody immutable';
  end if;
- -- Delivered complaints and bounces are authoritative later provider
- -- evidence and MUST reach suppression. They never restore queued/sending.
+ -- The actual Resend planner allows email.complained after delivered.
+ -- It explicitly refuses email.bounced/email.suppressed after delivered;
+ -- do not expand the provider transition contract merely via SQL grants.
  if old.status in ('delivered','terminal_failed','hard_bounced',
                    'complained','suppressed','cancelled')
     and new.status is distinct from old.status then
-   if not (old.status='delivered'
-      and new.status in ('complained','hard_bounced','suppressed')) then
+   if not (old.status='delivered' and new.status='complained') then
      raise exception using errcode='42501',
        message='terminal account deletion completion cannot be rearmed';
    end if;

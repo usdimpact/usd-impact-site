@@ -855,8 +855,14 @@ begin
     p_disposition,p_clearance,v_i.last_observed_at,v_q.financial_hold_at,
     session_user);
   if p_disposition='resume' then
-    if p_clearance is null or v_q.phase<>'auth_confirmed'
-       or v_a.auth_attempt_at is null or v_a.auth_observed_at is null
+    if p_clearance is null
+       or not (
+         (v_q.phase='auth_confirmed' and v_a.auth_attempt_at is not null
+            and v_a.auth_observed_at is not null)
+         or (v_q.phase='auth_pending' and v_a.auth_attempt_at is null
+            and v_a.auth_observed_at is null and exists(
+              select 1 from auth.users u where u.id=p_account))
+       )
        or (v_q.lease_id is not null and v_q.next_attempt_at>v_now)
        or research_lifecycle_private.a_strict_unsettled_rights(p_account) then
       raise exception using errcode='55000',message='Auth/rights/lease state forbids resumed deletion';
@@ -865,17 +871,22 @@ begin
       where c.id=p_clearance and c.account_id=p_account for share;
     select r.* into v_r from research_lifecycle_private.a_strict_merchant_receipts r
       where r.clearance_id=p_clearance and r.account_id=p_account
-        and r.case_ref=p_case and r.stage='post_auth' for share;
+        and r.case_ref=p_case
+        and r.stage=case when v_q.phase='auth_pending' then 'pre_auth'
+                         else 'post_auth' end for share;
     if v_c.id is null or v_r.id is null
        or v_r.read_observed_at is distinct from v_c.verified_at
        or v_r.read_observed_at<=v_i.last_observed_at
        or (v_q.financial_hold_at is not null
            and v_r.read_observed_at<=v_q.financial_hold_at)
-       or v_r.read_observed_at<=v_a.auth_observed_at
+       or (v_q.phase='auth_confirmed'
+            and v_r.read_observed_at<=v_a.auth_observed_at)
        or v_r.read_observed_at>v_now
        or v_r.read_observed_at<v_now-interval '15 minutes'
        or not research_lifecycle_private.a_strict_receipt_valid(
-         p_account,p_case,p_clearance,'post_auth',v_a.pre_clearance_id) then
+         p_account,p_case,p_clearance,
+          case when v_q.phase='auth_pending' then 'pre_auth'
+               else 'post_auth' end,v_a.pre_clearance_id) then
       raise exception using errcode='55000',message='post-incident provider evidence invalid or stale';
     end if;
     if not public.resolve_research_deletion_billing_incident(
@@ -885,7 +896,11 @@ begin
     -- Sole writer to reconciled_hold_at. Never reset Auth DELETE intent.
     update research_lifecycle_private.a_strict_cases a
       set reconciled_hold_at=v_now,
-          post_clearance_id=null,post_recorded_at=null
+          post_clearance_id=null,post_recorded_at=null,
+          auth_fenced_at=case when v_q.phase='auth_pending' then null
+                               else a.auth_fenced_at end,
+          last_auth_lease_id=case when v_q.phase='auth_pending' then null
+                                  else a.last_auth_lease_id end
       where a.account_id=p_account;
   else
     -- A documented D2/D4 terminal decision still leaves financial/identity

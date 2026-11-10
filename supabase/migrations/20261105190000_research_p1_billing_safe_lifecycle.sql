@@ -1973,7 +1973,7 @@ create trigger deletion_auth_financial_hold_events_no_truncate
 -- exist without a local footprint. Before ANY Auth retirement step, require a
 -- per-account owner-recorded provider clearance that was verified:
 --   * after database Phase A started (it reflects post-finalization state),
---   * within the last 24 hours (a stale attestation cannot cover new retries),
+--   * within the last 15 minutes (a stale attestation cannot cover new retries),
 --   * after any durable financial hold on this cleanup row,
 -- in addition to the existing local billing hold reasons.
 create or replace function research_lifecycle_private.auth_retirement_hold_reasons(
@@ -1987,7 +1987,7 @@ begin
     select 1 from public.research_billing_clearances c
      where c.account_id=p_account_id
        and c.verified_at >= p_started_at
-       and c.verified_at >= pg_catalog.clock_timestamp() - interval '24 hours'
+       and c.verified_at >= pg_catalog.clock_timestamp() - interval '15 minutes'
        and (p_financial_hold_at is null or c.verified_at > p_financial_hold_at)
   ) then
     v_reasons := pg_catalog.array_append(v_reasons, 'provider_cessation_unverified');

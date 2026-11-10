@@ -531,4 +531,107 @@ check("paid-period hold preserves existing Research entitlement",
  db("""SELECT count(*) FROM public.entitlements WHERE account_id=%s
       AND product_id='research-membership' AND state='active'
       AND ends_at>clock_timestamp()""",(k,))==1)
+# D2/D4 owner-only synthetic reconciliation: a terminal privacy decision
+# records an opaque legal decision but does NOT clear a financial incident,
+# resurrect Auth, send completion email or falsely mark privacy complete.
+m=new_account()
+mp=clear(m,"syn-astrict-mpre-"+m.hex[:12])
+mr=start(m,mp[1])
+check("terminal-review case authorized",mr[0]=="OK",mr)
+mt=mr[1]
+check("terminal-review Phase A",phase(m,mt)[0]=="OK")
+ma=lease(m,mt,'auth')
+check("terminal-review Auth claim",ma[0]=="OK")
+ml=uuid.UUID(ma[1]['lease_id'])
+check("terminal-review pre-Auth fresh inventory",clear(m,"syn-astrict-mfresh-"+m.hex[:12])[0]=="OK")
+check("terminal-review fence",fence(m,mt,ml)==("OK",True))
+check("terminal-review Auth intent",q("postgres",
+  "SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(m,mt,ml))==("OK",True))
+db("DELETE FROM auth.users WHERE id=%s",(m,))
+check("terminal-review Auth retirement observed",q("postgres",
+  "SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(m,mt,ml))[0]=="OK")
+mc=lease(m,mt,'complete')
+check("terminal-review completion claimed",mc[0]=="OK")
+mcl=uuid.UUID(mc[1]['lease_id'])
+check("terminal-review holds account",q("service_role",
+  "SELECT public.a_strict_hold(%s,%s,%s,%s)",
+  (m,mt,mcl,'unknown_payment'))[0]=="OK")
+md="p1-d2-terminal-"+m.hex[:12]
+mf="p1-d4-terminal-"+m.hex[:12]
+mid="p1-terminal-"+m.hex[:12]
+check("service_role cannot adjudicate owner incident",q("service_role",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (m,"p1-"+m.hex[:12],None,mid,md,mf,"terminal_hold"))[0]=="ERR")
+terminal=q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (m,"p1-"+m.hex[:12],None,mid,md,mf,"terminal_hold"))
+check("owner-only terminal decision recorded without release",terminal==("OK","terminal_hold"),terminal)
+check("terminal decision replay is idempotent",q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (m,"p1-"+m.hex[:12],None,mid,md,mf,"terminal_hold"))==("OK","terminal_hold"))
+check("terminal decision refuses changed remedy reference",q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (m,"p1-"+m.hex[:12],None,mid,md,"p1-d4-changed-"+m.hex[:12],"terminal_hold"))[0]=="ERR")
+check("terminal decision is append only",q("postgres",
+  "UPDATE research_lifecycle_private.a_strict_owner_resolutions SET d2_privacy_ref=%s WHERE decision_ref=%s RETURNING decision_ref",
+  ("p1-d2-changed-"+m.hex[:12],mid))[0]=="ERR")
+check("terminal decision leaves financial incident open, privacy uncompleted and email blocked",
+  inc(m)=="open" and privacy_open(m)>=1 and sendable(m)==0
+  and db("SELECT reconciled_hold_at FROM research_lifecycle_private.a_strict_cases WHERE account_id=%s",(m,)) is None)
+
+# Separate clean synthetic Auth-retired case: owner may resume only after
+# independently attested post-HOLD provider inventory. No auto Auth reattempt.
+n=new_account()
+np=clear(n,"syn-astrict-npre-"+n.hex[:12])
+nr=start(n,np[1])
+check("resume-review case authorized",nr[0]=="OK",nr)
+nt=nr[1]
+check("resume-review Phase A",phase(n,nt)[0]=="OK")
+na=lease(n,nt,'auth')
+check("resume-review Auth claim",na[0]=="OK")
+nl=uuid.UUID(na[1]['lease_id'])
+check("resume-review pre-Auth fresh inventory",clear(n,"syn-astrict-nfresh-"+n.hex[:12])[0]=="OK")
+check("resume-review fence",fence(n,nt,nl)==("OK",True))
+check("resume-review Auth intent",q("postgres",
+  "SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(n,nt,nl))==("OK",True))
+db("DELETE FROM auth.users WHERE id=%s",(n,))
+check("resume-review Auth retirement observed",q("postgres",
+  "SELECT public.a_strict_record_auth_observed(%s,%s,%s)",(n,nt,nl))[0]=="OK")
+nc=lease(n,nt,'complete')
+check("resume-review completion claimed",nc[0]=="OK")
+ncl=uuid.UUID(nc[1]['lease_id'])
+check("resume-review financial HOLD persisted",q("service_role",
+  "SELECT public.a_strict_hold(%s,%s,%s,%s)",
+  (n,nt,ncl,'unknown_payment'))[0]=="OK" and inc(n)=="open")
+nd="p1-d2-resume-"+n.hex[:12]
+nf="p1-d4-resume-"+n.hex[:12]
+nid="p1-resume-"+n.hex[:12]
+ncase="p1-"+n.hex[:12]
+check("owner cannot resume using old pre-HOLD clearance",q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (n,ncase,np[1],nid,nd,nf,"resume"))[0]=="ERR")
+newpost=clear(n,"syn-astrict-nposthold-"+n.hex[:12],"post_auth")
+check("post-HOLD, post-Auth scoped provider receipt recorded",newpost[0]=="OK",newpost)
+check("owner cannot resume without D4 reference",q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (n,ncase,newpost[1],nid,nd,None,"resume"))[0]=="ERR")
+resumed=q("postgres","SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (n,ncase,newpost[1],nid,nd,nf,"resume"))
+check("owner reconciles signed-off financial hold after Auth confirmed",resumed==("OK","resume"),resumed)
+check("resume closes incident and writes single reconciliation marker",
+  inc(n)=="resolved" and db("SELECT reconciled_hold_at IS NOT NULL FROM research_lifecycle_private.a_strict_cases WHERE account_id=%s",(n,)) is True)
+check("resume resets any earlier post-Auth clearance",
+  db("SELECT post_clearance_id IS NULL FROM research_lifecycle_private.a_strict_cases WHERE account_id=%s",(n,)) is True)
+check("resume exact owner decision replay is idempotent",q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (n,ncase,newpost[1],nid,nd,nf,"resume"))==("OK","resume"))
+check("conflicting second decision reference denied",q("postgres",
+  "SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
+  (n,ncase,newpost[1],"p1-conflict-"+n.hex[:12],nd,nf,"resume"))[0]=="ERR")
+check("new completion lease cannot release email before renewed post-Auth owner confirmation",
+  sendable(n)==0 and privacy_open(n)>=1)
+check("Auth remains retired and cannot be retried from SQL owner",
+  db("SELECT count(*) FROM auth.users WHERE id=%s",(n,))==0
+  and q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(n,nt,ncl))[0]=="ERR")
+
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

@@ -118,7 +118,10 @@ jobs:
           # deciding whether a previous paid recovery consumed the budget.
           # No current-day run may disappear behind a truncated 30-entry page.
           runs_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news.yml/runs?created=$today&per_page=100")"
-          jq -e '.total_count == (.workflow_runs | length) and .total_count <= 100' <<< "$runs_json" >/dev/null
+          if ! jq -e '.total_count == (.workflow_runs | length) and .total_count <= 100' <<< "$runs_json" >/dev/null; then
+            echo "- HOLD: incomplete current-day Daily run history; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           active_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and (.status != "completed"))] | length' <<< "$runs_json")"
           success_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .status == "completed" and .conclusion == "success")] | length' <<< "$runs_json")"
           failed_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .status == "completed" and .conclusion != "success")] | length' <<< "$runs_json")"

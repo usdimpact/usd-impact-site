@@ -5,6 +5,8 @@ the a-strict-overlay-review.sql DRAFT source overlay."""
 import uuid
 import time
 import psycopg
+import hashlib
+from psycopg.types.json import Jsonb
 
 def conn(autocommit=True):
     return psycopg.connect(dbname="ci_review",host="127.0.0.1",autocommit=autocommit)
@@ -40,8 +42,40 @@ def new_account():
     deletion_requested_at=now()-interval '31 days' WHERE account_id=%s""",(a,))
     return a
 
-def clear(a,tag):
-    return q("postgres","SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp(),'synthetic-owner')",(a,tag))
+def evidence(a,tag,verified, *, mode="live", store="41", customer_digest=None,
+             complete=True):
+    return {
+        "store_id":store, "product_key":"research-membership", "mode":mode,
+        "customer_scope_digest":customer_digest or hashlib.sha256(str(a).encode()).hexdigest(),
+        "inventory_digest":hashlib.sha256(tag.encode()).hexdigest(),
+        "receipt_digest":hashlib.sha256((tag+"-owner-custody").encode()).hexdigest(),
+        "read_observed_at":verified.isoformat(),
+        "subscription_pages":1, "invoice_pages":1, "order_pages":1, "checkout_pages":1,
+        "subscriptions_terminal":True,"invoices_settled":True,
+        "checkout_closed":True,"no_retries":True,
+        "no_unknown_provider_objects":complete,
+    }
+
+def attest(a,tag,clearance,stage="pre_auth",*,mode="live",store="41",
+           customer_digest=None,complete=True):
+    observed=db("SELECT verified_at FROM public.research_billing_clearances WHERE id=%s",(clearance,))
+    if observed is None: return ("ERR","no clearance")
+    capsule=evidence(a,tag,observed,mode=mode,store=store,
+                     customer_digest=customer_digest,complete=complete)
+    return q("postgres",
+      "SELECT public.a_strict_owner_record_merchant_receipt(%s,%s,%s,%s,%s)",
+      (a,"p1-"+a.hex[:12],clearance,stage,Jsonb(capsule)))
+
+def clear(a,tag,stage="pre_auth"):
+    # Sanitize all public verification_reference values: opaque, never PII.
+    ref="p1-"+hashlib.sha256(tag.encode()).hexdigest()[:24]
+    receipt=q("postgres",
+      "SELECT public.record_research_billing_clearance(%s,'provider_api',%s,clock_timestamp(),'synthetic-owner')",
+      (a,ref))
+    if receipt[0]!="OK": return receipt
+    att=attest(a,tag,receipt[1],stage)
+    if att[0]!="OK": return att
+    return receipt
 
 def start(a,ref):
     return q("postgres","SELECT public.a_strict_authorize(%s,%s,%s,'synthetic-owner',clock_timestamp()+interval '40 minutes')",(a,"p1-"+a.hex[:12],ref))
@@ -137,7 +171,7 @@ check("owner cannot certify pre-Auth evidence as post-Auth",
  q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",
    (a,token,pre,"p1-"+a.hex[:12]))[0]=="ERR")
 time.sleep(0.03)
-post=clear(a,"syn-astrict-post-"+a.hex[:12])
+post=clear(a,"syn-astrict-post-"+a.hex[:12],"post_auth")
 check("post-Auth clearance recorded",post[0]=="OK",post)
 check("ambiguous merchant invoices refuse post-Auth clearance",
  q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,false)",
@@ -254,7 +288,7 @@ dcomp=uuid.UUID(r[1]['lease_id'])
 check("cannot confirm before post-Auth read",
  q("service_role","SELECT public.a_strict_confirm_release(%s,%s,%s)",(d,td,dcomp))[0]=="ERR")
 time.sleep(.03)
-post_d=clear(d,"syn-astrict-dpost-"+d.hex[:12])
+post_d=clear(d,"syn-astrict-dpost-"+d.hex[:12],"post_auth")
 check("clean post-Auth evidence",post_d[0]=="OK")
 check("owner explicitly marks all merchant paths as reviewed",
  q("postgres","SELECT public.a_strict_owner_post_auth_clearance(%s,%s,%s,%s,true,true,true)",

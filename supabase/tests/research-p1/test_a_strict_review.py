@@ -283,6 +283,41 @@ check("Auth remains intact when payment commits before intent",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(c,))==1)
 check("no completion email on refused post-fence payment",sendable(c)==0)
 
+# Signed payment after a durable Auth DELETE intent but BEFORE external Auth
+# DELETE. This is precisely the inter-system race: DB must retain an open
+# incident, refuse retrospective SQL acknowledgement, preserve Auth and keep
+# the final email nondispatchable. No external Auth call is simulated here.
+after_intent=new_account()
+ai_pre=clear(after_intent,"syn-astrict-ai-pre-"+after_intent.hex[:12])
+ai_auth=start(after_intent,ai_pre[1])
+check("after-intent payment account owner authorized",ai_auth[0]=="OK")
+ai_token=ai_auth[1]
+check("after-intent account Phase A",phase(after_intent,ai_token)[0]=="OK")
+ai_lease=lease(after_intent,ai_token,'auth')
+check("after-intent single-account lease",ai_lease[0]=="OK")
+ai_id=uuid.UUID(ai_lease[1]['lease_id'])
+check("after-intent fresh owner merchant read",
+ clear(after_intent,"syn-astrict-ai-fresh-"+after_intent.hex[:12])[0]=="OK")
+check("after-intent SQL fence",fence(after_intent,ai_token,ai_id)==("OK",True))
+check("after-intent durable Auth DELETE intent",
+ q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",
+ (after_intent,ai_token,ai_id))==("OK",True))
+ai_paid=q("service_role",
+ "SELECT public.record_research_paid_binding_refusal('lemon-squeezy',%s,%s,%s,%s)",
+ ("syn-astrict-ai-paid-"+after_intent.hex[:12],after_intent,
+  "syn-astrict-ai-checkout-"+after_intent.hex[:12],"SIGNED_PAID_BINDING_REFUSED"))
+check("after Auth intent signed payment creates durable open incident",
+ ai_paid[0]=="OK" and inc(after_intent)=="open",ai_paid)
+check("payment after intent blocks Auth observation and final completion",
+ q("postgres","SELECT public.a_strict_record_auth_observed(%s,%s,%s)",
+ (after_intent,ai_token,ai_id))[0]=="ERR")
+check("payment after intent preserves currently active Auth identity",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(after_intent,))==1)
+check("payment after intent leaves privacy request pending",
+ privacy_open(after_intent)>=1)
+check("payment after intent does not enqueue dispatchable completion email",
+ sendable(after_intent)==0)
+
 # Clean synthetic positive path and real outbox trigger behaviour: both
 # post-Auth SQL barriers run before staged email may become dispatchable.
 import hashlib
@@ -369,12 +404,25 @@ check("direct service_role cannot bypass staged email",
 check("wrong outbox receipt cannot finish",
  q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
  (d,td,dcomp,uuid.uuid4()))[0]=="ERR")
+# Preserve the private custody IDs before finalizer atomically scrubs them.
+clean_privacy_ids=state(d)["privacy_request_ids"]
+check("clean path has durable pending privacy request IDs before finish",
+ len(clean_privacy_ids)>=1 and privacy_open(d)>=1)
 finish=q("service_role","SELECT public.a_strict_finish_release(%s,%s,%s,%s)",
  (d,td,dcomp,outbox))
 check("staged email and privacy completion released atomically",finish==("OK",True),finish)
 check("clean released outbox now sendable after both barriers",sendable(d)==1)
 check("clean custody scrubs duplicate email",
  state(d)['phase']=='email_enqueued' and state(d)['recipient_email'] is None)
+check("successful completion records owner case completed_at",
+ db("SELECT completed_at IS NOT NULL FROM research_lifecycle_private.a_strict_cases WHERE account_id=%s",(d,)) is True)
+check("successful completion updates tracked privacy requests to completed",
+ db("""SELECT count(*) FROM public.privacy_requests
+      WHERE id=ANY(%s::uuid[]) AND status='completed' AND completed_at IS NOT NULL""",
+    (clean_privacy_ids,))==len(clean_privacy_ids))
+check("successful completion clears private request-ID custody without deleting history",
+ state(d)["privacy_request_ids"]==[])
+
 # Actual TWO-CONNECTION synthetic worker contention. Both callers race to
 # lease one account; profile/q locks must permit only one unexpired lease.
 from concurrent.futures import ThreadPoolExecutor

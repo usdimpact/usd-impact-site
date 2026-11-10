@@ -103,7 +103,7 @@ function queuedFetch(responses) {
     }], 201),
     jsonResponse([{ id: 'outbox-1', status: 'accepted', provider_message_ref: emailId }]),
     jsonResponse([{ id: 'outbox-1', status: 'delivered', provider_message_ref: emailId }]),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-1', status: 'processed', attempt_count: 1 }]),
   ]);
   const response = responseMock();
   await handleResendWebhook(requestFor(payload), response, { environment, fetchImpl, nowMs });
@@ -113,6 +113,9 @@ function queuedFetch(responses) {
   assert.equal(calls.length, 4);
   assert.match(calls[0].url, /webhook_receipts\?on_conflict=/);
   assert.equal(calls[0].body.provider, 'resend');
+  assert.equal(calls[0].headers.apikey, environment.SUPABASE_SECRET_KEY);
+  assert.equal(Object.hasOwn(calls[0].headers, 'Authorization'), false,
+    'opaque sb_secret_ must never be sent as Bearer JWT');
   assert.equal(calls[0].body.provider_event_id, svixId);
   assert.equal(calls[0].body.payload_sha256, payloadSha256);
   assert.equal(calls[1].method, 'GET');
@@ -235,7 +238,7 @@ function queuedFetch(responses) {
       status: 'received',
       attempt_count: 1,
     }], 201),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-untracked', status: 'ignored', attempt_count: 1 }]),
   ]);
   const response = responseMock();
   await handleResendWebhook(requestFor(untrackedPayload), response, { environment, fetchImpl, nowMs });
@@ -259,7 +262,7 @@ function queuedFetch(responses) {
       attempt_count: 1,
     }], 201),
     jsonResponse({ message: 'temporary database failure' }, 503),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-failure', status: 'failed', attempt_count: 1 }]),
   ]);
   const response = responseMock();
   await handleResendWebhook(requestFor(payload), response, { environment, fetchImpl, nowMs });

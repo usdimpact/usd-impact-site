@@ -54,6 +54,15 @@ function database(options = {}) {
           db.options.failFinishOnce = false;
           return json({}, 503);
         }
+        // Inject a competing writer just before PostgREST reevaluates the
+        // conditional status/version filters (the actual row-lock behavior).
+        if (db.options.beforeReceiptPatch) {
+          await db.options.beforeReceiptPatch(db, row, body, url.searchParams);
+        }
+        if (['status', 'attempt_count'].some((field) =>
+          url.searchParams.has(field) && url.searchParams.get(field) !== `eq.${row[field]}`)) {
+          return json([]);
+        }
         Object.assign(row, body);
         return request.headers.Prefer === 'return=representation' ? json([clone(row)]) : json(null, 204);
       }
@@ -272,6 +281,49 @@ test('processed duplicate does not repeat an outbox write', async () => {
   assert.equal(result.parsed.duplicate, true);
   assert.equal(db.patchCount, patches);
 });
+test('receipt retry must not resurrect an already completed receipt', async () => {
+  const db = database();
+  const first = await invoke(db);
+  assert.equal(first.statusCode, 200);
+  const receipt = [...db.receipts.values()][0];
+  receipt.status = 'failed'; // stale retry snapshot
+  const priorOutboxPatches = db.patchCount;
+  db.options.beforeReceiptPatch = async (_store, current, body) => {
+    if (body.status === 'received') current.status = 'processed';
+  };
+  const retry = await invoke(db);
+  assert.equal(retry.statusCode, 200);
+  assert.equal(retry.parsed.duplicate, true);
+  assert.equal(receipt.status, 'processed', 'a stale duplicate must never reset terminal receipt');
+  assert.equal(db.patchCount, priorOutboxPatches, 'duplicate must not reprocess outbox');
+});
+
+test('stale failure must not overwrite a concurrently processed receipt', async () => {
+  const db = database({ updateHttpError: 503 });
+  db.options.beforeReceiptPatch = async (_store, receipt, body) => {
+    if (body.status === 'failed') receipt.status = 'processed';
+  };
+  const result = await invoke(db);
+  assert.equal(result.statusCode, 500);
+  const receipt = [...db.receipts.values()][0];
+  assert.equal(receipt.status, 'processed');
+  assert.equal(receipt.attempt_count, 1);
+});
+
+test('a stale completion must not acknowledge another attempt as processed', async () => {
+  const db = database();
+  db.options.beforeReceiptPatch = async (_store, receipt, body) => {
+    if (body.status === 'processed') receipt.attempt_count += 1;
+  };
+  const result = await invoke(db);
+  assert.equal(result.statusCode, 503);
+  assert.equal(result.parsed.code, 'WEBHOOK_RECEIPT_CONTENDED');
+  const receipt = [...db.receipts.values()][0];
+  assert.equal(receipt.status, 'received');
+  assert.equal(receipt.attempt_count, 2);
+  assert.equal(db.rows[0].status, 'delivered');
+});
+
 test('retry after receipt persistence failure preserves a later complaint', async () => {
   const db = database({ failFinishOnce: true });
   assert.equal((await invoke(db)).statusCode, 500);

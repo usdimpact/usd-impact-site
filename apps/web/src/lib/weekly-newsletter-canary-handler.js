@@ -22,10 +22,12 @@ async function boundedFetch(input, options = {}) {
   return fetch(url.toString(), { ...options, redirect: 'error', signal: AbortSignal.timeout(10000) });
 }
 
-async function readRows(environment, query) {
+export async function readWeeklyCanaryOutboxRows(environment, query, fetchImpl = boundedFetch) {
   const config = readSupabaseServerConfig(environment, { requireSecret: true });
-  const response = await boundedFetch(`${CANARY_DATABASE}/rest/v1/notification_outbox?${query}`, {
-    headers: { Accept: 'application/json', apikey: config.secretKey, Authorization: `Bearer ${config.secretKey}` },
+  // The modern Supabase sb_secret_ key authenticates at the API gateway; it
+  // must not be forwarded as a non-JWT Authorization: Bearer value.
+  const response = await fetchImpl(`${CANARY_DATABASE}/rest/v1/notification_outbox?${query}`, {
+    headers: { Accept: 'application/json', apikey: config.secretKey },
   });
   if (!response.ok) throw new WeeklyCanaryError('CANARY_STATE_UNAVAILABLE');
   const rows = await response.json();
@@ -47,8 +49,8 @@ const runtimePorts = Object.freeze({
   async readState({ email, environment }) {
     const prefix = `recipient_email_normalized=eq.${encodeURIComponent(email)}&select=status&limit=2`;
     const [weekly, confirmations] = await Promise.all([
-      readRows(environment, `${prefix}&template_id=eq.weekly_newsletter`),
-      readRows(environment, `${prefix}&template_id=eq.marketing_opt_in_confirmation&payload->>purpose=eq.weekly_newsletter`),
+      readWeeklyCanaryOutboxRows(environment, `${prefix}&template_id=eq.weekly_newsletter`),
+      readWeeklyCanaryOutboxRows(environment, `${prefix}&template_id=eq.marketing_opt_in_confirmation&payload->>purpose=eq.weekly_newsletter`),
     ]);
     return { weekly, confirmations };
   },

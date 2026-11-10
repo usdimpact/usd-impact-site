@@ -1,0 +1,84 @@
+name: Integrated no-send webhook and Supabase contracts
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/web/src/lib/resend-webhook-handler.js'
+      - 'apps/web/src/lib/supabase-server.js'
+      - 'apps/web/src/lib/guided-supabase-server.js'
+      - 'apps/web/src/lib/*email*.js'
+      - 'apps/web/src/lib/marketing-*.js'
+      - 'apps/web/src/lib/waitlist-*.js'
+      - 'apps/web/scripts/test-*.mjs'
+      - '.github/workflows/qa-integrated-webhook-supabase-no-send.yml'
+      - 'docs/operations/qa-integrated-webhook-supabase-no-send-2026-10-29.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integrated-no-send-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  integrated-offline-contracts:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout proposed integration snapshot without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies without audit or fund side effects
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Preflight — no runtime credentials or send-capable inputs
+        run: |
+          test "$GITHUB_EVENT_NAME" = "pull_request"
+          test "$GITHUB_BASE_REF" = "main"
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${DEV_POSTGREST_SECRET_KEY:-}"
+          test -z "${DEV_PGPASSWORD:-}"
+          node --check scripts/webhook-postgrest-cas-qa.mjs
+          node --check src/lib/resend-webhook-handler.js
+          node --check src/lib/supabase-server.js
+          node --check src/lib/guided-supabase-server.js
+      - name: Offline CAS primitive and signed webhook concurrency
+        run: |
+          node scripts/test-webhook-postgrest-cas-qa.mjs
+          node scripts/test-resend-webhook-function.mjs
+          node scripts/test-resend-webhook-correlation-race.mjs
+          node scripts/test-resend-webhook-atomic-update.mjs
+      - name: Offline account, Guided Edition and Auth contracts
+        run: |
+          node scripts/test-supabase-foundation.mjs
+          node scripts/test-guided-supabase-server.mjs
+          node scripts/test-supabase-auth.mjs
+      - name: Offline governed newsletter and progress contracts
+        run: |
+          node scripts/test-weekly-newsletter-dispatch.mjs
+          node scripts/test-progress-email-dispatch.mjs
+          node scripts/test-marketing-email-preferences.mjs
+          node scripts/test-progress-email-readiness.mjs
+          node scripts/test-weekly-newsletter-canary-handler.mjs
+      - name: Offline launch, opt-in and unsubscribe contracts
+        run: |
+          node scripts/test-launch-email-dispatch-runtime.mjs
+          node scripts/test-marketing-opt-in-readiness.mjs
+          node scripts/test-waitlist-readiness.mjs
+          node scripts/test-marketing-opt-in-delivery.mjs
+          node scripts/test-waitlist-unsubscribe.mjs
+          node scripts/test-waitlist-unsubscribe-email-integration.mjs

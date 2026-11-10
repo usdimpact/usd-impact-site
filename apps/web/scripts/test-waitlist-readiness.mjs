@@ -35,6 +35,12 @@ function jsonResponse(body, status = 200) {
 function queueFetch(responses) {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
+    const parsed = new URL(url);
+    assert.equal(parsed.origin, `https://${WAITLIST_DEVELOPMENT_PROJECT_REF}.supabase.co`);
+    assert.ok(parsed.pathname.startsWith('/rest/v1/'));
+    assert.equal(options.headers?.apikey, 'sb_secret_12345678901234567890');
+    assert.equal(Object.hasOwn(options.headers || {}, 'Authorization'), false,
+      'Waitlist REST must use apikey only for opaque sb_secret_');
     calls.push({
       url: String(url),
       method: options.method || 'GET',
@@ -204,7 +210,8 @@ const developmentEnvironment = {
   assert.equal(calls[1].body.consent_record_id, consentId);
   assert.equal(calls[1].body.consent_purpose, WAITLIST_CONSENT_PURPOSE);
   assert.equal(calls[1].body.consent_checked_at, capturedAt);
-  assert.equal(calls[0].headers.Authorization, `Bearer ${developmentEnvironment.SUPABASE_SECRET_KEY}`);
+  assert.equal(calls[0].headers.apikey, developmentEnvironment.SUPABASE_SECRET_KEY);
+  assert.equal(Object.hasOwn(calls[0].headers, 'Authorization'), false);
 
   const updates = queueFetch([
     jsonResponse([{ id: state.outbox.id, status: 'sending', attempt_count: 1 }]),

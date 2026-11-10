@@ -1,0 +1,47 @@
+name: Consent and launch PostgREST opaque-key contracts
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/launch-email-dispatch-ledger.js'
+      - 'apps/web/src/lib/marketing-opt-in-readiness.js'
+      - 'apps/web/src/lib/waitlist-readiness.js'
+      - 'apps/web/scripts/test-launch-email-dispatch-runtime.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-readiness.mjs'
+      - 'apps/web/scripts/test-waitlist-readiness.mjs'
+      - '.github/workflows/consent-launch-rest-opaque-headers.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-consent-outbox-headers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout reviewed code without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Syntax and offline consent/outbox regression
+        run: |
+          node --check src/lib/launch-email-dispatch-ledger.js
+          node --check src/lib/marketing-opt-in-readiness.js
+          node --check src/lib/waitlist-readiness.js
+          node --check scripts/test-launch-email-dispatch-runtime.mjs
+          node --check scripts/test-marketing-opt-in-readiness.mjs
+          node --check scripts/test-waitlist-readiness.mjs
+          node scripts/test-launch-email-dispatch-runtime.mjs
+          node scripts/test-marketing-opt-in-readiness.mjs
+          node scripts/test-waitlist-readiness.mjs

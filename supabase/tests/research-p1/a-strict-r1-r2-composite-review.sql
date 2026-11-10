@@ -320,6 +320,15 @@ begin
    raise exception using errcode='42501',
      message='completion email identity, original recipient and custody immutable';
  end if;
+ -- A provider-accepted completion is already outside our send boundary;
+ -- requeueing it may send a second "deleted" acknowledgement. Other status
+ -- transitions (delivered, complaint, terminal failure) remain possible.
+ if old.message_id='account_deletion_completed'
+    and old.status='accepted'
+    and new.status in ('queued','sending','retry_scheduled') then
+   raise exception using errcode='42501',
+     message='provider-accepted account deletion mail cannot be rearmed';
+ end if;
  -- The actual Resend planner allows email.complained after delivered.
  -- It explicitly refuses email.bounced/email.suppressed after delivered;
  -- do not expand the provider transition contract merely via SQL grants.

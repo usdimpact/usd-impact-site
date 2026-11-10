@@ -148,8 +148,12 @@ const preflightMock = [
   '        esac',
   '      elif [ "$2" = "repos/$GITHUB_REPOSITORY" ]; then',
   '        printf "main\\n"',
-  '      elif [[ "$2" == *"/actions/workflows/daily-news.yml/runs?"* ]]; then',
-  '        printf \'{"workflow_runs":[{"created_at":"2026-10-30T09:17:00Z","status":"in_progress","conclusion":null,"event":"schedule"}]}\\n\'',
+  "      elif [[ \"$2\" == *\"/actions/workflows/daily-news.yml/runs?created=\"* ]]; then",
+  "        if [ \"$MOCK_RUN_HISTORY_INCOMPLETE\" = \"true\" ]; then",
+  "          printf '{\"total_count\":101,\"workflow_runs\":[]}\\n'",
+  "        else",
+  "          printf '{\"total_count\":1,\"workflow_runs\":[{\"created_at\":\"2026-10-30T09:17:00Z\",\"status\":\"in_progress\",\"conclusion\":null,\"event\":\"schedule\"}]}\\n'",
+  "        fi",
   '      else return 94; fi ;;',
   '    workflow) printf "MOCK_UNAUTHORIZED_DISPATCH\\n" >&2; return 97 ;;',
   '    *) return 94 ;;',
@@ -206,6 +210,7 @@ try {
         MOCK_PR_FULL: hundredUnrelated, MOCK_PR_ALL_FULL: scenario.prAllFull ? 'true' : 'false',
         MOCK_PR_ERROR_PAGE: scenario.prErrorPage ?? '',
         MOCK_PR_BAD_PAGE: scenario.prBadPage ?? '',
+        MOCK_RUN_HISTORY_INCOMPLETE: scenario.runHistoryIncomplete ? 'true' : 'false',
         GH_TOKEN: 'offline-fixture-not-a-real-token',
       },
     });
@@ -234,8 +239,10 @@ const backstopPreflight = backstop.match(
 assert.ok(backstopPreflight);
 const backstopShellForMock = backstopPreflight[1].split('\n')
   .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
-const backstopScenarios = preflightCases.filter((caseItem) => caseItem.weekday !== '6'
-  && caseItem.event !== 'workflow_dispatch');
+const backstopScenarios = [...preflightCases.filter((caseItem) => caseItem.weekday !== '6'
+  && caseItem.event !== 'workflow_dispatch'),
+  { label: 'incomplete current-day run history', status: '404',
+    runHistoryIncomplete: true, exit: 1 }];
 const backstopTemp = await mkdtemp(join(tmpdir(), 'usd-daily-backstop-preflight-offline-'));
 try {
   for (const scenario of backstopScenarios) {
@@ -252,6 +259,7 @@ try {
         MOCK_PR_FULL: hundredUnrelated, MOCK_PR_ALL_FULL: scenario.prAllFull ? 'true' : 'false',
         MOCK_PR_ERROR_PAGE: scenario.prErrorPage ?? '',
         MOCK_PR_BAD_PAGE: scenario.prBadPage ?? '',
+        MOCK_RUN_HISTORY_INCOMPLETE: scenario.runHistoryIncomplete ? 'true' : 'false',
         GH_TOKEN: 'offline-fixture-not-a-real-token',
       },
     });
@@ -276,7 +284,7 @@ try {
 } finally {
   await rm(backstopTemp, { recursive: true, force: true });
 }
-console.log('Daily recovery backstop: 16 offline duplicate/complete-page/negative tests PASS.');
+console.log('Daily recovery backstop: 17 offline duplicate/complete-page/negative tests PASS.');
 
 const pollStep = workflow.match(
   /      - name: Poll background news generation\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Import as published content)/,
@@ -434,7 +442,7 @@ assert.match(
 );
 assert.match(
   backstop,
-  /actions\/workflows\/daily-news\.yml\/runs\?per_page=30/,
+  /actions\/workflows\/daily-news\.yml\/runs\?created=\$today&per_page=100[\s\S]*\.total_count == \(\.workflow_runs \| length\) and \.total_count <= 100/,
   'the backstop must inspect current-day Daily runs before dispatching recovery',
 );
 assert.match(

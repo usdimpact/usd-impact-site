@@ -88,15 +88,20 @@ export async function reviewSupervisedAuth(input, services) {
   need(auth, ['get', 'deleteUser']);
   const row = await dbCall(db, 'claim', { ...ctx, purpose: 'auth' }, 'ASTRICT_LEASE_REFUSED');
   const leaseId = validLease(row, ctx, 'auth_pending');
-  let fenced;
-  try { fenced = await db.fence({ ...ctx, leaseId }); }
-  catch {
-    await persistHold(ctx, db, leaseId, 'unknown_payment');
-    fail('ASTRICT_FENCE_REFUSED');
-  }
-  if (fenced !== true) {
-    await persistHold(ctx, db, leaseId, 'unknown_payment');
-    fail('ASTRICT_FENCE_REFUSED');
+  // A prior attempt may already have reached Auth. Never re-arm the SQL
+  // pre-DELETE fence or issue DELETE: inspect Auth and reconcile this lease
+  // only. SQL a_strict_fence intentionally refuses any second attempt.
+  if (!row.prior_auth_attempt) {
+    let fenced;
+    try { fenced = await db.fence({ ...ctx, leaseId }); }
+    catch {
+      await persistHold(ctx, db, leaseId, 'unknown_payment');
+      fail('ASTRICT_FENCE_REFUSED');
+    }
+    if (fenced !== true) {
+      await persistHold(ctx, db, leaseId, 'unknown_payment');
+      fail('ASTRICT_FENCE_REFUSED');
+    }
   }
   const before = await inspectAuth(ctx, db, auth, leaseId);
   if (row.prior_auth_attempt) {

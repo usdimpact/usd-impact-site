@@ -59,7 +59,7 @@ mutation_denied("queued completion template immutable",
 mutation_denied("queued completion state version immutable",
   "state_version=%s",(version+1,))
 mutation_denied("queued completion idempotency key immutable",
-  "idempotency_key=%s",("notification:v1:"+uuid.uuid4().hex,))
+  "idempotency_key=%s",("notification:v1:"+uuid.uuid4().hex+uuid.uuid4().hex,))
 mutation_denied("queued completion payload immutable",
   "payload=%s::jsonb",('{"synthetic":"redirect"}',))
 check("adversarial rollback did not change canonical recipient",
@@ -94,7 +94,7 @@ with connection() as c:
          'synthetic@invalid.example','ordinary','v1',
          'resend','{}'::jsonb,'queued'
        ) RETURNING id
-    """,("notification:v1:"+uuid.uuid4().hex,"synthetic-spoof-"+uuid.uuid4().hex,
+    """,("notification:v1:"+uuid.uuid4().hex+uuid.uuid4().hex,"synthetic-spoof-"+uuid.uuid4().hex,
          owner,version)).fetchone()[0]
 check("ordinary queued synthetic notification created",spoof is not None)
 

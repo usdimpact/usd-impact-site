@@ -592,7 +592,15 @@ begin
    or pg_catalog.cardinality(research_lifecycle_private.billing_hold_reasons(p_account))>0
    or exists(select 1 from research_lifecycle_private.deletion_billing_incidents i
       where i.account_id=p_account
-        and (i.status='open' or i.last_observed_at>=v_c.verified_at)) then
+        and (i.status='open' or i.last_observed_at>=v_c.verified_at
+           or not exists(
+             select 1 from research_lifecycle_private.a_strict_owner_resolutions d
+             where d.account_id=i.account_id and d.case_ref=v_a.case_ref
+               and d.disposition='resume'
+               and d.incident_last_observed_at=i.last_observed_at
+               and d.decision_ref=i.resolution_reference
+               and d.clearance_id=i.resolution_clearance_id
+           ))) then
   raise exception using errcode='55000',message='post-Auth financial completion barrier held';
  end if;
  return true;
@@ -740,6 +748,41 @@ create trigger a_strict_owner_resolutions_no_truncate before truncate
  on research_lifecycle_private.a_strict_owner_resolutions
  for each statement execute function research_lifecycle_private.reject_append_only_change();
 
+-- B1: deny legacy/source resolver status transition without an owner
+-- ledger decision for the same case and incident generation.
+create function research_lifecycle_private.a_strict_require_incident_decision()
+returns trigger language plpgsql security definer set search_path='' as $incident_decision$
+declare v_case text;
+begin
+  if new.status='resolved' and (
+      old.status is distinct from new.status
+      or old.resolution_reference is distinct from new.resolution_reference
+      or old.resolution_clearance_id is distinct from new.resolution_clearance_id
+    ) then
+    select a.case_ref into v_case
+      from research_lifecycle_private.a_strict_cases a
+      where a.account_id=new.account_id;
+    if found and not exists (
+       select 1 from research_lifecycle_private.a_strict_owner_resolutions d
+       where d.account_id=new.account_id and d.case_ref=v_case
+         and d.incident_last_observed_at=old.last_observed_at
+         and d.disposition='resume'
+         and d.decision_ref=new.resolution_reference
+         and d.clearance_id=new.resolution_clearance_id
+    ) then
+      raise exception using errcode='42501',
+        message='supervised incident cannot resolve without owner D2/D4 decision';
+    end if;
+  end if;
+  return new;
+end;
+$incident_decision$;
+revoke all on function research_lifecycle_private.a_strict_require_incident_decision()
+  from public,anon,authenticated,service_role;
+create trigger a_strict_require_incident_decision
+ before update on research_lifecycle_private.deletion_billing_incidents
+ for each row execute function research_lifecycle_private.a_strict_require_incident_decision();
+
 -- Owner SQL session ONLY. The worker, service_role and web client cannot call
 -- this entry point. An owner-chosen terminal_hold is a non-destructive legal
 -- record: it DOES NOT clear the incident, perform Auth deletion, mark privacy
@@ -804,6 +847,13 @@ begin
   if v_i.status<>'open' then
     raise exception using errcode='55000',message='incident is no longer open';
   end if;
+  insert into research_lifecycle_private.a_strict_owner_resolutions
+    (decision_ref,account_id,case_ref,d2_privacy_ref,d4_remedy_ref,
+     disposition,clearance_id,incident_last_observed_at,financial_hold_at,
+     actor_session_role)
+  values(p_decision_ref,p_account,p_case,p_d2_privacy_ref,p_d4_remedy_ref,
+    p_disposition,p_clearance,v_i.last_observed_at,v_q.financial_hold_at,
+    session_user);
   if p_disposition='resume' then
     if p_clearance is null or v_q.phase<>'auth_confirmed'
        or v_a.auth_attempt_at is null or v_a.auth_observed_at is null
@@ -844,13 +894,6 @@ begin
       raise exception using errcode='55000',message='terminal decision cannot certify merchant cessation';
     end if;
   end if;
-  insert into research_lifecycle_private.a_strict_owner_resolutions
-    (decision_ref,account_id,case_ref,d2_privacy_ref,d4_remedy_ref,
-     disposition,clearance_id,incident_last_observed_at,financial_hold_at,
-     actor_session_role)
-  values(p_decision_ref,p_account,p_case,p_d2_privacy_ref,p_d4_remedy_ref,
-    p_disposition,p_clearance,v_i.last_observed_at,v_q.financial_hold_at,
-    session_user);
   return p_disposition;
 end;
 $reconcile$;

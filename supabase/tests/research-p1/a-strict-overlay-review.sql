@@ -850,7 +850,7 @@ begin
      actor_session_role)
   values(p_decision_ref,p_account,p_case,p_d2_privacy_ref,p_d4_remedy_ref,
     p_disposition,p_clearance,v_i.last_observed_at,v_q.financial_hold_at,
-    pg_catalog.session_user);
+    session_user);
   return p_disposition;
 end;
 $reconcile$;

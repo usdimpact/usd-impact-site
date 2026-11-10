@@ -89,9 +89,9 @@ with connection() as c:
          recipient_email_normalized,template_id,template_version,
          provider,payload,status
        ) VALUES(
-         %s,%s,'synthetic_ordinary_notification','transactional_operational',
+         %s,%s,'synthetic_ordinary_notification','operational',
          'account_deletion_request',%s,%s,
-         'synthetic@invalid.example','ordinary','v1',
+         'synthetic@invalid.example','waitlist_confirmation','v1',
          'resend','{}'::jsonb,'queued'
        ) RETURNING id
     """,("notification:v1:"+uuid.uuid4().hex+uuid.uuid4().hex,"synthetic-spoof-"+uuid.uuid4().hex,
@@ -103,6 +103,7 @@ with connection(autocommit=False) as c:
         c.execute("SET ROLE service_role")
         c.execute("""UPDATE public.notification_outbox
          SET message_id='account_deletion_completed',
+             classification='transactional_operational',
              template_id='account_deletion_completed',
              recipient_email_normalized=%s
          WHERE id=%s RETURNING id""",(recipient,spoof))

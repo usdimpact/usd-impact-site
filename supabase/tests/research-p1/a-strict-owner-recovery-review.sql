@@ -186,6 +186,17 @@ begin
    or v_c.verified_at<=v_q.financial_hold_at
    or v_c.verified_at<=v_i.last_observed_at
    or v_c.verified_at>v_now or v_c.verified_at<v_now-interval '15 minutes'
+   -- Post-incident Auth must be re-observed and owner-attested as retired.
+   -- An earlier GET or a bare digest argument cannot authorize financial release.
+   or not exists (
+     select 1 from research_lifecycle_private.a_strict_auth_review_log ar
+      where ar.account_id=p_account and ar.case_ref=p_case
+        and ar.observation='retired'
+        and ar.observed_evidence_digest=p_auth_digest
+        and ar.verified_at>v_i.last_observed_at
+        and ar.verified_at>v_q.financial_hold_at
+        and ar.verified_at<=v_now
+   )
    or not research_lifecycle_private.a_strict_receipt_valid(
        p_account,p_case,p_clearance,'post_auth',v_a.pre_clearance_id)
    or research_lifecycle_private.a_strict_unsettled_rights(p_account) then

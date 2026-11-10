@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Research P1 fixture (from the D2-32 reviewer harness): Production-like OWNERSHIP model. Stubs as superuser; all 52 migrations
+executed by non-superuser role `postgres` (LOGIN CREATEROLE BYPASSRLS, as Supabase's
+migration runner is assumed to be — NOT VERIFIED). Optional overlays as superuser.
+Usage: owner_model.py <repo> [overlays]"""
+import sys, psycopg, hashlib
+from pathlib import Path
+repo=Path(sys.argv[1]); overlays="overlays" in sys.argv
+MIG=sorted((repo/"supabase/migrations").glob("*.sql"))
+# Optional review-only source fixture: *not* a connected Supabase source
+# or a migration installed in the repository's normal supabase/migrations.
+source_arg=next((v.split("=",1)[1] for v in sys.argv[2:]
+                 if v.startswith("--ui-source=")),None)
+if source_arg:
+    source_dir=Path(source_arg)/"supabase/migrations"
+    source_files={
+        "20261030214706_ui02_atomic_purchase_access_locale_dev.sql":
+            "4ebdeb72cfb140ea8bd24ae0f84f91b3e81b5762",
+        "20261030221037_ui02_language_privacy_lifecycle_dev.sql":
+            "0df302812a95982b7c0d9dbdbe5fc983849ccc5a",
+        "20261030234009_ui03_account_media_locale_preview_dev.sql":
+            "63a15deb451704efa94e6f0f6a561fe1b817d01d",
+    }
+    for name,pinned_blob in source_files.items():
+        path=source_dir/name
+        data=path.read_bytes()
+        actual=hashlib.sha1(b"blob "+str(len(data)).encode()+bytes([0])+data).hexdigest()
+        if actual!=pinned_blob or any(x.name==name for x in MIG):
+            raise SystemExit(f"Refusing non-pinned or duplicate UI source: {name}")
+        MIG.append(path)
+    MIG.sort(key=lambda path:path.name)
+    print("F3_UI_SOURCE pinned=7005aa0585301892c96490d341c3c5645a616890 blobs=3",flush=True)
+with psycopg.connect(dbname="ci_review", autocommit=True) as c:
+    c.execute("""
+create role postgres login createrole bypassrls nosuperuser;
+create role anon nologin; create role authenticated nologin;
+create role service_role nologin bypassrls; create role authenticator nologin noinherit;
+grant anon, authenticated, service_role to postgres;
+create schema extensions; create extension pgcrypto with schema extensions;
+create schema auth;
+create table auth.users(id uuid primary key,email text);
+-- SYNTHETIC ONLY: model both legacy GUCs and modern structured claims.
+-- request.jwt.claim wins over request.jwt.claims for JWT JSON; individual
+-- request.jwt.claim.sub is honored by auth.uid() first, with a JSON fallback.
+create function auth.jwt() returns jsonb language sql stable set search_path='' as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim',true),'')::jsonb,
+    nullif(current_setting('request.jwt.claims',true),'')::jsonb,
+    case when nullif(current_setting('request.jwt.claim.sub',true),'') is not null
+      then jsonb_build_object('sub',current_setting('request.jwt.claim.sub',true))
+      else '{}'::jsonb end) $$;
+create function auth.uid() returns uuid language sql stable set search_path='' as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub',true),''),
+    nullif((select auth.jwt()->>'sub'),'')
+  )::uuid $$;
+create schema storage;
+create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,
+  allowed_mime_types text[],owner uuid,created_at timestamptz default now(),updated_at timestamptz default now());
+create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,owner uuid,metadata jsonb);
+alter table storage.objects enable row level security;
+grant usage on schema auth,extensions,storage to postgres,anon,authenticated,service_role;
+grant all on auth.users to postgres; grant execute on all functions in schema auth,extensions to postgres;
+grant select,insert,update on storage.buckets to postgres;
+grant all on schema public to postgres; grant create on database ci_review to postgres;""")
+    c.execute("SET ROLE postgres")
+    ok=0
+    for f in MIG:
+        try: c.execute(f.read_text("utf8")); ok+=1
+        except psycopg.Error as e:
+            print("FAIL",f.name,e.sqlstate,str(e).splitlines()[0]); break
+    c.execute("RESET ROLE"); c.execute("reset lock_timeout; reset statement_timeout")
+    print(f"OWNER-MODEL REPLAY {ok}/{len(MIG)} as postgres", flush=True)
+    # Never report success from a partial schema: CI/standalone replay must
+    # exit nonzero immediately, before any F3 catalog or lifecycle checks.
+    if ok != len(MIG):
+        raise SystemExit(1)
+    print("owners:", c.execute("select string_agg(distinct pg_get_userbyid(relowner),',') from pg_class where relnamespace='public'::regnamespace and relkind='r'").fetchone()[0])
+    if overlays:
+        C=repo/"docs/operations"
+        c.execute((C/"research-ordering-stage-c/real_schema_ordering_review.sql").read_text())
+        c.execute((C/"research-ordering-stage-n/b5_m1_strict_pinned_review_only.sql").read_text())
+        c.execute("INSERT INTO research_checkout_guard.allowed_variants(store_id,product_id,variant_id,billing_interval,test_mode) VALUES('41','research-membership','313','monthly',true)")
+        for st,f in (("e","segmented_caller_review.sql"),("f","strict_witness_review.sql"),("h","receipt_journal_review.sql"),("i","journal_hardening_review.sql"),("j","invoice_journal_review.sql"),("k","conflict_observation_review.sql"),("l","first_activation_review.sql"),("m","canonical_bridge_review.sql"),("n","locked_first_purchase_review.sql")):
+            c.execute((C/f"research-ordering-stage-{st}/{f}").read_text())
+        c.execute((C/"research-ordering-stage-o/b5_pending_guard_review.sql").read_text())
+        c.execute((C/"research-ordering-stage-p/strict_consumed_handoff_review.sql").read_text())
+        print("OVERLAYS applied by superuser on postgres-owned schema", flush=True)

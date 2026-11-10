@@ -448,6 +448,16 @@ check("P2 legitimate completion delivery terminal state still allowed",
   final==("OK","delivered"),final)
 check("N6 delivered completion cannot re-arm queued resend",
   q("service_role","UPDATE public.notification_outbox SET status='queued' WHERE id=%s RETURNING id",(outbox,))[0]=="ERR")
+# C1: a provider complaint AFTER delivery is a forward-only event,
+# not a resend. A complaint must remain terminal.
+complained=q("service_role",
+  "UPDATE public.notification_outbox SET status='complained',failed_at=clock_timestamp(),error_code='RESEND_COMPLAINT' WHERE id=%s RETURNING status",(outbox,))
+check("C1 legitimate delivered-to-complained webhook patch permitted",
+  complained==("OK","complained"),complained)
+check("C1 complaint cannot be rearmed for delivery",
+  q("service_role","UPDATE public.notification_outbox SET status='queued' WHERE id=%s RETURNING status",(outbox,))[0]=="ERR")
+check("C1 complaint cannot be downgraded to delivered",
+  q("service_role","UPDATE public.notification_outbox SET status='delivered' WHERE id=%s RETURNING status",(outbox,))[0]=="ERR")
 # Actual TWO-CONNECTION synthetic worker contention. Both callers race to
 # lease one account; profile/q locks must permit only one unexpired lease.
 from concurrent.futures import ThreadPoolExecutor
@@ -730,6 +740,12 @@ check("B1 bypass denial leaves incident and privacy held, with no decision row",
   inc(n)=="open" and privacy_open(n)>=1 and sendable(n)==0
   and db("SELECT count(*) FROM research_lifecycle_private.a_strict_owner_resolutions WHERE account_id=%s",
     (n,))==0)
+check("B1c SQL owner cannot delete supervised incident",
+  q("postgres","DELETE FROM research_lifecycle_private.deletion_billing_incidents WHERE account_id=%s RETURNING account_id",(n,))[0]=="ERR")
+check("B1c SQL owner cannot truncate supervised incidents",
+  q("postgres","TRUNCATE research_lifecycle_private.deletion_billing_incidents")[0]=="ERR")
+check("B1d first_observed_at is immutable under SQL owner",
+  q("postgres","UPDATE research_lifecycle_private.deletion_billing_incidents SET first_observed_at=first_observed_at-interval '1 hour' WHERE account_id=%s RETURNING account_id",(n,))[0]=="ERR")
 resumed=q("postgres","SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)",
   (n,ncase,newpost[1],nid,nd,nf,"resume"))
 check("owner reconciles signed-off financial hold after Auth confirmed",resumed==("OK","resume"),resumed)
@@ -749,6 +765,22 @@ check("Auth remains retired and cannot be retried from SQL owner",
   db("SELECT count(*) FROM auth.users WHERE id=%s",(n,))==0
   and q("postgres","SELECT public.a_strict_mark_auth_attempt(%s,%s,%s)",(n,nt,ncl))[0]=="ERR")
 
+# B1d: a later signed payment opens a distinct generation; rewinding to
+# the previously reconciled generation must not reuse its D2/D4 decision.
+old_generation=db("SELECT observation_count FROM research_lifecycle_private.deletion_billing_incidents WHERE account_id=%s",(n,))
+old_observed=db("SELECT last_observed_at FROM research_lifecycle_private.deletion_billing_incidents WHERE account_id=%s",(n,))
+time.sleep(.02)
+late_n=q("service_role",
+  "SELECT public.record_research_paid_binding_refusal('lemon-squeezy',%s,%s,%s,%s)",
+  ("syn-nlater-"+n.hex[:12],n,"syn-nlater-corr-"+n.hex[:12],"SIGNED_PAID_BINDING_REFUSED"))
+new_generation=db("SELECT observation_count FROM research_lifecycle_private.deletion_billing_incidents WHERE account_id=%s",(n,))
+check("B1d new signed charge reopens newer incident generation",
+  late_n[0]=="OK" and inc(n)=="open" and new_generation>old_generation,late_n)
+check("B1d SQL owner cannot rewind prior generation chronology",
+  q("postgres","UPDATE research_lifecycle_private.deletion_billing_incidents SET last_observed_at=%s,observation_count=%s WHERE account_id=%s RETURNING account_id",
+    (old_observed,old_generation,n))[0]=="ERR")
+check("B1d prior D2/D4 decision cannot release later payment",
+  inc(n)=="open" and privacy_open(n)>=1 and sendable(n)==0)
 # A2: retirement already happened but a signed payment intervened after the
 # durable Auth intent. Only the owner can ATTEST an independently observed
 # retired identity; the financial incident remains open until D2/D4 review.
@@ -769,7 +801,9 @@ ra='p1-observed-retired-'+r.hex[:12]
 check('A2 owner cannot attest while Auth still exists',q('postgres',
  'SELECT public.a_strict_owner_attest_retired_under_incident(%s,%s,%s,clock_timestamp())',
  (r,'p1-'+r.hex[:12],ra))[0]=='ERR')
-db('DELETE FROM auth.users WHERE id=%s',(r,))
+db('UPDATE auth.users SET deleted_at=clock_timestamp() WHERE id=%s',(r,))
+check('SD-A2 soft-deleted Auth row persists with deleted_at, not a hard DELETE',
+  db('SELECT deleted_at IS NOT NULL FROM auth.users WHERE id=%s',(r,)) is True)
 check('A2 ordinary Auth observation refuses while financial incident open',q('postgres',
  'SELECT public.a_strict_record_auth_observed(%s,%s,%s)',(r,rt,rl))[0]=='ERR')
 check('A2 worker cannot attest Auth retirement',q('service_role',
@@ -824,5 +858,29 @@ check('B3 no false email or privacy completion after recovery',
 check('B3 renewed supervised lease remains possible without DELETE',
  lease(s,st,'auth')[0]=='OK'
  and db('SELECT count(*) FROM auth.users WHERE id=%s',(s,))==1)
+
+# SD-B3: a soft-deleted Auth row is not an intact identity, even when
+# it still exists in auth.users. Owner pre-intent resume must refuse it.
+sd=new_account()
+sdp=clear(sd,'syn-sd-b3-pre-'+sd.hex[:12])
+sdt=start(sd,sdp[1])[1]
+check('SD-B3 supervised case Phase A',phase(sd,sdt)[0]=='OK')
+sdl=uuid.UUID(lease(sd,sdt,'auth')[1]['lease_id'])
+check('SD-B3 fresh pre-fence evidence',clear(sd,'syn-sd-b3-fresh-'+sd.hex[:12])[0]=='OK')
+check('SD-B3 original fence',fence(sd,sdt,sdl)==('OK',True))
+check('SD-B3 owner-review HOLD prior to intent',q('service_role',
+  'SELECT public.a_strict_hold(%s,%s,%s,%s)',(sd,sdt,sdl,'unknown_payment'))[0]=='OK')
+db('UPDATE auth.users SET deleted_at=clock_timestamp() WHERE id=%s',(sd,))
+check('SD-B3 synthetic Auth row is soft retired',
+  db('SELECT deleted_at IS NOT NULL FROM auth.users WHERE id=%s',(sd,)) is True)
+db("UPDATE research_lifecycle_private.deletion_auth_cleanup SET next_attempt_at=clock_timestamp()-interval '1 second' WHERE account_id=%s",(sd,))
+sdpost=clear(sd,'syn-sd-b3-hold-'+sd.hex[:12])
+check('SD-B3 post-hold merchant read exists',sdpost[0]=='OK')
+sdres=q('postgres','SELECT public.a_strict_owner_reconcile(%s,%s,%s,%s,%s,%s,%s)',
+  (sd,'p1-'+sd.hex[:12],sdpost[1],'p1-sd-b3-decision-'+sd.hex[:12],
+   'p1-sd-b3-d2-'+sd.hex[:12],'p1-sd-b3-d4-'+sd.hex[:12],'resume'))
+check('SD-B3 cannot reconcile soft-retired identity as active',
+  sdres[0]=='ERR' and inc(sd)=='open'
+  and privacy_open(sd)>=1 and sendable(sd)==0,sdres)
 
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

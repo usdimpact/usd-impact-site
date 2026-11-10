@@ -105,3 +105,14 @@ jobs:
           PY
           python3 supabase/tests/research-p1/test_a_strict_review.py
           python3 supabase/tests/research-p1/test_a_strict_outbox_immutability.py
+          # P1-A/B owner recovery is another UNINSTALLED review overlay.
+          # Only this disposable PostgreSQL service, no hosted project.
+          python3 - <<'PY'
+          from pathlib import Path
+          import psycopg
+          with psycopg.connect(dbname='ci_review',autocommit=True) as c:
+              c.execute('SET ROLE postgres')
+              c.execute(Path('supabase/tests/research-p1/a-strict-owner-recovery-review.sql').read_text())
+              print('A-STRICT owner recovery review overlay applied to disposable PG17 only')
+          PY
+          python3 supabase/tests/research-p1/test_a_strict_owner_recovery.py

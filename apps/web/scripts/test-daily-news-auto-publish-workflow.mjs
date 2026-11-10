@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
-  selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
+  exactDailyPrQuery, selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
   dispatchSourceRunId, isAuthenticatedBotDispatch, classifyPreMergeReadiness,
   waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
@@ -72,6 +72,42 @@ assert.throws(() => selectExactDailyPr([{ ...pr, draft: true }], run, base), /no
 assert.throws(() => selectExactDailyPr([{ ...pr, base: { ref: 'main', sha } }], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr([pr, pr], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr(Array(100).fill(pr), run, base), /incomplete/);
+
+const scopedQuery = exactDailyPrQuery(run);
+assert.equal(scopedQuery,
+  'pulls?state=open&base=main&head=usdimpact%3Aautomation%2Fdaily-usd-impact-2026-11-04-80001&per_page=100');
+const scopedFilters = new URLSearchParams(scopedQuery.split('?')[1]);
+assert.deepEqual([...scopedFilters.keys()], ['state', 'base', 'head', 'per_page']);
+assert.equal(scopedFilters.get('state'), 'open');
+assert.equal(scopedFilters.get('base'), 'main');
+assert.equal(scopedFilters.get('head'), 'usdimpact:' + branch);
+assert.equal(scopedFilters.get('per_page'), '100');
+assert.match(runtime, /const pulls = api\(exactDailyPrQuery\(source\)\);/);
+assert.doesNotMatch(runtime, /api\('pulls\?state=open&base=main&per_page=100'\)/,
+  'the privileged publisher must not reintroduce an unscoped 100-PR listing');
+for (const invalidRun of [null, { ...run, id: 0 },
+  { ...run, id: '80001' }, { ...run, id: Number.MAX_SAFE_INTEGER + 1 },
+  { ...run, created_at: 'invalid' }]) {
+  assert.throws(() => exactDailyPrQuery(invalidRun), /invalid-daily-pr-query-source/);
+}
+// Regress the 2026-11-10 real failure shape: 104 unrelated open base PRs.
+// GitHub's exact head filter must leave only the authentic candidate;
+// the downstream fail-closed max-100 and identity assertions remain intact.
+const heldPrs = Array.from({ length: 104 }, (_, i) => ({
+  ...pr, number: 2000 + i, head: { ...pr.head, ref: 'agent/held-' + i },
+}));
+const headFilteredPrs = [pr, ...heldPrs].filter((item) => item.head.ref === branch);
+assert.equal(headFilteredPrs.length, 1);
+assert.deepEqual(selectExactDailyPr(headFilteredPrs, run, base),
+  { prNumber: 1101, branch, headSha: sha, editionDate: day });
+assert.throws(() => selectExactDailyPr([...heldPrs, pr], run, base), /open-pr-evidence-incomplete/,
+  'the old unfiltered 105-PR response must still fail closed');
+assert.throws(() => selectExactDailyPr([{ ...pr,
+  head: { ...pr.head, repo: { full_name: 'other/repo' } } }], run, base), /not-unique/);
+assert.throws(() => selectExactDailyPr([{ ...pr,
+  title: 'Publish Daily USD Impact — 2026-11-03' }], run, base), /not-unique/);
+console.log('Daily exact-head PR query: 104-unrelated-PR and negative integrity fixtures PASS.');
+
 // Native required checks can start after separately dispatched jobs pass.
 // A bounded wait is permitted; conflicts, drift and bypasses are not.
 const cleanPr = { ...pr, mergeable: true, mergeable_state: 'clean' };

@@ -1570,3 +1570,26 @@ create unique index a_strict_e3_invoice_provider_identity
   where product_id='research-membership'
     and actor_type='provider_webhook'
     and metadata->>'researchP1InvoiceReceipt'='true';
+
+-- E3 6b / 6b': isolated privilege proof. The original transition is SECURITY
+-- INVOKER and needs service_role INSERT, which also permits direct forged claims.
+-- Make the existing validated transition RPC owner-executed (strict path), then
+-- REMOVE direct service_role INSERT. This is uninstalled Draft SQL ONLY.
+-- Re-verify EVERY legitimate writer and effective privilege before release.
+alter function public.apply_research_membership_transition(
+  uuid,text,text,text,text,public.subscription_state,public.subscription_state,
+  timestamptz,timestamptz,boolean,public.entitlement_state,timestamptz,timestamptz,
+  text,timestamptz,jsonb) security definer;
+alter function public.apply_research_membership_transition(
+  uuid,text,text,text,text,public.subscription_state,public.subscription_state,
+  timestamptz,timestamptz,boolean,public.entitlement_state,timestamptz,timestamptz,
+  text,timestamptz,jsonb) set search_path='';
+revoke all on function public.apply_research_membership_transition(
+  uuid,text,text,text,text,public.subscription_state,public.subscription_state,
+  timestamptz,timestamptz,boolean,public.entitlement_state,timestamptz,timestamptz,
+  text,timestamptz,jsonb) from public,anon,authenticated,service_role;
+grant execute on function public.apply_research_membership_transition(
+  uuid,text,text,text,text,public.subscription_state,public.subscription_state,
+  timestamptz,timestamptz,boolean,public.entitlement_state,timestamptz,timestamptz,
+  text,timestamptz,jsonb) to service_role;
+revoke insert on table public.subscription_events from service_role;

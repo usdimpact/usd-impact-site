@@ -43,6 +43,22 @@ ek='lemon-squeezy:'+pid
 obs=owner("SELECT now()+interval '2 seconds'")
 md=Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'a'*64})
 rpc="SELECT public.record_research_signed_invoice_receipt(%s,%s,%s,'subscription_payment_success',%s,%s::jsonb)"
+# A direct service_role preclaim used to suppress genuine signed invoice custody.
+# Forbidding direct INSERT must not deny the validated transition RPC.
+priv=owner("SELECT has_table_privilege('service_role','public.subscription_events','INSERT')")
+check('service_role has no direct subscription_events INSERT after overlay',priv is False,priv)
+forge=svc("""INSERT INTO public.subscription_events(
+   event_key,subscription_id,account_id,product_id,from_state,to_state,
+   reason,actor_type,provider_event_id,metadata,occurred_at)
+   SELECT %s,s.id,s.account_id,'research-membership',s.state,s.state,
+   'subscription_payment_success','provider_webhook',%s,
+   jsonb_build_object('researchP1InvoiceReceipt',true,'replayFingerprint',repeat('0',64)),
+   clock_timestamp() FROM public.subscriptions s WHERE s.id=%s""",(ek,pid,sid))
+check('E3 6b direct forged signed invoice preclaim denied as real service_role',
+      forge==('ERR','42501'),forge)
+validfn='public.apply_research_membership_transition(uuid,text,text,text,text,public.subscription_state,public.subscription_state,timestamptz,timestamptz,boolean,public.entitlement_state,timestamptz,timestamptz,text,timestamptz,jsonb)'
+roles=[owner("SELECT has_function_privilege(%s,%s,'EXECUTE')",(r,validfn)) for r in ('anon','authenticated','service_role')]
+check('transition definer RPC only callable by service_role',roles==[False,False,True],roles)
 saved=svc(rpc,(sid,ek,pid,obs,md))
 check('non-granting signed invoice persisted',saved[0]=='OK' and saved[1]['action']=='invoice_recorded',saved)
 after=owner("SELECT jsonb_build_object('s',s.state,'e',e.state) FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id WHERE s.id=%s",(sid,))

@@ -105,3 +105,4 @@ jobs:
           PY
           python3 supabase/tests/research-p1/test_a_strict_review.py
           python3 supabase/tests/research-p1/test_invoice_receipt_overlay.py
+          python3 supabase/tests/research-p1/test_incident_custody_owner_boundary.py

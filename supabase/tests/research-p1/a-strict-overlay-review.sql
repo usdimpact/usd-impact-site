@@ -915,6 +915,143 @@ $reconcile$;
 revoke all on function public.a_strict_owner_reconcile(
  uuid,text,uuid,text,text,text,text) from public,anon,authenticated,service_role;
 
+-- A2: owner can attest that a previously attempted DELETE already
+-- retired Auth, despite a still-open signed-payment incident. NO new DELETE.
+-- The external Admin GET must be independently observed and custodied by
+-- the owner; SQL additionally proves the local auth.users identity is absent.
+create table research_lifecycle_private.a_strict_retirement_observations (
+  account_id uuid primary key references public.profiles(account_id) on delete restrict,
+  case_ref text not null,
+  observation_ref text not null unique,
+  observed_at timestamptz not null,
+  actor_session_role text not null,
+  recorded_at timestamptz not null default pg_catalog.clock_timestamp()
+);
+alter table research_lifecycle_private.a_strict_retirement_observations enable row level security;
+alter table research_lifecycle_private.a_strict_retirement_observations force row level security;
+revoke all on research_lifecycle_private.a_strict_retirement_observations
+  from public,anon,authenticated,service_role;
+create trigger a_strict_retirement_observations_append_only before update or delete
+ on research_lifecycle_private.a_strict_retirement_observations
+ for each row execute function research_lifecycle_private.reject_append_only_change();
+create trigger a_strict_retirement_observations_no_truncate before truncate
+ on research_lifecycle_private.a_strict_retirement_observations
+ for each statement execute function research_lifecycle_private.reject_append_only_change();
+
+create function public.a_strict_owner_attest_retired_under_incident(
+  p_account uuid,p_case text,p_observation_ref text,p_external_observed_at timestamptz
+) returns boolean language plpgsql security definer set search_path='' as $retired_hold$
+declare
+  v_a research_lifecycle_private.a_strict_cases;
+  v_q research_lifecycle_private.deletion_auth_cleanup;
+  v_i research_lifecycle_private.deletion_billing_incidents;
+  v_now timestamptz:=pg_catalog.clock_timestamp();
+begin
+  if p_account is null or p_case is null or p_observation_ref is null
+     or p_observation_ref !~ '^p1-[a-z0-9-]{12,80}
+-- An Auth GET showing 'active' cannot prove the prior DELETE request is final.
+-- All SQL above remains uninstalled, synthetic-only, and unapproved D2/D4/D5.
+
+-- P2 isolated Review overlay only: immutable identity for completion email.
+-- The existing table-wide service_role grant is NOT changed by this overlay.
+-- A future independently reviewed source migration must reconcile permissions
+-- and all email-writer contracts before any hosted cutover.
+create function research_lifecycle_private.a_strict_completion_identity_immutable()
+returns trigger language plpgsql security definer set search_path='' as $immutable_outbox$
+begin
+  if old.message_id='account_deletion_completed'
+     or new.message_id='account_deletion_completed' then
+    if old.message_id is distinct from new.message_id
+      or old.idempotency_key is distinct from new.idempotency_key
+      or old.event_id is distinct from new.event_id
+      or old.classification is distinct from new.classification
+      or old.business_object_type is distinct from new.business_object_type
+      or old.business_object_id is distinct from new.business_object_id
+      or old.state_version is distinct from new.state_version
+      or old.recipient_email_normalized is distinct from new.recipient_email_normalized
+      or old.template_id is distinct from new.template_id
+      or old.template_version is distinct from new.template_version
+       or old.provider is distinct from new.provider
+       or old.payload is distinct from new.payload
+       or old.consent_required is distinct from new.consent_required
+       or old.consent_record_id is distinct from new.consent_record_id
+       or old.consent_purpose is distinct from new.consent_purpose
+       or old.consent_checked_at is distinct from new.consent_checked_at
+       or old.created_at is distinct from new.created_at then
+      raise exception using errcode='42501',
+        message='account deletion completion identity cannot change after insert';
+    end if;
+  end if;
+  if old.message_id='account_deletion_completed'
+     and old.status in ('delivered','terminal_failed','hard_bounced',
+                        'complained','suppressed','cancelled')
+     and old.status is distinct from new.status then
+    raise exception using errcode='42501',
+      message='terminal completion notification cannot be requeued';
+  end if;
+  return new;
+end;
+$immutable_outbox$;
+revoke all on function research_lifecycle_private.a_strict_completion_identity_immutable()
+  from public,anon,authenticated,service_role;
+create trigger a_strict_completion_identity_immutable
+ before update on public.notification_outbox
+ for each row execute function
+   research_lifecycle_private.a_strict_completion_identity_immutable();
+
+-- P2 disposable-overlay privilege correction. Keep SELECT and INSERT; replace
+-- the later table-wide service_role UPDATE with delivery-status columns only.
+-- Do not copy into a live migration until all outbox writers are reconciled.
+revoke update on table public.notification_outbox from service_role;
+grant update (
+  status,attempt_count,next_attempt_at,provider_message_ref,error_code,
+  accepted_at,delivered_at,failed_at,updated_at
+) on table public.notification_outbox to service_role;
+
+     or p_external_observed_at is null then
+    raise exception using errcode='22023',message='owner Auth observation reference required';
+  end if;
+  perform 1 from public.profiles p where p.account_id=p_account for update;
+  select a.* into v_a from research_lifecycle_private.a_strict_cases a
+    where a.account_id=p_account for update;
+  select q.* into v_q from research_lifecycle_private.deletion_auth_cleanup q
+    where q.account_id=p_account for update;
+  select i.* into v_i from research_lifecycle_private.deletion_billing_incidents i
+    where i.account_id=p_account for update;
+  if v_a.account_id is null or v_q.account_id is null
+     or v_i.account_id is null or v_a.case_ref<>p_case
+     or v_a.auth_attempt_at is null or v_a.auth_observed_at is not null
+     or v_q.phase<>'auth_pending' or v_i.status<>'open'
+     or p_external_observed_at<=v_i.last_observed_at
+     or p_external_observed_at<=v_a.auth_attempt_at
+     or p_external_observed_at>v_now
+     or p_external_observed_at<v_now-interval '15 minutes'
+     or exists(select 1 from auth.users u where u.id=p_account)
+     or exists(select 1 from research_lifecycle_private.a_strict_retirement_observations x
+       where x.account_id=p_account) then
+    raise exception using errcode='55000',message='Auth retirement under incident unverified';
+  end if;
+  insert into research_lifecycle_private.a_strict_retirement_observations
+    (account_id,case_ref,observation_ref,observed_at,actor_session_role)
+  values(p_account,p_case,p_observation_ref,p_external_observed_at,session_user);
+  update research_lifecycle_private.deletion_auth_cleanup q
+    set phase='auth_confirmed',
+        auth_confirmed_at=coalesce(q.auth_confirmed_at,v_now),
+        auth_retired_observed_at=coalesce(q.auth_retired_observed_at,v_now),
+        lease_id=null,next_attempt_at=v_now
+    where q.account_id=p_account;
+  update research_lifecycle_private.a_strict_cases a
+    set auth_observed_at=coalesce(a.auth_observed_at,v_now),
+        post_clearance_id=null,post_recorded_at=null
+    where a.account_id=p_account;
+  -- Financial incident and privacy request remain held; only external Auth
+  -- retirement is now recorded. A new merchant read and D2/D4 resume required.
+  return true;
+end;
+$retired_hold$;
+revoke all on function public.a_strict_owner_attest_retired_under_incident(
+  uuid,text,text,timestamptz) from public,anon,authenticated,service_role;
+
 -- P1-A remains a separate HOLD: no reattempt gate is introduced here.
 -- An Auth GET showing 'active' cannot prove the prior DELETE request is final.
 -- All SQL above remains uninstalled, synthetic-only, and unapproved D2/D4/D5.

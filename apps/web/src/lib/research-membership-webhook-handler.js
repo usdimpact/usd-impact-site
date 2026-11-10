@@ -253,9 +253,15 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
   }
   const staleHeld = metadata.researchP1StaleHeld === true;
   const nonactiveHeld = metadata.researchP1NonactiveHeld === true;
+  const invoiceReceipt = metadata.researchP1InvoiceReceipt === true;
   if ((Object.hasOwn(metadata, 'researchP1StaleHeld') && !staleHeld)
       || (Object.hasOwn(metadata, 'researchP1NonactiveHeld') && !nonactiveHeld)
-      || (staleHeld && nonactiveHeld)) throw replayError();
+      || (staleHeld && nonactiveHeld)
+      || (Object.hasOwn(metadata, 'researchP1InvoiceReceipt') && !invoiceReceipt)
+      || (invoiceReceipt && (staleHeld || nonactiveHeld
+        || inspected.isSubscriptionObject
+        || row.from_state !== row.to_state
+        || row.reason !== inspected.eventName))) throw replayError();
   if ((staleHeld || nonactiveHeld) && (
     row.to_state !== row.from_state
     || typeof metadata.researchP1OriginalToState !== 'string'
@@ -270,6 +276,18 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
   if (Object.hasOwn(metadata, 'replayFingerprint') || Object.hasOwn(metadata, 'replayFingerprintVersion')) {
     if (metadata.replayFingerprintVersion !== 1
         || metadata.replayFingerprint !== inspected.metadata.replayFingerprint) throw replayError();
+  }
+  if (invoiceReceipt) {
+    // Receipts intentionally do not represent a state transition. Never
+    // reinterpret a historical partial/full refund against today's period.
+    // The signed replay fingerprint, timestamp, provider and invoice identity
+    // were checked above, and the SQL receipt was created only after binding.
+    if (metadata.replayFingerprintVersion !== 1
+        || metadata.replayFingerprint !== inspected.metadata.replayFingerprint) throw replayError();
+    return Object.freeze({
+      action: 'duplicate', eventKey,
+      providerSubscriptionId: subscription.providerSubscriptionId,
+    });
   }
   try {
     // Reconstruct classification using the archived from-state, not today's
@@ -329,6 +347,45 @@ async function quarantineRejectedSignedBoundEvent({
   }
 }
 
+
+// A verified Lemon Squeezy invoice can be financially relevant without
+// authorizing a subscription/entitlement transition. Persist the signed fact
+// before responding 2xx, including normal payment_success, partial refund,
+// and historical full refund. SQL records it as a non-applied event.
+async function recordSignedNonAppliedInvoice({
+  config, inspected, subscriptionId, eventKey, fetchImpl,
+}) {
+  let response;
+  try {
+    response = await fetchImpl(
+      config.supabaseUrl + '/rest/v1/rpc/record_research_signed_invoice_receipt', {
+        method: 'POST',
+        headers: { ...headers(config.supabaseSecret), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          p_subscription_id: subscriptionId,
+          p_event_key: eventKey,
+          p_provider_event_id: inspected.providerEventId,
+          p_event_name: inspected.eventName,
+          p_occurred_at: inspected.occurredAt,
+          p_metadata: inspected.metadata,
+        }),
+      },
+    );
+  } catch {
+    throw replayError('RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', 503);
+  }
+  let payload;
+  try { payload = await readJson(response); } catch {
+    throw replayError('RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', 503);
+  }
+  if (!response?.ok
+      || !['invoice_recorded', 'duplicate'].includes(payload?.action)
+      || payload?.event_key !== eventKey) {
+    throw replayError('RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', 503);
+  }
+  return payload.action;
+}
+
 export async function processResearchMembershipWebhook({
   rawBody,
   signature,
@@ -375,7 +432,29 @@ export async function processResearchMembershipWebhook({
     throw error;
   }
   if (plan.action === 'ignore') {
-    return Object.freeze({ action: 'ignored', providerEventId: plan.providerEventId, reason: plan.reason });
+    if (inspected.isSubscriptionObject
+        || !['subscription_payment_success', 'subscription_payment_refunded'].includes(inspected.eventName)) {
+      throw replayError('RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', 503);
+    }
+    let recorded;
+    try {
+      recorded = await recordSignedNonAppliedInvoice({
+        config, inspected, subscriptionId: existingSubscription.id, eventKey, fetchImpl,
+      });
+    } catch (error) {
+      // The response could have been lost after the DB insert. Read back the
+      // globally unique event key once; never drop signed billing evidence.
+      const alreadyCommitted = await readEvent();
+      if (alreadyCommitted) return verifiedDuplicate(alreadyCommitted, replayContext);
+      throw error;
+    }
+    const committed = await readEvent();
+    if (!committed) throw replayError('RESEARCH_WEBHOOK_INVOICE_RECEIPT_UNAVAILABLE', 503);
+    verifiedDuplicate(committed, replayContext);
+    return Object.freeze({
+      action: recorded === 'invoice_recorded' ? 'invoice_recorded' : 'duplicate',
+      eventKey, providerSubscriptionId: existingSubscription.providerSubscriptionId,
+    });
   }
 
   let persisted;

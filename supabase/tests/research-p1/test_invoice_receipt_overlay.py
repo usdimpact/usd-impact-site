@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""E3 exact source-proven invoice custody negatives on disposable PG17 ONLY."""
+import uuid
+import psycopg
+from psycopg.types.json import Jsonb
+N=0
+def call(role,sql,args=()):
+    with psycopg.connect(dbname='ci_review',host='127.0.0.1',autocommit=True) as c:
+        c.execute('SET ROLE '+role)
+        try:
+            x=c.execute(sql,args)
+            return ('OK',x.fetchone()[0] if x.description else x.rowcount)
+        except psycopg.Error as exc: return ('ERR',exc.sqlstate)
+def owner(sql,args=()):
+    r=call('postgres',sql,args)
+    if r[0]!='OK': raise AssertionError('synthetic setup failure '+str(r))
+    return r[1]
+def svc(sql,args=()): return call('service_role',sql,args)
+def check(label,ok,x=None):
+    global N
+    N+=1
+    print(f"[E3-OVERLAY] {'PASS' if ok else 'FAIL'} #{N}: {label} {str(x)[:90]}",flush=True)
+    if not ok: raise AssertionError(label)
+a=uuid.uuid4();key='e3bind'+a.hex;psub='e3sub'+a.hex[:12]
+owner("INSERT INTO auth.users(id,email) VALUES(%s,%s)",(a,'e3-'+a.hex[:9]+'@invalid.example'))
+r=svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",(a,key))
+check('create synthetic checkout',r[0]=='OK',r)
+r2=svc("SELECT public.attach_research_checkout_attempt(%s,%s,%s,now()+interval '30 minutes')",(r[1],a,'e3-ck-'+a.hex[-12:]))
+check('attach synthetic checkout',r2[0]=='OK',r2)
+owner("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '1 minute' WHERE id=%s",(r[1],))
+r3=svc("SELECT public.bind_research_membership_subscription(%s,'lemon-squeezy',%s,%s,'313','monthly',now(),%s::jsonb)",(a,psub,'e3-cus-'+a.hex[-6:],Jsonb({'bindingSource':'signed-subscription-created','checkoutKey':key})))
+check('bind synthetic Research subscription',r3[0]=='OK',r3)
+sid=uuid.UUID(r3[1]['subscription_id'])
+tr="""SELECT public.apply_research_membership_transition(%s,%s,%s,'lemon-squeezy',%s,
+  %s::public.subscription_state,%s::public.subscription_state,now()-interval '1 day',
+  now()+interval '29 days',false,%s::public.entitlement_state,now()-interval '1 day',
+  null,'e3 synthetic',%s,'{}'::jsonb)"""
+r4=svc(tr,(sid,'e3-first-'+psub,'e3-first-provider-'+psub,psub,'pending','active','active',owner('SELECT now()')))
+check('paid activation remains permitted',r4[0]=='OK' and r4[1]['action']=='applied',r4)
+before=owner("SELECT jsonb_build_object('s',s.state,'e',e.state) FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id WHERE s.id=%s",(sid,))
+pid='lemon-squeezy:subscription_payment_success:subscription-invoices:inve3demo:2026-11-10T21:00:00Z'
+ek='lemon-squeezy:'+pid
+obs=owner("SELECT now()+interval '2 seconds'")
+md=Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'a'*64})
+rpc="SELECT public.record_research_signed_invoice_receipt(%s,%s,%s,'subscription_payment_success',%s,%s::jsonb)"
+saved=svc(rpc,(sid,ek,pid,obs,md))
+check('non-granting signed invoice persisted',saved[0]=='OK' and saved[1]['action']=='invoice_recorded',saved)
+after=owner("SELECT jsonb_build_object('s',s.state,'e',e.state) FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id WHERE s.id=%s",(sid,))
+check('paid rights and state unchanged by receipt',before==after,(before,after))
+dup=svc(rpc,(sid,ek,pid,obs,md))
+check('exact signed invoice replay idempotent',dup[0]=='OK' and dup[1]['action']=='duplicate',dup)
+other=svc(rpc,(sid,'lemon-squeezy:secondary-event-key',pid,obs,md))
+check('alternate key for provider ID refused',other==('ERR','22023'),other)
+future=svc(rpc,(sid,'lemon-squeezy:future','future','2099-01-01T00:00:00Z',md))
+check('2099 timestamp refused',future==('ERR','22023'),future)
+conflict=svc(rpc,(sid,ek,pid,obs,Jsonb({'lemonEventName':'subscription_payment_success','lemonDataType':'subscription-invoices','replayFingerprintVersion':1,'replayFingerprint':'b'*64})))
+check('conflicting signed fingerprint refused',conflict==('ERR','23505'),conflict)
+original=owner("SELECT metadata->>'replayFingerprint' FROM public.subscription_events WHERE event_key=%s",(ek,))
+check('stored fingerprint remains intact',original=='a'*64,original)
+v=svc(tr,(sid,'e3-refund-'+psub,'e3-refund-provider-'+psub,psub,'active','refunded','refunded',owner("SELECT now()+interval '1 second'")))
+check('invoice chronology does not suppress legitimate terminal refund',v[0]=='OK' and v[1]['action']=='applied',v)
+s=owner("SELECT state::text FROM public.subscriptions WHERE id=%s",(sid,))
+check('terminal refund state preserved',s=='refunded',s)
+grant=[owner("SELECT has_function_privilege(%s,'public.record_research_signed_invoice_receipt(uuid,text,text,text,timestamptz,jsonb)','execute')",(u,)) for u in ('anon','authenticated','service_role')]
+check('RPC only executable by service_role',grant==[False,False,True],grant)
+print(f'[E3-OVERLAY] {N} disposable PG17 checks PASS; DRAFT HOLD',flush=True)

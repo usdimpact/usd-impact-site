@@ -104,3 +104,4 @@ jobs:
               print('A-STRICT disposable SQL overlay parsed and installed (job-local only)')
           PY
           python3 supabase/tests/research-p1/test_a_strict_review.py
+          python3 supabase/tests/research-p1/test_invoice_receipt_overlay.py

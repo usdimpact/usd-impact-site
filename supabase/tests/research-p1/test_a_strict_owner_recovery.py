@@ -263,4 +263,47 @@ ok("recovery never resends DELETE, restores access or queues email",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(c,))==0 and emails(c)==0)
 ok("privacy after recovery remains pending",privacy_pending(c)>=1)
 
+
+# Real TWO-CONNECTION overlap: the financial hold writer cannot pass the
+# owner reconciliation's profile lock. A later committed payment/hold reopens
+# an incident even if the owner had an earlier valid clearance.
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+import time
+post2=clearance(b,"owner-second-reconciliation","post_auth")
+auth2=call("postgres","SELECT public.a_strict_owner_record_auth_review(%s,%s,%s,%s,%s,%s,%s)",
+ (b,case(b),"retired",digest("b-auth-request-2"),digest("auth-b-2"),
+  db("SELECT clock_timestamp()"),"owner"))
+ok("second incident has fresh post-hold Auth observation",auth2[0]=="OK",auth2)
+refs2=(b,case(b),post2,"owner",code(b,"legal-2"),code(b,"remedy-2"),
+       code(b,"resolve-2"),digest("auth-b-2"))
+started=Event()
+def concurrent_hold_writer():
+    started.set()
+    return call("service_role","SELECT public.a_strict_hold(%s,%s,%s,%s)",
+        (b,bt,bid,"late_signed_webhook"))
+with ThreadPoolExecutor(max_workers=1) as pool:
+    with cx(autocommit=False) as owner_tx:
+        owner_tx.execute("SET ROLE postgres")
+        owner_tx.execute("SELECT 1 FROM public.profiles WHERE account_id=%s FOR UPDATE",(b,))
+        owned=owner_tx.execute(
+          "SELECT public.a_strict_owner_reconcile_financial(%s,%s,%s,%s,%s,%s,%s,%s)",
+          refs2).fetchone()[0]
+        ok("owner financial reconciliation held open inside profile transaction",owned is not None)
+        future=pool.submit(concurrent_hold_writer)
+        ok("concurrent financial writer began its separate connection",started.wait(timeout=5))
+        time.sleep(.10)
+        ok("financial hold writer actually blocks behind profile lock",not future.done())
+        owner_tx.commit()
+    late=future.result(timeout=10)
+ok("financial hold worker proceeds after owner commit",late[0]=="OK",late)
+ok("later financial observation reopens hold despite prior owner decision",
+ incident(b)["status"]=="open" and
+ incident(b)["last_observed_at"]>status(b)["reconciled_hold_at"])
+ok("new hold blocks completion and case rotation",
+ claim(b,bt,"complete")[0]=="ERR" and
+ call("postgres","SELECT public.a_strict_owner_rotate(%s,%s,%s,%s,clock_timestamp()+interval '35 minutes')",
+      (b,case(b),post2,"owner"))[0]=="ERR")
+ok("concurrent financial event never restores Auth or sends email",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(b,))==0 and emails(b)==0)
 print(f"[A-STRICT-RECOVERY] {N} disposable PG17 owner-only recovery tests PASS; no hosted operations.",flush=True)

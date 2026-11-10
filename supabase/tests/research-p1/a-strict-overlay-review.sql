@@ -860,3 +860,36 @@ revoke all on function public.a_strict_owner_reconcile(
 -- P1-A remains a separate HOLD: no reattempt gate is introduced here.
 -- An Auth GET showing 'active' cannot prove the prior DELETE request is final.
 -- All SQL above remains uninstalled, synthetic-only, and unapproved D2/D4/D5.
+
+-- P2 isolated Review overlay only: immutable identity for completion email.
+-- The existing table-wide service_role grant is NOT changed by this overlay.
+-- A future independently reviewed source migration must reconcile permissions
+-- and all email-writer contracts before any hosted cutover.
+create function research_lifecycle_private.a_strict_completion_identity_immutable()
+returns trigger language plpgsql security definer set search_path='' as $immutable_outbox$
+begin
+  if old.message_id='account_deletion_completed'
+     or new.message_id='account_deletion_completed' then
+    if old.message_id is distinct from new.message_id
+      or old.idempotency_key is distinct from new.idempotency_key
+      or old.event_id is distinct from new.event_id
+      or old.classification is distinct from new.classification
+      or old.business_object_type is distinct from new.business_object_type
+      or old.business_object_id is distinct from new.business_object_id
+      or old.state_version is distinct from new.state_version
+      or old.recipient_email_normalized is distinct from new.recipient_email_normalized
+      or old.template_id is distinct from new.template_id
+      or old.template_version is distinct from new.template_version then
+      raise exception using errcode='42501',
+        message='account deletion completion identity cannot change after insert';
+    end if;
+  end if;
+  return new;
+end;
+$immutable_outbox$;
+revoke all on function research_lifecycle_private.a_strict_completion_identity_immutable()
+  from public,anon,authenticated,service_role;
+create trigger a_strict_completion_identity_immutable
+ before update on public.notification_outbox
+ for each row execute function
+   research_lifecycle_private.a_strict_completion_identity_immutable();

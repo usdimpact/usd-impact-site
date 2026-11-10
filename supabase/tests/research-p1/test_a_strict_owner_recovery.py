@@ -188,6 +188,11 @@ ok("service_role cannot release a held financial incident",
 bad=list(refs);bad[4]="private-email@example.invalid"
 ok("plain-text PII in legal reference rejected",
  call("postgres","SELECT public.a_strict_owner_reconcile_financial(%s,%s,%s,%s,%s,%s,%s,%s)",tuple(bad))[0]=="ERR")
+ok("bare Auth evidence digest without post-hold retired GET is rejected",
+ call("postgres","SELECT public.a_strict_owner_reconcile_financial(%s,%s,%s,%s,%s,%s,%s,%s)",refs)[0]=="ERR")
+bget=call("postgres","SELECT public.a_strict_owner_record_auth_review(%s,%s,%s,%s,%s,%s,%s)",
+ (b,case(b),"retired",digest("b-auth-request"),digest("auth-b"),db("SELECT clock_timestamp()"),"owner"))
+ok("fresh post-hold owner Auth-retired observation recorded",bget[0]=="OK",bget)
 resolved=call("postgres","SELECT public.a_strict_owner_reconcile_financial(%s,%s,%s,%s,%s,%s,%s,%s)",refs)
 ok("owner financial reconciliation durable after new post-Auth merchant custody",resolved[0]=="OK",resolved)
 ok("reconciliation records monotonic event and timestamp",
@@ -235,6 +240,11 @@ db("""UPDATE research_lifecycle_private.a_strict_cases
 ok("expired case blocks direct completion",claim(c,ct,"complete")[0]=="ERR")
 after=clearance(c,"recovery","post_auth")
 cref=(c,case(c),after,"owner",code(c,"legal"),code(c,"remedy"),code(c,"resolve"),digest("auth-c"))
+ok("expired post-Auth case refuses reconciliation without fresh owner GET",
+ call("postgres","SELECT public.a_strict_owner_reconcile_financial(%s,%s,%s,%s,%s,%s,%s,%s)",cref)[0]=="ERR")
+cget=call("postgres","SELECT public.a_strict_owner_record_auth_review(%s,%s,%s,%s,%s,%s,%s)",
+ (c,case(c),"retired",digest("c-auth-request"),digest("auth-c"),db("SELECT clock_timestamp()"),"owner"))
+ok("owner may record fresh Auth-retired GET after case expiry",cget[0]=="OK",cget)
 ok("owner reconciliation allowed for expired but Auth-retired case",
  call("postgres","SELECT public.a_strict_owner_reconcile_financial(%s,%s,%s,%s,%s,%s,%s,%s)",cref)[0]=="OK")
 ok("old expired token still blocked",claim(c,ct,"complete")[0]=="ERR")

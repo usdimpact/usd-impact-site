@@ -854,6 +854,50 @@ create trigger a_strict_owner_resolutions_no_truncate before truncate
  on research_lifecycle_private.a_strict_owner_resolutions
  for each statement execute function research_lifecycle_private.reject_append_only_change();
 
+-- B1c/B1d synthetic containment: no deletion, truncation or rewind of
+-- an existing incident. These guards do NOT substitute for an independently
+-- verified append-only observation journal or separate owner custody.
+create function research_lifecycle_private.a_strict_guard_incident_integrity()
+returns trigger language plpgsql security definer set search_path='' as $integrity$
+begin
+  if tg_op='DELETE' then
+    raise exception using errcode='42501',
+      message='supervised incident evidence cannot be deleted';
+  end if;
+  if new.account_id is distinct from old.account_id
+     or new.first_observed_at is distinct from old.first_observed_at
+     or new.last_observed_at<old.last_observed_at
+     or new.observation_count<old.observation_count
+     or not (old.reason_codes <@ new.reason_codes) then
+    raise exception using errcode='42501',
+      message='supervised incident identity and chronology are immutable';
+  end if;
+  if new.observation_count is distinct from old.observation_count
+     or new.last_observed_at is distinct from old.last_observed_at then
+    if new.observation_count<>old.observation_count+1
+       or new.last_observed_at<=old.last_observed_at
+       or new.status<>'open' then
+      raise exception using errcode='42501',
+        message='incident generation cannot be rewound or forged';
+    end if;
+  end if;
+  if old.status='resolved' and new.status='open'
+     and new.observation_count=old.observation_count then
+    raise exception using errcode='42501',
+      message='resolved incident requires a newer signed observation';
+  end if;
+  return new;
+end;
+$integrity$;
+revoke all on function research_lifecycle_private.a_strict_guard_incident_integrity()
+ from public,anon,authenticated,service_role;
+create trigger a_strict_guard_incident_integrity
+ before update or delete on research_lifecycle_private.deletion_billing_incidents
+ for each row execute function research_lifecycle_private.a_strict_guard_incident_integrity();
+create trigger a_strict_guard_incident_no_truncate
+ before truncate on research_lifecycle_private.deletion_billing_incidents
+ for each statement execute function research_lifecycle_private.reject_append_only_change();
+
 -- B1: deny legacy/source resolver status transition without an owner
 -- ledger decision for the same case and incident generation.
 create function research_lifecycle_private.a_strict_require_incident_decision()
@@ -967,7 +1011,8 @@ begin
             and v_a.auth_observed_at is not null)
          or (v_q.phase='auth_pending' and v_a.auth_attempt_at is null
             and v_a.auth_observed_at is null and exists(
-              select 1 from auth.users u where u.id=p_account))
+              select 1 from auth.users u where u.id=p_account
+                and u.deleted_at is null))
        )
        or (v_q.lease_id is not null and v_q.next_attempt_at>v_now)
        or research_lifecycle_private.a_strict_unsettled_rights(p_account) then
@@ -1063,7 +1108,8 @@ begin
     or v_i.status<>'open' or p_observed_at<=v_i.last_observed_at
     or p_observed_at<=v_a.auth_attempt_at or p_observed_at>v_now
     or p_observed_at<v_now-interval '15 minutes'
-    or exists(select 1 from auth.users u where u.id=p_account) then
+    or exists(select 1 from auth.users u
+        where u.id=p_account and u.deleted_at is null) then
    raise exception using errcode='55000',message='Auth retirement under incident unverified';
  end if;
  insert into research_lifecycle_private.a_strict_retirement_observations
@@ -1119,7 +1165,8 @@ begin
   if old.message_id='account_deletion_completed'
      and old.status in ('delivered','terminal_failed','hard_bounced',
                         'complained','suppressed','cancelled')
-     and old.status is distinct from new.status then
+     and old.status is distinct from new.status
+     and not (old.status='delivered' and new.status='complained') then
     raise exception using errcode='42501',
       message='terminal completion notification cannot be requeued';
   end if;

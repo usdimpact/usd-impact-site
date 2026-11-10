@@ -712,15 +712,15 @@ grant execute on function public.a_strict_hold(uuid,uuid,uuid,text) to service_r
 -- Decisions are append-only and case+incident-generation bound. This does not
 -- prove remote merchant finality or create any permission for a live customer.
 create table research_lifecycle_private.a_strict_owner_resolutions (
-  decision_ref text primary key check(decision_ref ~ '^p1-[a-z0-9-]{12,80}
-),
+  decision_ref text primary key check(decision_ref ~ '^p1-[a-z0-9-]{12,80}$')
+,
   account_id uuid not null references public.profiles(account_id) on delete restrict,
-  case_ref text not null check(case_ref ~ '^p1-[0-9a-f]{12,40}
-),
-  d2_privacy_ref text not null check(d2_privacy_ref ~ '^p1-[a-z0-9-]{12,80}
-),
-  d4_remedy_ref text not null check(d4_remedy_ref ~ '^p1-[a-z0-9-]{12,80}
-),
+  case_ref text not null check(case_ref ~ '^p1-[0-9a-f]{12,40}$')
+,
+  d2_privacy_ref text not null check(d2_privacy_ref ~ '^p1-[a-z0-9-]{12,80}$')
+,
+  d4_remedy_ref text not null check(d4_remedy_ref ~ '^p1-[a-z0-9-]{12,80}$')
+,
   disposition text not null check(disposition in ('resume','terminal_hold')),
   clearance_id uuid references public.research_billing_clearances(id),
   incident_last_observed_at timestamptz not null,
@@ -758,13 +758,13 @@ declare
   v_existing research_lifecycle_private.a_strict_owner_resolutions;
   v_now timestamptz:=pg_catalog.clock_timestamp();
 begin
-  if p_account is null or p_case !~ '^p1-[0-9a-f]{12,40}
+  if p_account is null or p_case !~ '^p1-[0-9a-f]{12,40}$'
 
-     or p_decision_ref !~ '^p1-[a-z0-9-]{12,80}
+     or p_decision_ref !~ '^p1-[a-z0-9-]{12,80}$'
 
-     or p_d2_privacy_ref !~ '^p1-[a-z0-9-]{12,80}
+     or p_d2_privacy_ref !~ '^p1-[a-z0-9-]{12,80}$'
 
-     or p_d4_remedy_ref !~ '^p1-[a-z0-9-]{12,80}
+     or p_d4_remedy_ref !~ '^p1-[a-z0-9-]{12,80}$'
 
      or p_disposition not in ('resume','terminal_hold') then
     raise exception using errcode='22023',message='owner decision identifiers or disposition invalid';

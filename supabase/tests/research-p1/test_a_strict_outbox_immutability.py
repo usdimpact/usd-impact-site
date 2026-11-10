@@ -95,7 +95,7 @@ with connection() as c:
          'resend','{}'::jsonb,'queued'
        ) RETURNING id
     """,("notification:v1:"+uuid.uuid4().hex+uuid.uuid4().hex,"synthetic-spoof-"+uuid.uuid4().hex,
-         owner,version)).fetchone()[0]
+         owner,version+1)).fetchone()[0]
 check("ordinary queued synthetic notification created",spoof is not None)
 
 with connection(autocommit=False) as c:

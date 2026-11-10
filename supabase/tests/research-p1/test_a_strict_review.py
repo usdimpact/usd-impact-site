@@ -512,4 +512,23 @@ check("new owner session may claim single held Auth identity",
  lease(h,hrot[1],'auth')[0]=="OK")
 check("session renewal does not itself delete Auth",
  db("SELECT count(*) FROM auth.users WHERE id=%s",(h,))==1)
+
+# Active paid Research rights cannot be extinguished merely because an owner
+# entered a later clearance. Both owner authorization and Phase A fail closed
+# on still-valid rights; historical Library Pass source and receipts untouched.
+k=new_account()
+db("""INSERT INTO public.entitlements(account_id,product_id,state,starts_at,ends_at)
+ VALUES(%s,'research-membership','active',clock_timestamp()-interval '1 day',
+        clock_timestamp()+interval '3 days')""",(k,))
+kpre=clear(k,"p1-"+k.hex[:12]+"-research-rights")
+check("Research paid-period fixture and merchant receipt registered",kpre[0]=="OK")
+k_auth=start(k,kpre[1])
+check("unexpired Research entitlement blocks owner Phase A authorization",
+ k_auth[0]=="ERR",k_auth)
+check("paid-period hold preserves Auth identity",
+ db("SELECT count(*) FROM auth.users WHERE id=%s",(k,))==1)
+check("paid-period hold preserves existing Research entitlement",
+ db("""SELECT count(*) FROM public.entitlements WHERE account_id=%s
+      AND product_id='research-membership' AND state='active'
+      AND ends_at>clock_timestamp()""",(k,))==1)
 print(f"[A-STRICT] {count} executable disposable PG17 checks PASS; NO hosted SQL, Auth or merchant IO.",flush=True)

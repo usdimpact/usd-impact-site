@@ -134,7 +134,15 @@ assert.equal(classifyPreMergeReadiness(base, base,
 assert.equal(classifyPreMergeReadiness(base, base,
   { ...cleanPr, mergeable_state: 'dirty' }, sha), 'pre-merge-pr-not-clean');
 assert.equal(classifyPreMergeReadiness(base, base,
-  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pre-merge-pr-not-clean');
+  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pending',
+  'unstable can wait but cannot authorize the protected merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: null, mergeable_state: 'unstable' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: false, mergeable_state: 'unstable' }, sha),
+  'pre-merge-pr-not-clean', 'known unmergeable PR must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'has_hooks' }, sha), 'pre-merge-pr-not-clean');
 assert.equal(classifyPreMergeReadiness(base, base,
   { ...cleanPr, mergeable_state: 'behind' }, sha), 'pre-merge-pr-not-clean');
 assert.equal(classifyPreMergeReadiness(base, base, null, sha), 'pre-merge-main-or-pr-changed');
@@ -167,6 +175,81 @@ assert.equal(await waitForProtectedPrChecks(waitFixture), 1);
   assert.equal(count, 2);
   assert.equal(deadlines, 2);
   assert.equal(slept, 1);
+}
+// Regress Nov 11's plausible transient check state; only a later fresh
+// clean snapshot may authorize the existing standard protected merge.
+{
+  let reads = 0, slept = 0, logs = [];
+  const polls = await waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state:
+      ['unstable', 'blocked', 'clean'][reads++] }),
+    pause: async () => { slept++; },
+    report: (message) => { logs.push(message); },
+  });
+  assert.equal(polls, 3);
+  assert.equal(slept, 2);
+  assert.equal(reads, 3);
+  assert.match(logs[0], /mergeable_state=unstable, mergeable=true/);
+}
+// Neither an unmergeable PR nor a false state may ever enter a wait or merge.
+{
+  const logs = [];
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable: false, mergeable_state: 'unstable' }),
+    report: (message) => { logs.push(message); },
+  }), /pre-merge-pr-not-clean/);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /mergeable_state=unstable, mergeable=false/);
+}
+{
+  let polls = 0, slept = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => { polls++; return { ...cleanPr, mergeable_state: 'unstable' }; },
+    pause: async () => { slept++; },
+  }), /pre-merge-pr-check-readiness-timeout/);
+  assert.equal(polls, 3);
+  assert.equal(slept, 2);
+}
+{
+  let reads = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: reads++ === 0 ? 'unstable' : 'dirty' }),
+  }), /pre-merge-pr-not-clean/, 'a conflict after transient state must stop');
+}
+{
+  let reads = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readMain: () => reads++ === 0 ? base : sha,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable' }),
+  }), /pre-merge-main-or-pr-changed/, 'main drift after unstable must stop');
+}
+{
+  let checks = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable' }),
+    checkCutoff: () => { if (++checks > 1) throw Error('after-first-us-release-cutoff'); },
+  }), /after-first-us-release-cutoff/, 'the existing cutoff must interrupt all retries');
+  assert.equal(checks, 2);
+}
+// Do not allow GitHub or attacker-controlled payloads into logs.
+{
+  const logs = [];
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable\nsecret-payload',
+      body: 'secret-payload' }),
+    report: (message) => { logs.push(message); },
+  }), /pre-merge-pr-not-clean/);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /mergeable_state=other, mergeable=true/);
+  assert.doesNotMatch(logs[0], /secret-payload/);
+  assert.doesNotMatch(logs[0], /[\r\n]/, 'untrusted newlines must not enter log output');
 }
 {
   let seen = 0, slept = 0;
@@ -217,7 +300,7 @@ assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha), 'pre-merge-main
   'a base change after prior checks must not pass final guard');
 console.log('Daily pre-merge last-read protection: ordering and two negatives PASS.');
 
-console.log('Daily bounded protected PR wait: eight offline cases PASS.');
+console.log('Daily bounded protected PR wait: transient-unstable retries, safe diagnostics, adversarial HOLD cases PASS.');
 
 const comparison = {
   status: 'ahead', ahead_by: 1, behind_by: 0,

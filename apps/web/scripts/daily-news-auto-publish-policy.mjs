@@ -200,11 +200,25 @@ export function classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSh
     return 'pre-merge-main-or-pr-changed';
   }
   if (freshPr.mergeable === true && freshPr.mergeable_state === 'clean') return 'ready';
+  // GitHub may report 'unstable' for a pending OR failed non-required
+  // check. It may never settle; never infer success from time elapsed.
+  // This is a bounded wait ONLY. An unchanged main/head and a fresh
+  // mergeable=true, state='clean' read are mandatory before merging.
   if ((freshPr.mergeable === true || freshPr.mergeable === null)
-      && ['blocked', 'unknown'].includes(freshPr.mergeable_state)) return 'pending';
+      && ['blocked', 'unknown', 'unstable'].includes(freshPr.mergeable_state)) return 'pending';
   return 'pre-merge-pr-not-clean';
 }
 
+
+// Only an allowlisted GitHub mergeability enum is safe to log. Never emit a
+// raw PR body, unbounded REST field or untrusted newline in the publisher log.
+function safeMergeabilitySnapshot(pr) {
+  const states = ['clean', 'blocked', 'unknown', 'unstable', 'dirty', 'behind', 'has_hooks', 'draft'];
+  const state = states.includes(pr?.mergeable_state) ? pr.mergeable_state : 'other';
+  const mergeable = pr?.mergeable === true ? 'true'
+    : pr?.mergeable === false ? 'false' : 'unknown';
+  return 'mergeable_state=' + state + ', mergeable=' + mergeable;
+}
 
 // Real GitHub reads and a cutoff are dependency-injected. The trusted runner
 // supplies them; offline test receipts exercise the actual loop without IO.
@@ -222,10 +236,14 @@ export async function waitForProtectedPrChecks({
     const pr = readPr(prNumber);
     const decision = classifyPreMergeReadiness(actualMain, mainSha, pr, headSha);
     if (decision === 'ready') return poll + 1;
-    if (decision !== 'pending') throw new Error(decision);
+    if (decision !== 'pending') {
+      report('Protected PR readiness HOLD: PR #' + prNumber + ', '
+        + safeMergeabilitySnapshot(pr) + ', decision=' + decision);
+      throw new Error(decision);
+    }
     if (poll === 0 || (poll + 1) % 12 === 0) {
       report('Waiting for native protected PR checks: PR #' + prNumber
-        + ', mergeable_state=' + pr.mergeable_state + ', poll ' + (poll + 1));
+        + ', ' + safeMergeabilitySnapshot(pr) + ', poll ' + (poll + 1));
     }
     if (poll + 1 < maxPolls) await pause(retryDelayMs);
   }

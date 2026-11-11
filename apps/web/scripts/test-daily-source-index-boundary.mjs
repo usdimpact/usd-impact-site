@@ -16,15 +16,18 @@ function check(label, fn) { fn(); checks += 1; }
 const fedIndex = 'https://www.federalreserve.gov/newsevents.htm';
 const blsIndex = 'https://www.bls.gov/schedule/2026/home.htm';
 const blsCpsIndex = 'https://www.bls.gov/cps/publications/release-calendar.htm';
+const fedMonth = 'https://www.federalreserve.gov/newsevents/2026-november.htm';
+const beaIncome = 'https://www.bea.gov/data/income-saving/personal-income';
+const beaDpi = 'https://www.bea.gov/data/income-saving/disposable-personal-income';
 const blocked = [
-  fedIndex, blsIndex, blsCpsIndex,
+  fedIndex, blsIndex, blsCpsIndex, fedMonth, beaIncome, beaDpi,
   'https://www.federalreserve.gov/recentpostings.htm',
   'https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents',
   'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/schedule.php',
 ];
-for (const base of [fedIndex, blsIndex, blsCpsIndex]) {
+for (const base of [fedIndex, blsIndex, blsCpsIndex, fedMonth, beaIncome, beaDpi]) {
   for (const url of [
     base, `${base}/`, `${base}//`, `${base}?utm_source=fixture#section`,
     base.replace('www.', '').replace('.gov/', '.gov./'),
@@ -92,8 +95,21 @@ check('BLS monthly calendar pointers fail closed across URL variants', () => {
   assert.match(SOURCE_DATE_RULES, /month-specific release calendars/);
 });
 check('supported living calendars unchanged', () => {
-  assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-october.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
+  assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/calendar.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
+});
+check('November 11 bot source-date regressions are rejected without an assumed new date', () => {
+  for (const url of [fedMonth, beaIncome, beaDpi]) {
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+    assert.equal(isLivingSourceUrl(url), false);
+    const issue = sourceDateAttributionIssue(url);
+    assert.ok(issue);
+    assert.equal(safeValidationDiagnostic(issue).code, 'invalid-source-date');
+  }
+  assert.match(SOURCE_DATE_RULES, /Federal Reserve month-specific event calendars/);
+  assert.match(SOURCE_DATE_RULES, /BEA Personal Income and Disposable Personal Income data landing pages/);
+  assert.equal(sourceDateAttributionIssue('https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026'), null);
+  assert.equal(sourceDateAttributionIssue('https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm'), null);
 });
 check('discovery instructions distinguish document dates', () => {
   assert.match(SOURCE_DATE_RULES, /News and Events page \(newsevents\.htm\)/);
@@ -122,6 +138,49 @@ check('diagnostics never echo arbitrary failure suffixes', () => {
 if (!process.argv.includes('--pure')) {
   const { validateEditorialBundle } = await import('../src/lib/daily-news-editorial-validation.js');
   const { default: handler, collectRepairEvidence, assessBoundedRepairFeasibility } = await import('../api/daily-news-background.js');
+  // Immutable 2026-11-11 original App PR #1239 source ledger: no network or
+  // provider inference. The original source-count gate accepted all three
+  // primary labels; the new provenance guard must reject both bad pointers.
+  check('Nov 11 App source ledger does not pass the actual editorial gate', () => {
+    const sources = [
+      {
+        id: 'fed-calendar', title: 'Federal Reserve Calendar November 2026',
+        url: 'https://www.federalreserve.gov/newsevents/2026-november.htm',
+        publishedAt: '2026-11-10', sourceType: 'primary',
+      },
+      {
+        id: 'bea-personal-income', title: 'Personal Income',
+        url: 'https://www.bea.gov/data/income-saving/personal-income',
+        publishedAt: '2026-10-29', sourceType: 'primary',
+      },
+      {
+        id: 'bea-disposable-income', title: 'Disposable Personal Income',
+        url: 'https://www.bea.gov/data/income-saving/disposable-personal-income',
+        publishedAt: '2026-11-10', sourceType: 'primary',
+      },
+    ];
+    const fixture = {
+      editionDate: '2026-11-11',
+      sources,
+      highlights: sources.map((source) => ({
+        headline: 'Synthetic provenance regression, not market news',
+        development: 'Historical publisher provenance only',
+        whyItMatters: 'Incorrect source publication dates are unacceptable',
+        sourceIds: [source.id],
+      })),
+      catalysts: [],
+      summary: 'Synthetic regression only; no current macro claim',
+    };
+    let message = '';
+    try { validateEditorialBundle(fixture); }
+    catch (error) { message = String(error.message || ''); }
+    assert.match(message, /Federal Reserve monthly calendar index/);
+    assert.equal((message.match(/BEA income rolling landing index/g) || []).length, 2);
+    for (const source of sources) {
+      assert.equal(safeValidationDiagnostic(sourceDateAttributionIssue(source.url)).code,
+        'invalid-source-date', 'source-date failure must stay machine-classified');
+    }
+  });
   const edition = '2026-10-22';
   const goodUrls = [
     'https://www.federalreserve.gov/newsevents/pressreleases/synthetic20261022a.htm',

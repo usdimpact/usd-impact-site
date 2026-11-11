@@ -15,6 +15,8 @@ export const SOURCE_DATE_RULES = [
   'The Federal Reserve Recent Postings page (recentpostings.htm) is a multi-document index for discovery only. Cite the directly linked dated Federal Reserve document and its own verified publication or displayed update date. The index Last Update date is not the linked document publication date; never use an access date or a sibling posting date instead. If the underlying document cannot be verified, omit that source and the unsupported claim rather than relabel the index or change its date to satisfy validation.',
   'The Federal Reserve News and Events page (newsevents.htm) is also a multi-document index for discovery only, not a dated release. Follow and verify the relevant original document, use its own publication date and search-returned URL, or omit the unsupported source and claim. Never borrow the index update date or a different posting date.',
   'Federal Reserve annual FOMC press-release pages (/newsevents/pressreleases/YYYY-press-fomc.htm) are multi-release indexes for discovery only. Cite the directly linked dated monetary policy press release (for example monetaryYYYYMMDD*.htm) with its own displayed publication date. Never assign the meeting date, edition date, access date or newest index item date to the annual index; omit the unsupported claim if the dated release cannot be verified.',
+  'Federal Reserve month-specific event calendars (/newsevents/YYYY-month.htm) are discovery-only indexes. Their page Last Update may predate the listed event year; the November 2026 calendar displays November 3, 2025. Cite an independently verified, directly dated Fed document for the relevant claim, or omit the claim; never borrow the current day, listed event date or another item date as publishedAt.',
+  'BEA Personal Income and Disposable Personal Income data landing pages (/data/income-saving/personal-income and /disposable-personal-income) are rolling discovery pointers, not immutable dated releases. Cite a directly dated Personal Income and Outlays BEA news release for the relevant estimates; never copy the edition date, access date, page last modified date or another program page\'s current release date. Omit unsupported claims.',
   'The BLS annual and month-specific release calendars (/schedule/YYYY/home.htm, /schedule/YYYY/MM_sched*.htm) are mutable discovery indexes. Historical month-specific citations have conflicting Last Modified dates. Do not list these calendars as publishedAt-bearing sources. Use directly linked, independently verified dated BLS releases instead; check future event dates separately. Never assign an access date, edition date, event date or a different month section date to the annual page; never rewrite archived citations. Research sufficient eligible source documents before composing the bundle.',
   'The BLS CPS release calendar (/cps/publications/release-calendar.htm) is a reusable schedule index whose page Last Modified date differs from its listed future event dates. Use it for discovery only, not as a dated publication source. Cite an independently verified dated BLS news release or original document, not another mutable calendar pointer. Never use the edition date, listed event date, access date, or arbitrary last-seen date as the calendar publishedAt, and do not rewrite historical citations; omit unsupported claims instead.',
   'The EIA Weekly Petroleum Status Report schedule page (/petroleum/supply/weekly/schedule.php) is a reusable schedule with event rows but no page-level publication or Last Updated date. Do not put that page in the source ledger because publishedAt cannot be verified. For a next-release claim, use the current WPSR landing page when it directly supports the claim and use its displayed current Release Date as publishedAt, or cite a dated release-specific EIA document. Never assign a schedule-table event date, access date, edition date or older historical date to the reusable schedule page; otherwise omit the unsupported source and claim.',
@@ -151,6 +153,18 @@ export function safeValidationDiagnostic(message) {
     return {
       code: 'invalid-source-date',
       reason: 'Use a verified dated EIA archive document and its own Release Date, not the reused full-report pointer, data-week ending date, next release date or access date; otherwise omit the unsupported source and claim. Never invent an archive URL or rewrite a date to pass validation.',
+    };
+  }
+  if (/Federal Reserve monthly calendar index requires a directly linked dated original document/i.test(text)) {
+    return {
+      code: 'invalid-source-date',
+      reason: 'Treat the Federal Reserve month-specific calendar as discovery-only. Its Last Update may be from a different year. Cite an independently verified dated release/document and that document\'s own publication date, or omit the unsupported claim.',
+    };
+  }
+  if (/BEA income rolling landing index requires a directly dated Personal Income and Outlays news release/i.test(text)) {
+    return {
+      code: 'invalid-source-date',
+      reason: 'Use a directly dated BEA Personal Income and Outlays news release, not a rolling Personal/Disposable Income data page or an assumed edition/access/current date. Omit the unsupported claim if no dated document is verified.',
     };
   }
   if (/Federal Reserve News and Events index requires a directly linked dated document/i.test(text)) {

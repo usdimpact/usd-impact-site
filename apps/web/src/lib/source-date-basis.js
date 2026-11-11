@@ -14,6 +14,14 @@ const TREASURY_TENTATIVE_AUCTION_SCHEDULE_PATH = '/system/files/221/tentative-au
 const FEDERAL_RESERVE_POSTINGS_INDEX_PATH = '/recentpostings.htm';
 const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
 const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{4}-press-fomc\.htm$/;
+// These month-specific event calendars can display a Last Update from a prior
+// year even when they list new events (November 2026 shows 2025-11-03).
+// They are discovery-only until the cited underlying document has its own date.
+const FEDERAL_RESERVE_MONTH_CALENDAR_PATH = /^\/newsevents\/\d{4}-(?:january|february|march|april|may|june|july|august|september|october|november|december)\.htm$/;
+const BEA_INCOME_LANDING_PATHS = new Set([
+  '/data/income-saving/personal-income',
+  '/data/income-saving/disposable-personal-income',
+]);
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
 // Month-specific BLS calendar URLs are mutable and historical editions disagree
@@ -50,7 +58,7 @@ export function sourceDateBasisForUrl(value) {
 
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
   const indexHostname = hostname.replace(/\.$/, '');
-  if (indexHostname === 'home.treasury.gov' || indexHostname === 'federalreserve.gov' || indexHostname === 'eia.gov' || indexHostname === 'bls.gov') {
+  if (indexHostname === 'home.treasury.gov' || indexHostname === 'federalreserve.gov' || indexHostname === 'eia.gov' || indexHostname === 'bls.gov' || indexHostname === 'bea.gov') {
     let pathname;
     try {
       pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
@@ -65,9 +73,10 @@ export function sourceDateBasisForUrl(value) {
       return SOURCE_DATE_BASIS.ROLLING_REPORT;
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
-      || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)))
+      || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname) || FEDERAL_RESERVE_MONTH_CALENDAR_PATH.test(pathname)))
       || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
-      || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)) {
+      || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)
+      || (indexHostname === 'bea.gov' && BEA_INCOME_LANDING_PATHS.has(pathname))) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
   }
@@ -114,6 +123,12 @@ export function sourceDateAttributionIssue(value) {
   const url = new URL(String(value));
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
   const pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
+  if (hostname === 'federalreserve.gov' && FEDERAL_RESERVE_MONTH_CALENDAR_PATH.test(pathname)) {
+    return 'Federal Reserve monthly calendar index requires a directly linked dated original document. This living event calendar may carry a Last Update from a previous year; never substitute a listed event date, access date, edition date, or another Fed posting date as publishedAt. Cite the independently verified dated release or omit the unsupported claim.';
+  }
+  if (hostname === 'bea.gov' && BEA_INCOME_LANDING_PATHS.has(pathname)) {
+    return 'BEA income rolling landing index requires a directly dated Personal Income and Outlays news release. The current release on a mutable Personal/Disposable Income landing page may be stale or differ from another page. Do not assign the edition date, access date, current date or another page\'s release date; cite the verified dated BEA release or omit the unsupported claim.';
+  }
   if (hostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH) {
     return 'EIA Weekly Petroleum Status Report schedule is a reusable schedule page without a page-level publication or Last Updated date. Use the current WPSR landing page when it directly supports the next-release claim and its displayed current Release Date as publishedAt, or cite a dated release-specific EIA document. Never assign an event date from the schedule table, an access date, or a prior historical date to the reusable schedule page; if no dated source supports the claim, omit the unsupported source and claim.';
   }

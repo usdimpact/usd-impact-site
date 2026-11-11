@@ -200,8 +200,11 @@ export function classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSh
     return 'pre-merge-main-or-pr-changed';
   }
   if (freshPr.mergeable === true && freshPr.mergeable_state === 'clean') return 'ready';
+  // GitHub may report 'unstable' while native checks are still settling.
+  // A bounded wait does not make it merge-eligible: only a fresh 'clean'
+  // reading can pass, and a failed check can never be bypassed.
   if ((freshPr.mergeable === true || freshPr.mergeable === null)
-      && ['blocked', 'unknown'].includes(freshPr.mergeable_state)) return 'pending';
+      && ['blocked', 'unknown', 'unstable'].includes(freshPr.mergeable_state)) return 'pending';
   return 'pre-merge-pr-not-clean';
 }
 
@@ -222,7 +225,16 @@ export async function waitForProtectedPrChecks({
     const pr = readPr(prNumber);
     const decision = classifyPreMergeReadiness(actualMain, mainSha, pr, headSha);
     if (decision === 'ready') return poll + 1;
-    if (decision !== 'pending') throw new Error(decision);
+    if (decision !== 'pending') {
+      // Whitelist GitHub's public enum; never log arbitrary PR payloads.
+      const state = ['clean', 'blocked', 'unknown', 'unstable', 'dirty', 'behind', 'has_hooks']
+        .includes(pr?.mergeable_state) ? pr.mergeable_state : 'other';
+      const mergeable = pr?.mergeable === true ? 'true'
+        : pr?.mergeable === false ? 'false' : 'unknown';
+      report('Protected PR readiness HOLD: PR #' + prNumber
+        + ', mergeable_state=' + state + ', mergeable=' + mergeable);
+      throw new Error(decision);
+    }
     if (poll === 0 || (poll + 1) % 12 === 0) {
       report('Waiting for native protected PR checks: PR #' + prNumber
         + ', mergeable_state=' + pr.mergeable_state + ', poll ' + (poll + 1));

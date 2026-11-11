@@ -138,6 +138,49 @@ check('diagnostics never echo arbitrary failure suffixes', () => {
 if (!process.argv.includes('--pure')) {
   const { validateEditorialBundle } = await import('../src/lib/daily-news-editorial-validation.js');
   const { default: handler, collectRepairEvidence, assessBoundedRepairFeasibility } = await import('../api/daily-news-background.js');
+  // Immutable 2026-11-11 original App PR #1239 source ledger: no network or
+  // provider inference. The original source-count gate accepted all three
+  // primary labels; the new provenance guard must reject both bad pointers.
+  check('Nov 11 App source ledger does not pass the actual editorial gate', () => {
+    const sources = [
+      {
+        id: 'fed-calendar', title: 'Federal Reserve Calendar November 2026',
+        url: 'https://www.federalreserve.gov/newsevents/2026-november.htm',
+        publishedAt: '2026-11-10', sourceType: 'primary',
+      },
+      {
+        id: 'bea-personal-income', title: 'Personal Income',
+        url: 'https://www.bea.gov/data/income-saving/personal-income',
+        publishedAt: '2026-10-29', sourceType: 'primary',
+      },
+      {
+        id: 'bea-disposable-income', title: 'Disposable Personal Income',
+        url: 'https://www.bea.gov/data/income-saving/disposable-personal-income',
+        publishedAt: '2026-11-10', sourceType: 'primary',
+      },
+    ];
+    const fixture = {
+      editionDate: '2026-11-11',
+      sources,
+      highlights: sources.map((source) => ({
+        headline: 'Synthetic provenance regression, not market news',
+        development: 'Historical publisher provenance only',
+        whyItMatters: 'Incorrect source publication dates are unacceptable',
+        sourceIds: [source.id],
+      })),
+      catalysts: [],
+      summary: 'Synthetic regression only; no current macro claim',
+    };
+    let message = '';
+    try { validateEditorialBundle(fixture); }
+    catch (error) { message = String(error.message || ''); }
+    assert.match(message, /Federal Reserve monthly calendar index/);
+    assert.equal((message.match(/BEA income rolling landing index/g) || []).length, 2);
+    for (const source of sources) {
+      assert.equal(safeValidationDiagnostic(sourceDateAttributionIssue(source.url)).code,
+        'invalid-source-date', 'source-date failure must stay machine-classified');
+    }
+  });
   const edition = '2026-10-22';
   const goodUrls = [
     'https://www.federalreserve.gov/newsevents/pressreleases/synthetic20261022a.htm',

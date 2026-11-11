@@ -33,7 +33,7 @@ assert.match(SOURCE_ID_RULES, /same normalized source id/i);
 
 assert.equal(
   sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-september.htm'),
-  SOURCE_DATE_BASIS.LAST_UPDATED,
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/calendar.htm'),
@@ -127,7 +127,11 @@ assert.equal(
 );
 assert.equal(isLivingSourceUrl('https://www.bea.gov/data/personal-consumption-expenditures-price-index'), true);
 assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
-assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
+assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), false);
+assert.equal(sourceDateBasisForUrl('https://bea.gov/data/income-saving/disposable-personal-income'), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+assert.equal(sourceDateBasisForUrl('https://www.bea.gov/data/income-saving/personal-income'), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+assert.equal(sourceDateAttributionIssue('https://www.federalreserve.gov/newsevents/2026-november.htm')?.includes('monthly calendar index'), true);
+assert.equal(sourceDateAttributionIssue('https://www.bea.gov/data/income-saving/disposable-personal-income')?.includes('rolling landing index'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
 assert.equal(isLivingSourceUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=example'), true);

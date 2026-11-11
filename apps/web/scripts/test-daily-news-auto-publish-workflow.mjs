@@ -242,13 +242,14 @@ assert.equal(await waitForProtectedPrChecks(waitFixture), 1);
   const logs = [];
   await assert.rejects(waitForProtectedPrChecks({
     ...waitFixture,
-    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable\\nsecret-payload',
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable\nsecret-payload',
       body: 'secret-payload' }),
     report: (message) => { logs.push(message); },
   }), /pre-merge-pr-not-clean/);
   assert.equal(logs.length, 1);
   assert.match(logs[0], /mergeable_state=other, mergeable=true/);
   assert.doesNotMatch(logs[0], /secret-payload/);
+  assert.doesNotMatch(logs[0], /[\r\n]/, 'untrusted newlines must not enter log output');
 }
 {
   let seen = 0, slept = 0;

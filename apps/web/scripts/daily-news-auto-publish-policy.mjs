@@ -200,9 +200,10 @@ export function classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSh
     return 'pre-merge-main-or-pr-changed';
   }
   if (freshPr.mergeable === true && freshPr.mergeable_state === 'clean') return 'ready';
-  // GitHub may briefly report 'unstable' while native check runs settle.
-  // Treat it only as a bounded wait, never as permission to merge: a new
-  // unmodified-main/head read with mergeable=true and state='clean' is mandatory.
+  // GitHub may report 'unstable' for a pending OR failed non-required
+  // check. It may never settle; never infer success from time elapsed.
+  // This is a bounded wait ONLY. An unchanged main/head and a fresh
+  // mergeable=true, state='clean' read are mandatory before merging.
   if ((freshPr.mergeable === true || freshPr.mergeable === null)
       && ['blocked', 'unknown', 'unstable'].includes(freshPr.mergeable_state)) return 'pending';
   return 'pre-merge-pr-not-clean';

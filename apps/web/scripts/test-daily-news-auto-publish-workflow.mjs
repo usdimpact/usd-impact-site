@@ -134,7 +134,11 @@ assert.equal(classifyPreMergeReadiness(base, base,
 assert.equal(classifyPreMergeReadiness(base, base,
   { ...cleanPr, mergeable_state: 'dirty' }, sha), 'pre-merge-pr-not-clean');
 assert.equal(classifyPreMergeReadiness(base, base,
-  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pre-merge-pr-not-clean');
+  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pending',
+  'unstable may be polled but is never merge-ready without a fresh clean state');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: false, mergeable_state: 'unstable' }, sha),
+  'pre-merge-pr-not-clean', 'known unmergeable PR still fails immediately');
 assert.equal(classifyPreMergeReadiness(base, base,
   { ...cleanPr, mergeable_state: 'behind' }, sha), 'pre-merge-pr-not-clean');
 assert.equal(classifyPreMergeReadiness(base, base, null, sha), 'pre-merge-main-or-pr-changed');
@@ -167,6 +171,27 @@ assert.equal(await waitForProtectedPrChecks(waitFixture), 1);
   assert.equal(count, 2);
   assert.equal(deadlines, 2);
   assert.equal(slept, 1);
+}
+{
+  let reads = 0, sleeps = 0;
+  const polls = await waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr,
+      mergeable_state: reads++ === 0 ? 'unstable' : 'clean' }),
+    pause: async () => { sleeps++; },
+  });
+  assert.equal(polls, 2, 'transient unstable state resolves only after clean re-read');
+  assert.equal(sleeps, 1);
+}
+{
+  let holds = [];
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable: false, mergeable_state: 'unstable' }),
+    report: (line) => holds.push(line),
+  }), /pre-merge-pr-not-clean/);
+  assert.ok(holds.some((line) => line.includes('mergeable_state=unstable, mergeable=false')),
+    'fail-closed error records a bounded GitHub state without raw PR content');
 }
 {
   let seen = 0, slept = 0;
@@ -217,7 +242,7 @@ assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha), 'pre-merge-main
   'a base change after prior checks must not pass final guard');
 console.log('Daily pre-merge last-read protection: ordering and two negatives PASS.');
 
-console.log('Daily bounded protected PR wait: eight offline cases PASS.');
+console.log('Daily bounded protected PR wait: transient-unstable and fail-closed cases PASS.');
 
 const comparison = {
   status: 'ahead', ahead_by: 1, behind_by: 0,

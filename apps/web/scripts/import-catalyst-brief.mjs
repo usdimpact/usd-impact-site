@@ -1,6 +1,7 @@
 import { CalendarHold, verifyPublicationCalendar } from '../src/lib/publication-calendar.js';
 import { explicitBlsMonthlyLabel, mentionsSupportedBlsSeries } from '../src/lib/publication-calendar-series.js';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { SOURCE_DATE_BASIS, sourceDateBasisForUrl, sourceDateAttributionIssue } from '../src/lib/source-date-basis.js';
 import path from 'node:path';
 
 const inputPath = process.argv[2];
@@ -23,7 +24,71 @@ const requiredString = (object, key) => {
   return value;
 };
 const quoted = (value) => JSON.stringify(String(value));
-const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+const isDate = (value) => {
+  const raw = String(value ?? '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+  const parsed = new Date(raw + 'T00:00:00.000Z');
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === raw;
+};
+// Source-ledger dates describe original documents, never a rolling page, an
+// event's scheduled date or the day a crawler accessed an undated document.
+function canonicalPublicationUrl(value) {
+  let url;
+  try { url = new URL(String(value)); } catch { throw new Error('Catalyst Brief source URL is invalid'); }
+  if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) {
+    throw new Error('Catalyst Brief source URL must be a direct HTTPS URL without credentials');
+  }
+  url.hash = '';
+  for (const key of [...url.searchParams.keys()]) {
+    if (/^(utm_|gclid$|fbclid$|mc_)/i.test(key)) url.searchParams.delete(key);
+  }
+  if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, '');
+  return url.toString();
+}
+async function markdownFiles(directory) {
+  let entries;
+  try { entries = await readdir(directory, { withFileTypes: true }); }
+  catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    throw error;
+  }
+  const files = [];
+  for (const entry of entries) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await markdownFiles(file));
+    else if (entry.isFile() && entry.name.endsWith('.md')) files.push(file);
+  }
+  return files;
+}
+async function validateHistoricalSourceDates(candidateSources, outputPath) {
+  const historical = new Map();
+  for (const root of [path.resolve('src/content/news'), path.resolve('src/content/catalyst-briefs')]) {
+    for (const file of await markdownFiles(root)) {
+      if (path.resolve(file) === path.resolve(outputPath)) continue;
+      const text = await readFile(file, 'utf8');
+      for (const match of text.matchAll(/^\s+url:\s*["']([^"']+)["']\s*\r?\n\s+publishedAt:\s*["']([^"']+)["']\s*$/gm)) {
+        if (!isDate(match[2])) continue;
+        let url;
+        try { url = canonicalPublicationUrl(match[1]); } catch { continue; }
+        const dates = historical.get(url) ?? new Set();
+        dates.add(match[2]);
+        historical.set(url, dates);
+      }
+    }
+  }
+  for (const source of candidateSources) {
+    const id = requiredString(source, 'id');
+    const url = canonicalPublicationUrl(requiredString(source, 'url'));
+    const dates = historical.get(url);
+    if (!dates || dates.size === 0) continue;
+    if (dates.size > 1) {
+      throw new Error(`Source ${id} has conflicting historical publication dates for ${url}: ${[...dates].sort().join(', ')}`);
+    }
+    if (!dates.has(source.publishedAt)) {
+      throw new Error(`Source ${id} publishedAt ${source.publishedAt} conflicts with previously verified ${[...dates][0]} for ${url}`);
+    }
+  }
+}
 const allowedAssets = new Set([
   'DXY', 'USD', 'EURUSD', 'Fed', 'U.S. rates', 'Liquidity', 'WTI', 'Brent',
   'Henry Hub', 'TTF', 'LNG', 'XAUUSD', 'BTCUSD', 'S&P 500', 'Nasdaq',
@@ -53,13 +118,23 @@ if (assets.length < 1 || assets.some((asset) => !allowedAssets.has(asset))) thro
 const sources = Array.isArray(payload.sources) ? payload.sources : [];
 if (sources.length < 2) throw new Error('Catalyst Brief requires at least two sources');
 const sourceIds = new Set();
+const sourceUrls = new Set();
 for (const source of sources) {
   const id = requiredString(source, 'id');
   if (sourceIds.has(id)) throw new Error(`Duplicate source id: ${id}`);
   sourceIds.add(id);
-  if (!/^https:\/\//.test(requiredString(source, 'url'))) throw new Error(`Source ${id} must use HTTPS`);
+  const rawUrl = requiredString(source, 'url');
+  const url = canonicalPublicationUrl(rawUrl);
+  if (sourceUrls.has(url)) throw new Error(`Source ${id} reuses a duplicate source URL`);
+  sourceUrls.add(url);
   if (!['primary', 'reporting'].includes(requiredString(source, 'sourceType'))) throw new Error(`Source ${id} has invalid sourceType`);
-  if (!isDate(requiredString(source, 'publishedAt'))) throw new Error(`Source ${id} publishedAt must use YYYY-MM-DD`);
+  if (!isDate(requiredString(source, 'publishedAt'))) throw new Error(`Source ${id} publishedAt must be a real YYYY-MM-DD date`);
+  const attributionIssue = sourceDateAttributionIssue(rawUrl);
+  if (attributionIssue) throw new Error(`Source ${id}: ${attributionIssue}`);
+  const basis = sourceDateBasisForUrl(rawUrl);
+  if (basis !== SOURCE_DATE_BASIS.PUBLISHED) {
+    throw new Error(`Source ${id} uses mutable ${basis} material, not an independently dated original publication. Cite the exact verified dated document, never an event date, data-week ending date, prior citation date or access date; otherwise omit the source and claim.`);
+  }
 }
 if (!sources.some((source) => source.sourceType === 'primary')) throw new Error('Catalyst Brief requires a primary source');
 
@@ -141,6 +216,8 @@ if (existing && /^status:\s*"published"\s*$/m.test(existing)) {
   throw new Error(`${outputPath} is already published and cannot be replaced by automation`);
 }
 if (existing) throw new Error(`${outputPath} already exists and requires editorial resolution`);
+
+await validateHistoricalSourceDates(sources, outputPath);
 
 if (publish) {
   try {

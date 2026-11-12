@@ -23,6 +23,7 @@ const BEA_INCOME_LANDING_PATHS = new Set([
   '/data/income-saving/disposable-personal-income',
 ]);
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
+const BLS_ROOT_SCHEDULE_PATH = '/schedule';
 const BLS_CPI_CURRENT_NEWS_POINTER_PATHS = new Set([
   '/news.release/cpi.htm',
   '/news.release/cpi.nr0.htm',
@@ -78,7 +79,7 @@ export function sourceDateBasisForUrl(value) {
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
       || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname) || FEDERAL_RESERVE_MONTH_CALENDAR_PATH.test(pathname)))
-      || (indexHostname === 'bls.gov' && (BLS_CPI_CURRENT_NEWS_POINTER_PATHS.has(pathname) || BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
+      || (indexHostname === 'bls.gov' && (pathname === BLS_ROOT_SCHEDULE_PATH || BLS_CPI_CURRENT_NEWS_POINTER_PATHS.has(pathname) || BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
       || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)
       || (indexHostname === 'bea.gov' && BEA_INCOME_LANDING_PATHS.has(pathname))) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;

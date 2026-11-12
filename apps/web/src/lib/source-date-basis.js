@@ -23,6 +23,10 @@ const BEA_INCOME_LANDING_PATHS = new Set([
   '/data/income-saving/disposable-personal-income',
 ]);
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
+const BLS_CPI_CURRENT_NEWS_POINTER_PATHS = new Set([
+  '/news.release/cpi.htm',
+  '/news.release/cpi.nr0.htm',
+]);
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
 // Month-specific BLS calendar URLs are mutable and historical editions disagree
 // about their Last Modified date. Block as discovery-only until independently
@@ -74,7 +78,7 @@ export function sourceDateBasisForUrl(value) {
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
       || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname) || FEDERAL_RESERVE_MONTH_CALENDAR_PATH.test(pathname)))
-      || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
+      || (indexHostname === 'bls.gov' && (BLS_CPI_CURRENT_NEWS_POINTER_PATHS.has(pathname) || BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
       || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)
       || (indexHostname === 'bea.gov' && BEA_INCOME_LANDING_PATHS.has(pathname))) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
@@ -133,6 +137,9 @@ export function sourceDateAttributionIssue(value) {
     return 'EIA Weekly Petroleum Status Report schedule is a reusable schedule page without a page-level publication or Last Updated date. Use the current WPSR landing page when it directly supports the next-release claim and its displayed current Release Date as publishedAt, or cite a dated release-specific EIA document. Never assign an event date from the schedule table, an access date, or a prior historical date to the reusable schedule page; if no dated source supports the claim, omit the unsupported source and claim.';
   }
   if (hostname === 'bls.gov') {
+    if (BLS_CPI_CURRENT_NEWS_POINTER_PATHS.has(pathname)) {
+      return 'BLS CPI current-release index requires an independently verified dated BLS archive release, not a reusable news.release CPI pointer. The page changes each month: never assign a prior source date, edition date, access date, or current displayed release date to a mutable historical citation. Cite the dated original BLS release using its verified URL and publication date; do not construct an unverified archive URL or alter historical citations. Omit unsupported claims.';
+    }
     if (pathname === BLS_CPS_RELEASE_CALENDAR_PATH) {
       return 'BLS CPS release calendar is a reusable schedule index, not a news release. Its Last Modified date is different from the dates of listed events. Use a directly linked, independently verified dated BLS release or official document; month-specific calendars are discovery-only and must not be cited as dated publication sources; never assign an event date, edition date or access date as the publication date of the CPS calendar. If no eligible dated source supports the claim, omit the source and unsupported claim. Do not modify archived citations.';
     }

@@ -47,6 +47,39 @@ assert.equal(validateSourceRun(run, jobs, base, new Date('2026-11-04T13:30:01Z')
 assert.equal(validateSourceRun(run, jobs, base, new Date('2026-11-05T10:00:00Z')), 'not-current-utc-weekday');
 assert.equal(validateSourceRun(run, [{ ...jobs[0], steps: jobs[0].steps.slice(1) }], base, now), 'generator-required-step-missing-or-failed');
 assert.equal(validateSourceRun(run, [{ ...jobs[0], steps: [{ name: 'Import as published content', conclusion: 'failure' }] }], base, now), 'generator-required-step-missing-or-failed');
+  
+// Regression: Nov 12's delayed native schedule (17:37 UTC) saw an existing
+// edition and skipped all paid generation/import/PR steps. That may be a NOOP
+// after the cutoff, never a publisher success. An actually generated Daily
+// after 08:30 ET must still HOLD as before.
+const late = new Date('2026-11-04T17:38:00Z');
+const allSkippedJobs = [{
+  ...jobs[0],
+  steps: REQUIRED_GENERATOR_STEPS.map((name) => ({ name, conclusion: 'skipped' })),
+}];
+assert.equal(validateSourceRun(run, allSkippedJobs, base, late),
+  'generator-required-step-missing-or-failed',
+  'late authentic all-skipped generator is a publisher NOOP, not a late-source incident');
+assert.equal(validateSourceRun(run, jobs, base, late), 'after-first-us-release-cutoff',
+  'a fully generated source cannot bypass the 08:30 ET cutoff');
+assert.equal(validateSourceRun(run, [{ ...jobs[0],
+  steps: allSkippedJobs[0].steps.slice(1) }], base, late), 'after-first-us-release-cutoff',
+  'missing generator step is not a verified complete all-skipped NOOP');
+assert.equal(validateSourceRun(run, [{ ...jobs[0],
+  steps: [{ ...allSkippedJobs[0].steps[0], conclusion: 'success' },
+    ...allSkippedJobs[0].steps.slice(1)] }], base, late), 'after-first-us-release-cutoff',
+  'a partially generated candidate must still HOLD after the cutoff');
+assert.equal(validateSourceRun(run, [{ ...jobs[0], conclusion: 'failure' }], base, late),
+  'after-first-us-release-cutoff', 'failed jobs are never silently classified as a late NOOP');
+assert.equal(validateSourceRun({ ...run, run_attempt: 2 }, allSkippedJobs, base, late),
+  'source-run-was-replayed', 'replayed late source never earns NOOP status');
+assert.equal(validateSourceRun({ ...run, path: 'foreign-workflow.yml' }, allSkippedJobs, base, late),
+  'not-a-successful-trusted-daily-run', 'wrong workflow cannot claim the skipped-run NOOP');
+assert.equal(validateSourceRun({ ...run, head_sha: sha }, allSkippedJobs, base, late),
+  'main-has-moved', 'source commit/main drift still fails closed');
+assert.equal(validateSourceRun(run, allSkippedJobs, base, new Date('2026-11-05T17:38:00Z')),
+  'not-current-utc-weekday', 'stale prior-day source must not receive NOOP authorization');
+
 
 const backstop = {
   path: '.github/workflows/daily-news-schedule-backstop.yml',

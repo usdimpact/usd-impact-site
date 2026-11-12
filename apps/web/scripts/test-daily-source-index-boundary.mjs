@@ -16,18 +16,20 @@ function check(label, fn) { fn(); checks += 1; }
 const fedIndex = 'https://www.federalreserve.gov/newsevents.htm';
 const blsIndex = 'https://www.bls.gov/schedule/2026/home.htm';
 const blsCpsIndex = 'https://www.bls.gov/cps/publications/release-calendar.htm';
+const blsCpiPointer = 'https://www.bls.gov/news.release/cpi.htm';
+const blsCpiSummaryPointer = 'https://www.bls.gov/news.release/cpi.nr0.htm';
 const fedMonth = 'https://www.federalreserve.gov/newsevents/2026-november.htm';
 const beaIncome = 'https://www.bea.gov/data/income-saving/personal-income';
 const beaDpi = 'https://www.bea.gov/data/income-saving/disposable-personal-income';
 const blocked = [
-  fedIndex, blsIndex, blsCpsIndex, fedMonth, beaIncome, beaDpi,
+  fedIndex, blsIndex, blsCpsIndex, blsCpiPointer, blsCpiSummaryPointer, fedMonth, beaIncome, beaDpi,
   'https://www.federalreserve.gov/recentpostings.htm',
   'https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents',
   'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/schedule.php',
 ];
-for (const base of [fedIndex, blsIndex, blsCpsIndex, fedMonth, beaIncome, beaDpi]) {
+for (const base of [fedIndex, blsIndex, blsCpsIndex, blsCpiPointer, blsCpiSummaryPointer, fedMonth, beaIncome, beaDpi]) {
   for (const url of [
     base, `${base}/`, `${base}//`, `${base}?utm_source=fixture#section`,
     base.replace('www.', '').replace('.gov/', '.gov./'),
@@ -43,6 +45,8 @@ for (const base of [fedIndex, blsIndex, blsCpsIndex, fedMonth, beaIncome, beaDpi
 for (const url of [
   'https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm',
   'https://www.bls.gov/news.release/archives/cpi_09112026.htm',
+  'https://www.bls.gov/news.release/archives/cpi_11102026.htm',
+  'https://www.bls.gov.example.org/news.release/cpi.htm',
   'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_10/',
   'https://home.treasury.gov/news/press-releases/sb0607',
   'https://www.federalreserve.gov.example.org/newsevents.htm',
@@ -56,6 +60,17 @@ for (const url of [
 for (const url of blocked.slice(2)) check(`existing safeguard ${url}`, () => {
   assert.ok(sourceDateAttributionIssue(url));
   assert.equal(isLivingSourceUrl(url), false);
+});
+check('BLS CPI rolling news links reject reassigned historical or current dates', () => {
+  for (const url of [blsCpiPointer, blsCpiSummaryPointer, `${blsCpiPointer}?from=2026-11-10`, 'https://BLS.GOV/news.release/%63pi.htm/']) {
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+    assert.equal(isLivingSourceUrl(url), false);
+    const issue = sourceDateAttributionIssue(url);
+    assert.match(issue, /BLS CPI current-release index/);
+    assert.equal(safeValidationDiagnostic(issue).code, 'invalid-source-date');
+  }
+  assert.equal(sourceDateBasisForUrl('https://www.bls.gov/news.release/archives/cpi_11102026.htm'), SOURCE_DATE_BASIS.PUBLISHED);
+  assert.match(SOURCE_DATE_RULES, /BLS CPI news/);
 });
 check('CPS July-modified calendar may not be rebadged with a November edition date', () => {
   const issue = sourceDateAttributionIssue(blsCpsIndex);
@@ -351,14 +366,14 @@ if (!process.argv.includes('--pure')) {
     await writeFile(archive, sentinel);
     const input = path.join(scratch, 'candidate.json');
     const target = path.join(news, `${edition}.md`);
-    for (const url of [fedIndex, blsIndex]) {
+    for (const url of [fedIndex, blsIndex, blsCpiPointer, blsCpiSummaryPointer]) {
       const candidate = structuredClone(normalized);
       candidate.sources[2].url = url;
       await writeFile(input, JSON.stringify(candidate));
       const result = spawnSync(process.execPath, [importer, input, '--publish'], { cwd: scratch, encoding: 'utf8' });
       check('import rejects the index before any new article write', () => {
         assert.notEqual(result.status, 0);
-        assert.match(result.stderr, /directly linked dated document|annual release calendar/);
+        assert.match(result.stderr, /directly linked dated document|annual release calendar|BLS CPI current-release index/);
       });
       await assert.rejects(readFile(target), { code: 'ENOENT' });
       assert.equal(await readFile(archive, 'utf8'), sentinel);

@@ -68,8 +68,8 @@ assert.equal(
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/news.release/cpi.nr0.htm'),
-  SOURCE_DATE_BASIS.PUBLISHED,
-  'BLS current-release alias remains outside the narrow CPI-homepage exception',
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
+  'BLS current-release alias is discovery-only and cannot carry a stable publication date',
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
@@ -134,6 +134,10 @@ assert.equal(sourceDateAttributionIssue('https://www.federalreserve.gov/newseven
 assert.equal(sourceDateAttributionIssue('https://www.bea.gov/data/income-saving/disposable-personal-income')?.includes('rolling landing index'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
+assert.equal(sourceDateBasisForUrl('https://www.bls.gov/news.release/cpi.htm'), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+assert.equal(sourceDateAttributionIssue('https://www.bls.gov/news.release/cpi.htm')?.includes('current-release index'), true);
+assert.equal(sourceDateBasisForUrl('https://www.bls.gov/news.release/archives/cpi_11102026.htm'), SOURCE_DATE_BASIS.PUBLISHED);
+assert.match(SOURCE_DATE_RULES, /BLS CPI news/);
 assert.equal(isLivingSourceUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=example'), true);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');

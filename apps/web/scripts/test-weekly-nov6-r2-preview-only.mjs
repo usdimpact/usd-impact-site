@@ -30,6 +30,7 @@ function validate(route, sitemap) {
   assert.ok(!route.includes('Any public release requires an accountable editor to approve'), 'Public AI disclosure must not contain internal workflow text');
   assert.ok(route.includes('a:focus-visible { outline: 3px solid var(--navy);'), 'Links on light surfaces need dark focus ring');
   assert.ok(route.includes('.hero a:focus-visible, .site-header a:focus-visible { outline-color: #f4e2bc; }'), 'Links on dark surfaces need light focus ring');
+  assert.ok(route.includes('.skip:focus-visible { outline-color: #f4e2bc; }'), 'Skip link crossing the dark ribbon needs a light contrasting outline');
   assert.ok(route.includes('name="robots" content="noindex,nofollow,noarchive,nosnippet"'));
   assert.ok(route.includes('name="googlebot" content="noindex,nofollow,noarchive,nosnippet"'));
   assert.ok(route.includes('name="referrer" content="no-referrer"'));
@@ -84,6 +85,7 @@ const mutants = [
   ['restore internal AI workflow wording',src.replace('USD Impact is operated by KELA LEADS S.R.L.','USD Impact is operated by KELA LEADS S.R.L. Any public release requires an accountable editor to approve'),config],
   ['restore low-contrast gold focus',src.replace('a:focus-visible { outline: 3px solid var(--navy);','a:focus-visible { outline: 3px solid var(--gold);'),config],
   ['remove dark-surface contrast override',src.replace('.hero a:focus-visible, .site-header a:focus-visible { outline-color: #f4e2bc; }',''),config],
+  ['remove skip focus contrast',src.replace('.skip:focus-visible { outline-color: #f4e2bc; }',''),config],
 ];
 let rejected=0;
 for (const [name,badSrc,badConfig] of mutants) {

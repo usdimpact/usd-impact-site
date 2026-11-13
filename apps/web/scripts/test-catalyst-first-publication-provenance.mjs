@@ -95,4 +95,5 @@ assert.ok(renderer.includes("import { catalystArticleDatePublished } from '../..
 assert.ok(renderer.includes('datePublished: catalystArticleDatePublished(entry.data),'));
 assert.ok(!renderer.includes('datePublished: entry.data.generatedAt,'), 'Never use drafting time for a new public Catalyst');
 assert.ok(renderer.includes("entry.data.status === 'published'"), 'Unapproved review pages must not be routed');
+assert.ok(renderer.includes('publishedBySlug.size !== briefs.length'), 'Reject duplicate slugs masquerading as legacy-publication exemptions');
 console.log('Catalyst publication-date provenance PASS: 15 unchanged historical pages, 1 valid future date, '+rejected.length+' fail-closed cases');

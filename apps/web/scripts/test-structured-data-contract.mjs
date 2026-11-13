@@ -103,7 +103,7 @@ assert.match(dailyPage, /structuredData=\{structuredData\}/);
 const catalystPage = fs.readFileSync(new URL('../src/pages/news/catalysts/[slug].astro', import.meta.url), 'utf8');
 assert.match(catalystPage, /articleStructuredData/);
 assert.match(catalystPage, /datePublished: catalystArticleDatePublished\(entry\.data\)/);
-assert.match(catalystPage, /import \{ catalystArticleDatePublished \} from/);
+assert.match(catalystPage, /import \{ catalystArticleDatePublished, catalystArticleDateModified \} from/);
 assert.doesNotMatch(catalystPage, /datePublished: entry\.data\.generatedAt/);
 assert.doesNotMatch(catalystPage, /datePublished: entry\.data\.eventDate/);
 assert.match(catalystPage, /structuredData=\{structuredData\}/);

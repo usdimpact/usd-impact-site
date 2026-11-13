@@ -24,6 +24,7 @@ const privatePaths = new Set([
   '/internal/ask-usd-impact',
   '/internal/localization/spanish-privacy-review',
   '/macro-reviews/weekly/2026-10-30', // first independent Weekly: public but noindex-first pending separate SEO authorization
+  '/macro-reviews/weekly/review-2026-11-06', // strictly review-only; exclude from sitemap, not a dated public edition
   '/score/lab', // fictional Score exercise: noindex-first; separate release/SEO review required
 ]);
 

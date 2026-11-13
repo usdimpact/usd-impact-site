@@ -55,7 +55,21 @@ for (const forbidden of [
 assert.doesNotMatch(dashboard, /method\s*:\s*['"]POST['"]/);
 assert.match(telemetryApi, /if \(requestedAction === 'checkout-funnel-report'\) return handleCheckoutFunnelReport\(request, response\);/);
 assert.match(telemetryApi, /eventSemantics: 'Aggregate event counts; not unique visitors and not buyer evidence\.'/);
-assert.match(telemetryApi, /const endpointToken = process\.env\.TELEMETRY_REPORT_TOKEN \|\| process\.env\.NEWSFEED_BEARER_TOKEN;/);
+assert.equal(
+  telemetryApi.split('const endpointToken = process.env.TELEMETRY_REPORT_TOKEN;').length - 1,
+  3,
+  'All three reporting routes must require the dedicated telemetry report token.',
+);
+assert.doesNotMatch(
+  telemetryApi,
+  /process\.env\.TELEMETRY_REPORT_TOKEN \|\| process\.env\.NEWSFEED_BEARER_TOKEN/,
+  'Newsfeed bearer must not authorize telemetry reporting.',
+);
+assert.equal(
+  telemetryApi.split("return send(response, 404, { error: 'Not found.' });").length - 1,
+  3,
+  'All three report endpoints must fail closed outside Production.',
+);
 assert.match(layout, /noindex && <meta name="robots" content="noindex, nofollow"/);
 assert.match(astroConfig, /'\/internal\/checklist-analytics'/);
 const rewriteMap = new Map(vercelConfig.rewrites.map((entry) => [entry.source, entry.destination]));

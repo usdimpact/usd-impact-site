@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/ga4-compiled-astro-qa.yml'
       - 'apps/web/scripts/test-ga4-compiled-astro-browser.py'
+      - 'apps/web/scripts/test-ga4-preview-compiled-output.mjs'
+      - 'apps/web/scripts/test-ga4-preview-compiled-browser.py'
+      - 'apps/web/scripts/test-ga4-optional-production-build.mjs'
+      - 'apps/web/scripts/verify-production-build.mjs'
       - 'apps/web/src/components/GoogleAnalyticsClient.astro'
       - 'apps/web/src/components/ConsentClient.astro'
       - 'apps/web/src/layouts/BaseLayout.astro'
@@ -43,7 +47,10 @@ jobs:
       - name: Build actual Astro output with synthetic GA4 ID, no deployment
         working-directory: apps/web
         env:
+          # Simulate the exact Production target locally with a fictional ID.
+          # This is only a build fixture; no Vercel deployment is created.
           PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          VERCEL_ENV: production
           CI: 'true'
         run: |
           set -euo pipefail
@@ -64,3 +71,46 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-ga4-compiled-astro-browser.py
+      - name: Reject missing Vercel build target with a synthetic GA4 ID
+        working-directory: apps/web
+        env:
+          # This is a deliberate negative test; never uses a real GA4 ID.
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          VERCEL: '1'
+          VERCEL_ENV: ''
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          if npx --no-install astro build > "$RUNNER_TEMP/ga4-missing-target.log" 2>&1; then
+            echo 'FAIL: unresolved Vercel target silently built with configured GA4 ID' >&2
+            exit 1
+          fi
+          grep -F 'GA4_BUILD_ENV_UNRESOLVED' "$RUNNER_TEMP/ga4-missing-target.log" >/dev/null
+
+      - name: Verify optional GA4-off full Production build still publishes
+        working-directory: apps/web
+        env:
+          # Simulate an intentionally unconfigured GA4 ID without altering
+          # Vercel settings. The *full* build runs Production validation.
+          VERCEL: '1'
+          VERCEL_ENV: production
+          PUBLIC_GA4_MEASUREMENT_ID: ''
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run build
+          node scripts/test-ga4-optional-production-build.mjs
+
+      - name: Verify Preview compiled output never embeds a GA4 ID
+        working-directory: apps/web
+        env:
+          # Deliberately mis-scope a *synthetic* ID to the Preview build.
+          # The source fail-closed guard must suppress it anyway.
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          VERCEL_ENV: preview
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npx --no-install astro build
+          node scripts/test-ga4-preview-compiled-output.mjs
+          "$RUNNER_TEMP/ga4-compiled-venv/bin/python" scripts/test-ga4-preview-compiled-browser.py

@@ -49,6 +49,7 @@ const errors = [];
 const originalLog = console.log;
 const originalError = console.error;
 const originalReportToken = process.env.TELEMETRY_REPORT_TOKEN;
+const originalNewsfeedToken = process.env.NEWSFEED_BEARER_TOKEN;
 const originalVercelEnvironment = process.env.VERCEL_ENV;
 console.log = (value) => logged.push(value);
 console.error = (value) => errors.push(value);
@@ -146,6 +147,40 @@ try {
   assert.equal(isolatedPreviewEvent.status, 202);
   assert.equal(isolatedPreviewEvent.json.environmentIsolated, true);
   assert.equal(isolatedPreviewEvent.json.durable, false);
+
+  // All other allowed event types must also be discarded before any
+  // persistent write, runtime log or duplicate-event state mutation.
+  const logCountBeforePreview = logged.length;
+  const previewCases = [
+    { eventId: 'evt-preview-checklist-0001', eventName: 'checklist_download', route: '/lead-magnets/weekly-dollar-regime-checklist/' },
+    { eventId: 'evt-preview-quiz-start-0001', eventName: 'quiz_start', route: '/start-here/quiz', quizId: 'quiz-start-here' },
+    { eventId: 'evt-preview-quiz-retry-0001', eventName: 'quiz_retry', route: '/start-here/quiz', quizId: 'quiz-start-here' },
+    { eventId: 'evt-preview-quiz-complete-0001', eventName: 'quiz_complete', route: '/start-here/quiz', quizId: 'quiz-start-here', outcome: 'pass', score: 9, questionCount: 10 },
+    { eventId: 'evt-preview-checkout-click-0001', eventName: 'checkout_button_click', route: '/checkout/' },
+    { eventId: 'evt-preview-signin-0001', eventName: 'checkout_sign_in_redirect', route: '/checkout/' },
+  ];
+  for (const event of previewCases) {
+    const discarded = await request(event);
+    assert.equal(discarded.status, 202);
+    assert.equal(discarded.json.accepted, true);
+    assert.equal(discarded.json.environmentIsolated, true);
+    assert.equal(discarded.json.durable, false);
+  }
+  assert.equal(logged.length, logCountBeforePreview, 'Preview must not log optional event bodies');
+
+  for (const environment of ['development', '', undefined]) {
+    if (environment === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = environment;
+    const discarded = await request({
+      eventId: 'evt-no-production-env-0001',
+      eventName: 'checklist_download',
+      route: '/lead-magnets/weekly-dollar-regime-checklist/',
+    });
+    assert.equal(discarded.status, 202);
+    assert.equal(discarded.json.environmentIsolated, true);
+    assert.equal(discarded.json.durable, false);
+  }
+  assert.equal(logged.length, logCountBeforePreview, 'Unknown targets must not log optional events');
   process.env.VERCEL_ENV = 'production';
   setTelemetryRecorderForTests(async () => ({
     durable: true,
@@ -257,6 +292,63 @@ try {
   assert.deepEqual(checkoutSummary.attribution.sources, [{ label: 'launch_email', value: 8 }]);
 
   process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+  process.env.NEWSFEED_BEARER_TOKEN = 'legacy-newsfeed-token-for-tests';
+
+  // Non-Production reporting must fail before bearer-token or storage work.
+  let unauthorizedAggregateReads = 0;
+  setTelemetryAggregateReaderForTests(async () => {
+    unauthorizedAggregateReads += 1;
+    throw new Error('Non-Production reporting must not reach Redis.');
+  });
+  for (const environment of ['preview', 'development', '', undefined]) {
+    if (environment === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = environment;
+    for (const action of ['report', 'checklist-report', 'checkout-funnel-report']) {
+      const denied = await request(null, 'GET', {
+        url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+        headers: { authorization: 'Bearer report-token-for-tests' },
+      });
+      assert.equal(denied.status, 404, `${environment ?? 'unset'} must block ${action}`);
+      assert.equal(denied.json.error, 'Not found.');
+
+      // D2: The environment guard must run before any bearer validation.
+      // With the dedicated token entirely absent and no Authorization header,
+      // Preview, Development, and unknown targets must still return 404.
+      const errorCountBefore = errors.length;
+      delete process.env.TELEMETRY_REPORT_TOKEN;
+      const noTokenDenied = await request(null, 'GET', {
+        url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+      });
+      assert.equal(noTokenDenied.status, 404, `${environment ?? 'unset'} must reject ${action} before token validation`);
+      assert.equal(noTokenDenied.json.error, 'Not found.');
+      assert.equal(errors.length, errorCountBefore, 'Non-Production report must not log missing-token errors');
+      process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+    }
+  }
+  assert.equal(unauthorizedAggregateReads, 0, 'Non-Production report path read aggregates');
+  process.env.VERCEL_ENV = 'production';
+
+  // A legacy Newsfeed bearer token must never act as telemetry-report privilege.
+  delete process.env.TELEMETRY_REPORT_TOKEN;
+  // D3: No report action may silently fall back to the Newsfeed credential.
+  for (const action of ['report', 'checklist-report', 'checkout-funnel-report']) {
+    const legacyOnly = await request(null, 'GET', {
+      url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+      headers: { authorization: 'Bearer legacy-newsfeed-token-for-tests' },
+    });
+    assert.equal(legacyOnly.status, 503, `${action} requires a dedicated report token`);
+    assert.equal(unauthorizedAggregateReads, 0, `${action} legacy-only auth read aggregates`);
+  }
+  process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+  for (const action of ['report', 'checklist-report', 'checkout-funnel-report']) {
+    const legacyCredential = await request(null, 'GET', {
+      url: `/api/telemetry?action=${action}&end=2026-07-30&days=2`,
+      headers: { authorization: 'Bearer legacy-newsfeed-token-for-tests' },
+    });
+    assert.equal(legacyCredential.status, 401, `${action} must reject the Newsfeed credential`);
+    assert.equal(unauthorizedAggregateReads, 0, `${action} legacy bearer read aggregates`);
+  }
+
   setTelemetryAggregateReaderForTests(async (dates) => {
     assert.deepEqual(dates, ['2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30']);
     return aggregateFixture;
@@ -316,6 +408,8 @@ try {
   console.error = originalError;
   if (originalReportToken === undefined) delete process.env.TELEMETRY_REPORT_TOKEN;
   else process.env.TELEMETRY_REPORT_TOKEN = originalReportToken;
+  if (originalNewsfeedToken === undefined) delete process.env.NEWSFEED_BEARER_TOKEN;
+  else process.env.NEWSFEED_BEARER_TOKEN = originalNewsfeedToken;
   if (originalVercelEnvironment === undefined) delete process.env.VERCEL_ENV;
   else process.env.VERCEL_ENV = originalVercelEnvironment;
   resetTelemetryStateForTests();

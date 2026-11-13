@@ -63,7 +63,13 @@ function verify(raw) {
   assert.match(data.summary, /No observed market reaction is asserted/i);
   assert.match(raw, /Data week|week ending/i);
   assert.ok(!/\b(?:guaranteed return|risk-free profit|must buy|must sell)\b/i.test(raw));
-  assert.ok(!/https:\/\/www\.eia\.gov\/petroleum\/supply\/weekly\/(?:schedule\.php|pdf\/wpsrall\.pdf)/i.test(raw), 'Rolling pointers may not be used');
+  // Exact, explicit forbidden pointers avoid a host-unanchored URL regex.
+  for (const pointer of [
+    'https://www.eia.gov/petroleum/supply/weekly/schedule.php',
+    'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf',
+  ]) {
+    assert.ok(!raw.toLowerCase().includes(pointer), 'Rolling source pointer must not appear: ' + pointer);
+  }
   assert.match(route, /\.filter\(\(entry\) => entry\.data\.status === 'published'\)/,
     'Live Catalyst route must exclude review candidates');
   return true;

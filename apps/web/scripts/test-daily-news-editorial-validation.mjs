@@ -4,7 +4,7 @@ import {
   buildMetaDescription,
   validateEditorialBundle,
 } from '../src/lib/daily-news-editorial-validation.js';
-import { buildRepairOutputSchema, collectRepairEvidence, requestParam } from '../api/daily-news-background.js';
+import { buildRepairOutputSchema, collectRepairEvidence, collectRepairLengthIssues, requestParam } from '../api/daily-news-background.js';
 
 const currentTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0590';
 const staleTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0489';
@@ -574,5 +574,51 @@ for (const rollingTableUrl of [
   );
 }
 
+
+// #840 / 2026-11-13: reproduce the two independent failures from the real
+// source-run diagnostics using synthetic strings and mocked provider metadata.
+// No outbound requests, model calls, date invention, or automatic repair here.
+const failedNov13StyleDraft = structuredClone(repairDraft);
+failedNov13StyleDraft.highlights[0].headline = 'H'.repeat(141);
+failedNov13StyleDraft.highlights[1].whyItMatters = 'W'.repeat(701);
+failedNov13StyleDraft.summary = 'The next FOMC decision remains on the watchlist.';
+const originalNov13StyleBytes = JSON.stringify(failedNov13StyleDraft);
+const nov13LengthIssues = collectRepairLengthIssues(failedNov13StyleDraft);
+assert.ok(
+  nov13LengthIssues.some((issue) => issue.includes('Highlight 1 headline exceeds 140 characters (141)')),
+  'the exact 141-character headline violation must be diagnosed for bounded repair',
+);
+assert.ok(
+  nov13LengthIssues.some((issue) => issue.includes('Highlight 2 whyItMatters exceeds 700 characters (701)')),
+  'a second independent overlong field must not be hidden by the first error',
+);
+assert.equal(JSON.stringify(failedNov13StyleDraft), originalNov13StyleBytes, 'advisory diagnostics must not mutate or truncate content');
+assert.deepEqual(collectRepairLengthIssues({ highlights: [{ headline: 'A'.repeat(140) }] }), []);
+assert.deepEqual(collectRepairLengthIssues(null), []);
+
+const failedNov13StyleResponse = structuredClone(repairFixture);
+failedNov13StyleResponse.output[1].content[0].text = JSON.stringify(failedNov13StyleDraft);
+const nov13FullEvidence = collectRepairEvidence(failedNov13StyleResponse, '2026-10-12').issues.join('; ');
+assert.match(nov13FullEvidence, /Highlight 1 headline exceeds 140 characters/);
+assert.match(nov13FullEvidence, /Upcoming systemic catalyst mentioned but missing from catalysts: central-bank/);
+
+assert.throws(
+  () => validateEditorialBundle(bundle({ summary: 'The next FOMC decision remains on the watchlist.' })),
+  /Upcoming systemic catalyst mentioned but missing from catalysts: central-bank/,
+  'without a genuine matching catalyst, calendar-focused FOMC wording must still block publication',
+);
+assert.doesNotThrow(
+  () => validateEditorialBundle(bundle({ summary: 'Historical policy context from verified older documents.' })),
+  'removing an unsupported forward-looking sentence must not require inventing an event',
+);
+assert.match(sourceHandler, /Prefer a compact complete answer to avoid model output exhaustion/);
+assert.match(sourceHandler, /hard maximum of 140/);
+assert.match(sourceHandler, /Apply an explicit forward-looking FOMC and central-bank check/);
+assert.ok(repairHandler.includes('collectRepairLengthIssues(draft)'));
+assert.match(repairHandler, /For an unsupported forward-looking FOMC or central-bank decision/);
+assert.match(repairHandler, /never fabricate a new catalyst, source, or date/);
+assert.match(repairHandler, /MAX_REPAIR_ATTEMPTS = 2/);
+assert.match(repairHandler, /MAX_REPAIR_OUTPUT_TOKENS = 9_000/);
+assert.match(repairHandler, /REPAIR_TOTAL_TIMEOUT_MS = 225_000/);
 
 console.log('daily news editorial validation tests pass');

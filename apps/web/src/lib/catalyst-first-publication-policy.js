@@ -138,6 +138,12 @@ export function catalystFirstPublicationIssue(brief, { todayUtc = new Date().toI
   const isLegacy = isPinnedLegacyCatalyst(brief);
   const first = brief?.firstPublishedDate;
 
+  // The historical exception is *exclusively* for records with no independently
+  // attested first-publication date; do not allow retroactive, self-declared
+  // dates to overwrite those fifteen old JSON-LD values.
+  if (isLegacy && first != null) {
+    return 'Pinned legacy Catalyst cannot self-assign or backfill firstPublishedDate.';
+  }
   if (brief?.status !== 'published') {
     return first == null ? null : 'A Catalyst review/draft cannot claim a first public availability date.';
   }
@@ -156,6 +162,12 @@ export function catalystFirstPublicationIssue(brief, { todayUtc = new Date().toI
     return 'firstPublishedDate cannot claim future public availability.';
   }
   if (!isLegacy) {
+    if (!validUtcCalendarDate(brief.lastReviewed)) {
+      return 'New Catalyst lastReviewed must be a real YYYY-MM-DD UTC editorial review date.';
+    }
+    if (brief.lastReviewed > todayUtc) {
+      return 'A new Catalyst cannot claim future editorial review.';
+    }
     if (first < policyIntroductionUtcDate) {
       return 'New Catalyst publication dates cannot predate adoption of this provenance guard.';
     }
@@ -179,4 +191,17 @@ export function catalystArticleDatePublished(brief, options = {}) {
   // Legacy values are unchanged for source-compatibility only; historical
   // generatedAt is not asserted to be independently verified first-publication.
   return brief.firstPublishedDate || brief.generatedAt;
+}
+
+/**
+ * An editorial review date earlier than the actual first public release
+ * cannot truthfully be reported as a public Article modification date.
+ * Preserve all legacy output exactly; omit unverified dateModified for new
+ * articles until a genuine review on or after first-publication day exists.
+ */
+export function catalystArticleDateModified(brief, options = {}) {
+  const first = catalystArticleDatePublished(brief, options);
+  return brief.firstPublishedDate && brief.lastReviewed < first
+    ? undefined
+    : brief.lastReviewed;
 }

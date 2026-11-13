@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 web = Path(__file__).resolve().parents[1]
 dist = web / "dist"
 routes = {"/":"en", "/es/":"es", "/news/":"en", "/reports/":"en",
-          "/score/":"en", "/learn/":"en", "/learn/dxy-signal-vs-dollar-system/":"en",
+          "/score/":"en", "/score/lab/":"es", "/learn/":"en", "/learn/dxy-signal-vs-dollar-system/":"en",
           "/quiz/":"en", "/start-here/quiz/":"en", "/book/read-the-dollar-first/":"en"}
 for route in routes:
     target = ("index.html" if route == "/" else route.lstrip("/") + "index.html")
@@ -219,11 +219,63 @@ def reflow(browser, route):
     finally:
         ctx.close()
 
+def score_lab_native_slider(browser, width):
+    """Exercise the compiled, client-hydrated synthetic lab using a real Chrome range input."""
+    ctx, page = setup(browser, width=width, js=True)
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)[:240]))
+    try:
+        visit(page, "/score/lab/")
+        assert page.locator("[data-lab-status='fictional-only']").count() == 1
+        assert page.locator('meta[name="robots"]').get_attribute("content") == "noindex, nofollow"
+        assert page.locator("[data-sim-score]").inner_text() == "0.4011"
+        assert page.locator("#lab-csv").input_value().splitlines()[1] == (
+            "DXY,0.125,900,900,1000,1100,1100,1120")
+        slider = page.locator("input#lab-DXY[type='range']")
+        assert slider.count() == 1 and slider.input_value() == "1120"
+        slider.scroll_into_view_if_needed()
+        slider.focus()
+        assert slider.evaluate("(el) => el === document.activeElement"), (
+            "DXY native range failed keyboard focus")
+        # Browser-generated keyboard input must invoke the actual input listener;
+        # assigning JS .value/dispatchEvent would not verify native interaction.
+        page.keyboard.press("ArrowRight")
+        page.wait_for_function(
+            """() => document.querySelector('#lab-DXY')?.value === '1130'
+               && document.querySelector('[data-sim-score]')?.textContent === '0.4088'
+               && document.querySelector('[data-sim-row="DXY"] [data-sim-x]')?.textContent === '1130'
+               && document.querySelector('#lab-csv')?.value.split('\\n')[1]
+                    === 'DXY,0.125,900,900,1000,1100,1100,1130'""",
+            timeout=8000,
+        )
+        changed = {"score":page.locator("[data-sim-score]").inner_text(),
+                   "dxy":slider.input_value(),
+                   "csv":page.locator("#lab-csv").input_value().splitlines()[1]}
+        page.locator("button#lab-reset").click()
+        page.wait_for_function(
+            """() => document.querySelector('#lab-DXY')?.value === '1120'
+               && document.querySelector('[data-sim-score]')?.textContent === '0.4011'
+               && document.querySelector('#lab-csv')?.value.split('\\n')[1]
+                    === 'DXY,0.125,900,900,1000,1100,1100,1120'""",
+            timeout=8000,
+        )
+        assert not errors, f"Unexpected JavaScript errors in synthetic lab: {errors}"
+        assert all(cookie["name"] != "usd_impact_consent" for cookie in ctx.cookies()), (
+            "Unrequested consent mutation")
+        return {"width":width, "native_input":"ArrowRight",
+                "before":{"score":"0.4011","dxy":"1120"},
+                "after":changed, "reset_score":"0.4011", "reset_dxy":"1120",
+                "network":"loopback-only", "page_errors":0}
+    finally:
+        ctx.close()
+
 try:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=chrome, headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
         check("no-JS skip Tab-Enter across public pages", lambda: skips(browser, False))
         check("JS-on skip Tab-Enter across public pages", lambda: skips(browser, True))
+        for width in (390, 1280):
+            check(f"ES fictional Score Lab native slider/reset {width}px", lambda width=width: score_lab_native_slider(browser, width))
         for width in (390, 768, 960):
             check(f"ES tablet/mobile {width}px Enter-Tab-Escape", lambda width=width: mobile_menu(browser, "es", width))
             check(f"EN tablet/mobile {width}px Enter-Tab-Escape", lambda width=width: mobile_menu(browser, "en", width))

@@ -104,6 +104,6 @@ Likewise, a sustained oil-price move could affect inflation expectations and rat
 
 The 12 November archive is the authoritative original for this historical issue. The EIA's reusable publication schedule, current WPSR landing page and rolling full-PDF pointers are useful for discovery but are **not eligible as release-dated source documents** in this brief. The three cited originals are different documents from **one government publisher**, not three independent publishers.
 
-This educational outcome was assembled for review on **13 November** from the dated 12 November original. It should not be described as a new 13 November government release or a real-time market response.
+The underlying government report was released on **12 November 2026** for the week ending **6 November 2026**. The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public. The historical inventory results do not establish a same-day market-price response.
 
-The article remains an **unpublished review candidate**, pending an accountable editor's exact-copy approval and separate rights, AI-transparency, privacy and publication decisions.
+Later EIA corrections or revisions must be considered as separately dated source evidence. The educational discussion does not establish consensus surprises, returns, investment signals or a causal reaction in WTI, Brent, DXY or Treasury yields.

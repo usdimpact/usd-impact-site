@@ -25,17 +25,23 @@ const readFrontmatter = filename => {
 
 // Existing published content must retain all its old URL and JSON-LD semantics.
 // The pins are a bounded, fixed legacy exception, never a dynamically refreshed list.
-assert.equal(files.length, 15, 'Published legacy census drift; audit changes before editing the pins');
 assert.equal(LEGACY_CATALYST_PUBLICATION_PINS.length, 15);
 assert.equal(new Set(LEGACY_CATALYST_PUBLICATION_PINS.map(x => x.slug)).size, 15);
-const allLegacy = files.map(readFrontmatter);
-for (const [i, entry] of allLegacy.entries()) {
-  assert.equal(entry.status, 'published', 'Legacy sample must remain published: '+files[i]);
-  assert.equal(entry.firstPublishedDate, undefined, 'Do not auto-backfill legacy first-publication claims');
-  assert.equal(isPinnedLegacyCatalyst(entry), true, 'Historical reference signature changed: '+files[i]);
+const records = files.map(name => ({ name, data: readFrontmatter(name) }));
+const legacyRecords = records.filter(({ data }) => data.status === 'published' && isPinnedLegacyCatalyst(data));
+const allLegacy = legacyRecords.map(({ data }) => data);
+assert.equal(legacyRecords.length, 15, 'All fifteen pinned historical public records must remain intact');
+for (const { name, data: entry } of legacyRecords) {
+  assert.equal(entry.firstPublishedDate, undefined, 'Do not auto-backfill legacy first-publication claims: '+name);
   assert.equal(catalystFirstPublicationIssue(entry, today), null);
   assert.equal(catalystArticleDatePublished(entry, today), entry.generatedAt,
     'Keep prior public JSON-LD behavior unchanged for unverified legacy records');
+}
+// Later new Catalyst review files and separately approved public documents must
+// not break the *legacy census* test solely by adding a new Markdown file.
+for (const { name, data } of records.filter(({ data }) => !isPinnedLegacyCatalyst(data))) {
+  const issue = catalystFirstPublicationIssue(data);
+  assert.equal(issue, null, 'New Catalyst must satisfy first-publication guard: '+name+' — '+issue);
 }
 
 const prepared = {

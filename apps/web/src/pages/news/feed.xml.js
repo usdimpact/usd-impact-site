@@ -12,7 +12,8 @@ const escapeXml = (value) => String(value)
 // These collections have editorial dates and preparation times, not verified
 // first-publication instants. Omit pubDate and lastBuildDate rather than invent
 // them from noon, generatedAt, a Git commit, or the current build clock.
-// sortKey preserves legacy feed order only; it is never a publication timestamp.
+// sortKey orders new Catalysts by an attested publication calendar date and
+// retains legacy order otherwise; it is never an exact publication timestamp.
 export async function GET({ site }) {
   const origin = site?.origin ?? 'https://usd-impact.com';
   const editions = (await getCollection('news'))
@@ -29,7 +30,7 @@ export async function GET({ site }) {
       .map((entry) => ({
       title: entry.data.title,
       slug: entry.data.slug,
-      sortKey: entry.data.generatedAt,
+      sortKey: entry.data.firstPublishedDate ?? entry.data.generatedAt,
       summary: entry.data.summary,
       }))
     : [];

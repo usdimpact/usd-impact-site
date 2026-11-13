@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import yaml from 'js-yaml';
+import { catalystFirstPublicationIssue, catalystArticleDatePublished } from '../src/lib/catalyst-first-publication-policy.js';
 
 const importer = fileURLToPath(new URL('./import-catalyst-brief.mjs', import.meta.url));
 const root = await mkdtemp(path.join(os.tmpdir(), 'usd-impact-catalyst-import-'));
@@ -52,6 +54,39 @@ try {
   assert.equal(review.status, 0, review.stderr);
   assert.match(await readFile(outputPath, 'utf8'), /^status:\s*"review"\s*$/m);
   await rm(outputPath);
+
+  // Real importer -> generated frontmatter -> new publication schema contract.
+  // The schedule uses --review-only: retain all issuer/calendar verification
+  // while deliberately withholding status=published and firstPublishedDate.
+  const syntheticReviewBundle = { ...bundle, event: 'Treasury refunding review — synthetic offline fixture' };
+  await writeFile(bundlePath, JSON.stringify(syntheticReviewBundle), 'utf8');
+  const checkedReview = run('--review-only', '--skip-published');
+  assert.equal(checkedReview.status, 0, checkedReview.stderr);
+  const checkedText = await readFile(outputPath, 'utf8');
+  const frontmatter = checkedText.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  assert.ok(frontmatter, 'Actual review import must produce YAML frontmatter');
+  const checked = yaml.load(frontmatter[1]);
+  assert.equal(checked.status, 'review', 'Scheduled import must never claim publicly published status');
+  assert.equal(checked.firstPublishedDate, undefined, 'Review cannot self-assign a public first-publication date');
+  assert.equal(catalystFirstPublicationIssue(checked), null, 'Review import must pass new prospective date guard');
+  assert.throws(() => catalystArticleDatePublished(checked), /non-published/);
+  assert.match(checkedReview.stdout, /calendar-verified review-only/);
+  await rm(outputPath);
+
+  const mutuallyExclusive = run('--review-only', '--publish');
+  assert.notEqual(mutuallyExclusive.status, 0, 'Review-only and publish flags must never combine');
+  assert.match(mutuallyExclusive.stderr, /never both/);
+  await assert.rejects(readFile(outputPath, 'utf8'), { code: 'ENOENT' });
+
+  // A recognisable monthly BLS series without a canonical calendar must still
+  // HOLD in the review-only workflow, rather than bypassing its old --publish gate.
+  const calendared = { ...bundle, event: 'BLS Consumer Price Index (CPI) — August 2026' };
+  await writeFile(bundlePath, JSON.stringify(calendared), 'utf8');
+  const missingCalendar = run('--review-only');
+  assert.notEqual(missingCalendar.status, 0);
+  assert.match(missingCalendar.stderr, /HOLD_MISSING_CALENDAR_RECORD/);
+  await assert.rejects(readFile(outputPath, 'utf8'), { code: 'ENOENT' });
+  await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
   const published = run('--publish');
   assert.equal(published.status, 0, published.stderr);
   const content = await readFile(outputPath, 'utf8');
@@ -122,7 +157,7 @@ try {
   assert.equal(matchingOriginal.status, 0, matchingOriginal.stderr);
   assert.match(await readFile(outputPath, 'utf8'), /empsit_07022026\.htm/);
 
-  console.log('catalyst brief importer dates and historical-provenance tests pass');
+  console.log('catalyst brief importer dates, review-only calendar and publication-policy integration tests pass');
 } finally {
   await rm(root, { recursive: true, force: true });
 }

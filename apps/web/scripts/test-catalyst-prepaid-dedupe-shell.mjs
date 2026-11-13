@@ -11,6 +11,14 @@ import yaml from 'js-yaml';
 const appRoot = fileURLToPath(new URL('../', import.meta.url));
 const wf = yaml.load(readFileSync(new URL('../../../.github/workflows/catalyst-brief.yml', import.meta.url), 'utf8'));
 const steps = wf.jobs['research-and-publish'].steps;
+// Selection, paid model normalization and the PR branch must agree on the
+// same canonical event/date/phase slug; otherwise a paid duplicate might
+// evade the exact-slug PR check.
+const selectorLib = readFileSync(new URL('../src/lib/catalyst-briefs.js', import.meta.url), 'utf8');
+const sourceApi = readFileSync(new URL('../api/catalyst-brief-source.js', import.meta.url), 'utf8');
+assert.ok(selectorLib.includes('const slug = catalystBriefSlug(catalyst.date, catalyst.event, phase);'), 'selector uses canonical slug builder');
+assert.ok(sourceApi.includes('briefSlug: catalystBriefSlug(eventDate, event, phase),'), 'paid research normalizer uses the same canonical slug builder');
+assert.ok(sourceApi.includes('slug: `/news/catalysts/${candidate.briefSlug}`,'), 'published candidate path derives from canonical slug');
 const dedupe = steps.find(step => step.id === 'pending_catalyst');
 const paid = steps.find(step => step.name === 'Fetch and analyze the catalyst');
 const eligibility = steps.find(step => step.id === 'eligibility');

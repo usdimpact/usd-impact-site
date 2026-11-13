@@ -22,6 +22,7 @@ function verify(src) {
   assert.ok(src.includes('data-period-end="2026-10-30"'), 'Must preserve exact historical date');
   assert.ok(src.includes('a:focus-visible { outline: 3px solid var(--navy);'), 'Dark focus ring for light background');
   assert.ok(src.includes('.hero a:focus-visible, .site-header a:focus-visible { outline-color: #f4e2bc; }'), 'Light focus ring for dark backgrounds');
+  assert.ok(src.includes('.skip:focus-visible { outline-color: #f4e2bc; }'), 'Skip link must retain visible focus at the navy ribbon');
   assert.ok(src.includes('--navy: #071a33;') && src.includes('--gold: #c9a35b;'));
   assert.ok(!src.includes('a:focus-visible { outline: 3px solid var(--gold);'), 'Remove former low-contrast gold-on-light focus ring');
   assert.ok(src.includes('noindex,nofollow,noarchive,nosnippet'), 'Existing first-release index policy unchanged');
@@ -37,6 +38,7 @@ assert.equal(verify(original),true);
 const negative = [
   ['old gold-on-light ring', original.replace('a:focus-visible { outline: 3px solid var(--navy);','a:focus-visible { outline: 3px solid var(--gold);')],
   ['lost dark-background ring', original.replace('.hero a:focus-visible, .site-header a:focus-visible { outline-color: #f4e2bc; }','')],
+  ['lost skip-link ring', original.replace('.skip:focus-visible { outline-color: #f4e2bc; }','')],
   ['changed historical date', original.replace('data-period-end="2026-10-30"','data-period-end="2026-11-06"')],
 ];
 for (const [name,mutated] of negative) {

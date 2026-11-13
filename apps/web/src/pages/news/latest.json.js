@@ -19,6 +19,7 @@ export async function GET() {
       eventDate: entry.data.eventDate,
       phase: entry.data.phase,
       generatedAt: entry.data.generatedAt,
+      firstPublishedDate: entry.data.firstPublishedDate,
       statusLabel: entry.data.statusLabel,
       summary: entry.data.summary,
       }))

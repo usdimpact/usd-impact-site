@@ -1,0 +1,147 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../../components/ComplianceNote.astro';
+import SourceLedger from '../../../components/SourceLedger.astro';
+import { hasCatalystBriefFiles } from '../../../lib/catalyst-brief-content.js';
+
+export async function getStaticPaths() {
+  // Hard release boundary: this page is deliberately absent from every
+  // Production and local build, even if the Draft branch is accidentally merged.
+  if (process.env.VERCEL_ENV !== 'preview') return [];
+  const briefs = hasCatalystBriefFiles
+    ? (await getCollection('catalystBriefs')).filter(
+      (entry) => entry.data.status === 'review'
+        && entry.data.phase === 'outcome'
+        && entry.data.eventKey === '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication',
+    )
+    : [];
+  if (briefs.length !== 1) throw new Error('EIA November 12 review Preview requires exactly one review-status outcome');
+  return [{ params: { review: 'eia-2026-11-12-wpsr-outcome' }, props: { entry: briefs[0] } }];
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]));
+const formatDate = (value) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${value}T12:00:00Z`));
+---
+<BaseLayout title={`UNPUBLISHED REVIEW — ${entry.data.metaTitle}`} description={entry.data.metaDescription} noindex={true}>
+  <aside class="container" role="status" data-review-only="true" aria-label="Unpublished review-only content">
+    <strong>UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION</strong>
+    <p>Source verification and editorial review only. This preview does not authorize changes to Production or the article publication status.</p>
+  </aside>
+  <section class="hero news-hero">
+    <div class="container">
+      <div class="eyebrow">{entry.data.category} · {entry.data.phase === 'preview' ? 'Pre-event' : 'Outcome'}</div>
+      <h1>{entry.data.title}</h1>
+      {entry.data.archiveNote && (
+        <aside class="catalyst-archive-note" aria-labelledby="catalyst-archive-note-title">
+          <h2 id="catalyst-archive-note-title">Archive note — {formatDate(entry.data.archiveNote.addedAt)}</h2>
+          <p>
+            {entry.data.archiveNote.introduction}
+            {entry.data.archiveNote.links.map((link) => (
+              <>{' '}{link.context} <a href={link.href}>{link.label}</a>.</>
+            ))}
+            {' '}{entry.data.archiveNote.closing}
+          </p>
+        </aside>
+      )}
+      <p class="lead">{entry.data.summary}</p>
+      <p class="edition-meta">
+        Event date {formatDate(entry.data.eventDate)} · Last reviewed {entry.data.lastReviewed} · Candidate status: review
+      </p>
+    </div>
+  </section>
+
+  <main id="main-content" class="container">
+    <section class="regime-panel">
+      <span>Verification status</span>
+      <strong>{entry.data.statusLabel.replaceAll('-', ' ')}</strong>
+      <div class="asset-tags" aria-label="Affected assets">
+        {entry.data.assets.map((asset) => <span>{asset}</span>)}
+      </div>
+    </section>
+
+    <section class="catalyst-section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Verified evidence</div>
+          <h2>What is confirmed</h2>
+        </div>
+      </div>
+      <div class="news-grid">
+        {entry.data.verifiedFacts.map((fact) => (
+          <article class="card">
+            <span class="verification">
+              {fact.verification === 'verified-primary' ? 'Primary-source verified' : 'Multi-source verified'}
+            </span>
+            <p>{fact.statement}</p>
+            <p class="card-sources">
+              Sources:
+              {fact.sourceIds.map((id, index) => {
+                const source = sourceMap.get(id);
+                return source ? (
+                  <>
+                    {index > 0 && ' · '}
+                    <a href={source.url} target="_blank" rel="noreferrer">{source.publisher}</a>
+                  </>
+                ) : null;
+              })}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="catalyst-section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Transmission map</div>
+          <h2>How the event may move through markets</h2>
+        </div>
+      </div>
+      <div class="news-grid">
+        {entry.data.transmissionChannels.map((channel) => (
+          <article class="card">
+            <h3>{channel.channel}</h3>
+            <p>{channel.conditionalImpact}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="catalyst-section card">
+      <div class="eyebrow">Monitoring checklist</div>
+      <h2>What to watch next</h2>
+      <ul>
+        {entry.data.whatToWatch.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+
+    <article class="edition-analysis">
+      <Content />
+    </article>
+
+    <SourceLedger sources={entry.data.sources} />
+    <ComplianceNote text={entry.data.complianceNote} />
+  </main>
+</BaseLayout>
+
+<style>
+  .catalyst-archive-note {
+    margin-block: 24px;
+    padding: 20px 24px;
+    border: 1px solid var(--silver);
+    border-left: 4px solid var(--gold);
+    border-radius: 12px;
+    color: var(--white);
+  }
+  .catalyst-archive-note h2 { margin: 0 0 8px; font-size: 1rem; color: inherit; }
+  .catalyst-archive-note p { margin: 0; max-width: 80ch; }
+  .catalyst-archive-note a { color: var(--white); text-underline-offset: 3px; }
+</style>

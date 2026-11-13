@@ -10,7 +10,7 @@ export async function GET() {
   const catalystBriefs = hasCatalystBriefFiles
     ? (await getCollection('catalystBriefs'))
       .filter((entry) => entry.data.status === 'published')
-      .sort((a, b) => b.data.generatedAt.localeCompare(a.data.generatedAt))
+      .sort((a, b) => (b.data.firstPublishedDate ?? b.data.generatedAt).localeCompare(a.data.firstPublishedDate ?? a.data.generatedAt))
       .slice(0, 10)
       .map((entry) => ({
       title: entry.data.title,

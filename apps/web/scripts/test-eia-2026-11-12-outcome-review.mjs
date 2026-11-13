@@ -75,6 +75,41 @@ function verify(raw) {
   return true;
 }
 
+const previewPath = fileURLToPath(new URL(
+  '../src/pages/internal/review-catalysts/[review].astro', import.meta.url,
+));
+const sitemapPath = fileURLToPath(new URL('../astro.config.mjs', import.meta.url));
+const reviewPageSource = readFileSync(previewPath, 'utf8');
+const sitemapSource = readFileSync(sitemapPath, 'utf8');
+function verifyPreviewGate(page, config) {
+  assert.ok(page.includes("if (process.env.VERCEL_ENV !== 'preview') return [];"),
+    'Only Vercel Preview may create the review route');
+  assert.ok(page.includes("entry.data.status === 'review'"),
+    'The preview must render only review-state content, never an already released article');
+  assert.ok(page.includes("entry.data.phase === 'outcome'"));
+  assert.ok(page.includes("entry.data.eventKey === '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication'"));
+  assert.ok(page.includes("review: 'eia-2026-11-12-wpsr-outcome'"));
+  assert.ok(page.includes("noindex={true}"), 'Brand layout must force robots noindex and omit canonical/JSON-LD');
+  assert.ok(page.includes('data-review-only="true"'));
+  assert.ok(page.includes('UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION'));
+  assert.ok(!page.includes('structuredData={structuredData}'));
+  assert.ok(config.includes("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'"),
+    'Sitemap must omit the review page in all environments');
+  return true;
+}
+assert.equal(verifyPreviewGate(reviewPageSource, sitemapSource), true);
+const previewMutants = [
+  ['production build route leak', reviewPageSource.replace("VERCEL_ENV !== 'preview'", "VERCEL_ENV !== 'production'"), sitemapSource],
+  ['published article in preview', reviewPageSource.replace("entry.data.status === 'review'", "entry.data.status === 'published'"), sitemapSource],
+  ['indexed review preview', reviewPageSource.replace('noindex={true}', 'noindex={false}'), sitemapSource],
+  ['missing release warning', reviewPageSource.replace('UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION', 'Ready for publication'), sitemapSource],
+  ['missing sitemap hold', reviewPageSource, sitemapSource.replace("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'", "'/internal/review-catalysts/some-other-page'")],
+];
+for (const [label, badPage, badConfig] of previewMutants) {
+  assert.ok(badPage !== reviewPageSource || badConfig !== sitemapSource, 'Bad fixture: ' + label);
+  assert.throws(() => verifyPreviewGate(badPage, badConfig), { name: 'AssertionError' }, 'Fail closed: ' + label);
+}
+
 assert.equal(verify(content), true);
 const mutants = [
   ['premature release', content.replace('status: "review"', 'status: "published"')],

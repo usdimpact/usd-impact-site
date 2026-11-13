@@ -149,22 +149,22 @@ jobs:
             '
           fi
 
-      - name: Import as protected publication content
+      - name: Import as calendar-verified review candidate
         if: steps.eligibility.outputs.publishable == 'true'
-        run: node scripts/import-catalyst-brief.mjs "$RUNNER_TEMP/catalyst-brief.json" --publish --skip-published
+        run: node scripts/import-catalyst-brief.mjs "$RUNNER_TEMP/catalyst-brief.json" --review-only --skip-published
 
-      - name: Validate publication content preflight
+      - name: Validate review content preflight
         if: steps.eligibility.outputs.publishable == 'true'
         run: node scripts/validate-publication-content.mjs --preflight
 
-      - name: Open publication pull request
+      - name: Open protected Draft review pull request
         id: publish_pr
         if: steps.eligibility.outputs.publishable == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$(git status --porcelain src/content/catalyst-briefs)" ]; then
-            echo "No Catalyst Brief changes to publish."
+            echo "No new Catalyst Brief review candidate to hand off."
             exit 0
           fi
 
@@ -183,20 +183,21 @@ jobs:
             git config user.email "actions@users.noreply.github.com"
             git checkout -b "$branch"
             git add src/content/catalyst-briefs
-            git commit -m "Publish Catalyst Brief for ${event_name}"
+            git commit -m "Review verified Catalyst Brief for ${event_name}"
             git push --set-upstream origin "$branch"
             head_sha="$(git rev-parse HEAD)"
 
             printf '%s\n\n%s\n\n%s\n' \
               '## Automated Important Catalyst Brief' \
-              "This pull request contains the source-backed **${phase}** brief for **${event_name}** with status \`published\`." \
-              'Publication remains protected: Web quality must pass on this exact commit and a human must review and merge the pull request.' \
+              "This Draft PR contains the source-backed **${phase}** brief for **${event_name}** with status \`review\`, not \`published\`. No public Catalyst route is authorized." \
+              'Web quality and source-calendar checks must pass on this exact commit. A separate owner-approved publication-date, rights and editorial release PR is required before any public route or Production merge.' \
               > "$RUNNER_TEMP/catalyst-brief-pr.md"
 
             pr_url="$(gh pr create \
               --base main \
               --head "$branch" \
-              --title "Publish Catalyst Brief — ${event_name}" \
+              --title "DRAFT HOLD: Review Catalyst Brief — ${event_name}" \
+              --draft \
               --body-file "$RUNNER_TEMP/catalyst-brief-pr.md")"
           fi
 
@@ -227,9 +228,9 @@ jobs:
             echo "Web quality run $run_id concluded '${run_conclusion:-unknown}'; expected success."
             exit 1
           fi
-          echo 'Required PR-event checks, editorial facts/calendar review, Preview and exact-version release approval remain separate gates.'
+          echo 'Review-only PR is not a publication authorization. Final editorial, rights, publication-date and protected-release checks remain separate gates.'
           echo "validated_pr_url=$pr_url" >> "$GITHUB_OUTPUT"
-          echo "Catalyst Brief passed Web quality and is ready for protected review and merge: $pr_url"
+          echo "Catalyst Brief passed Web quality and is ready for protected editorial review ONLY; no public release: $pr_url"
 
       - name: Record automation failure
         if: failure()
@@ -241,8 +242,8 @@ jobs:
           body="Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           if [ -n "$issue_number" ]; then gh issue comment "$issue_number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
 
-      - name: Close recovered automation issue
-        # A no-candidate, held, unconfigured or manually dispatched run is not a verified scheduled recovery.
+      - name: Record scheduled review handoff without closing issue
+        # A successful review PR is not evidence of a verified public release.
         if: success() && github.event_name == 'schedule' && steps.config.outputs.configured == 'true' && steps.candidate.outputs.has_candidate == 'true' && steps.eligibility.outputs.publishable == 'true' && steps.publish_pr.outputs.validated_pr_url != ''
         env:
           GH_TOKEN: ${{ github.token }}
@@ -251,6 +252,5 @@ jobs:
           title="Important Catalyst Brief automation requires attention"
           issue_number="$(gh issue list --state open --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
           if [ -n "$issue_number" ]; then
-            gh issue comment "$issue_number" --body "Scheduled Catalyst automation recovered to validated PR handoff ${VALIDATED_PUBLICATION_PR} in workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Editorial review and merge remain separate; no Production publication is claimed."
-            gh issue close "$issue_number"
+            gh issue comment "$issue_number" --body "Scheduled Catalyst review automation produced a validated Draft review PR ${VALIDATED_PUBLICATION_PR} in workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. The issue remains OPEN until an owner confirms any separate required public-release recovery; no Production publication is claimed."
           fi

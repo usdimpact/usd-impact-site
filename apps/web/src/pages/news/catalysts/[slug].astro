@@ -5,6 +5,7 @@ import ComplianceNote from '../../../components/ComplianceNote.astro';
 import SourceLedger from '../../../components/SourceLedger.astro';
 import { hasCatalystBriefFiles } from '../../../lib/catalyst-brief-content.js';
 import { articleStructuredData } from '../../../lib/structured-data.js';
+import { catalystArticleDatePublished } from '../../../lib/catalyst-first-publication-policy.js';
 
 export async function getStaticPaths() {
   const briefs = hasCatalystBriefFiles
@@ -33,7 +34,7 @@ const structuredData = [articleStructuredData({
   headline: entry.data.title,
   description: entry.data.metaDescription,
   pathname: entry.data.slug,
-  datePublished: entry.data.generatedAt,
+  datePublished: catalystArticleDatePublished(entry.data),
   dateModified: entry.data.lastReviewed,
 })];
 const formatDate = (value) => new Intl.DateTimeFormat('en', {

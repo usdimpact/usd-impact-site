@@ -29,6 +29,8 @@ const owned = ref => ({ state: 'open', head: { ref, repo: { full_name: 'usdimpac
 assert.equal(hasOpenCatalystReviewPr(selected, [[owned('automation/catalyst-brief-unrelated-preview-111')], [owned(branch)]], 'usdimpact/usd-impact-site'), true, 'page two must suppress duplicate paid generation');
 assert.equal(hasOpenCatalystReviewPr(selected, [[owned(otherPhase)]], 'usdimpact/usd-impact-site'), false, 'a preview must not suppress an outcome');
 assert.equal(hasOpenCatalystReviewPr(selected, [[], []], 'usdimpact/usd-impact-site'), false, 'complete empty scan permits first research');
+assert.equal(hasOpenCatalystReviewPr(selected, [[]], 'usdimpact/usd-impact-site'), false, 'one complete empty page permits first research');
+assert.throws(() => hasOpenCatalystReviewPr(selected, [], 'usdimpact/usd-impact-site'), /pagination is incomplete/, 'zero returned pages is not an authenticated empty repository');
 assert.equal(hasOpenCatalystReviewPr(selected, [[owned(branch+'-extra')]], 'usdimpact/usd-impact-site'), false, 'non-numeric suffix must not suppress a candidate');
 assert.equal(hasOpenCatalystReviewPr(selected, [[{...owned(branch),head:{ref:branch,repo:{full_name:'external/fork'}}}]], 'usdimpact/usd-impact-site'), false, 'fork head must not impersonate review branch');
 for(const badPages of [null, {}, [{head: {ref: branch}}], [[null]], [[{state:'open',head:null}]]]) {

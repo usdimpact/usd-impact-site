@@ -9,6 +9,7 @@ import {
   isPinnedLegacyCatalyst,
   catalystFirstPublicationIssue,
   catalystArticleDatePublished,
+  catalystArticleDateModified,
 } from '../src/lib/catalyst-first-publication-policy.js';
 
 const root = fileURLToPath(new URL('../src/content/catalyst-briefs/', import.meta.url));
@@ -36,6 +37,7 @@ for (const { name, data: entry } of legacyRecords) {
   assert.equal(catalystFirstPublicationIssue(entry, today), null);
   assert.equal(catalystArticleDatePublished(entry, today), entry.generatedAt,
     'Keep prior public JSON-LD behavior unchanged for unverified legacy records');
+  assert.equal(catalystArticleDateModified(entry, today), entry.lastReviewed, 'Legacy modification date must remain unchanged');
 }
 // Later new Catalyst review files and separately approved public documents must
 // not break the *legacy census* test solely by adding a new Markdown file.
@@ -64,6 +66,10 @@ assert.throws(() => catalystArticleDatePublished(proposed, today), /requires/);
 const approvedDate = { ...proposed, firstPublishedDate: '2026-11-13' };
 assert.equal(catalystFirstPublicationIssue(approvedDate, today), null);
 assert.equal(catalystArticleDatePublished(approvedDate, today), '2026-11-13');
+assert.equal(catalystArticleDateModified(approvedDate, today), undefined,
+  'Never describe pre-publication editorial review as a post-publication modification');
+assert.equal(catalystArticleDateModified({ ...approvedDate, lastReviewed: '2026-11-13' }, today), '2026-11-13');
+assert.equal(catalystArticleDateModified({ ...approvedDate, lastReviewed: '2026-11-14' }, { todayUtc: '2026-11-14' }), '2026-11-14');
 assert.equal(catalystFirstPublicationIssue(approvedDate, { todayUtc:'2026-11-14' }), null, 'Historical public date persists on later builds');
 
 const rejected = [
@@ -72,6 +78,10 @@ const rejected = [
   ['content prepared after alleged publication', { ...proposed, firstPublishedDate:'2026-11-14', generatedAt:'2026-11-15T00:00:00Z' }, { todayUtc:'2026-11-15' }],
   ['future public date', { ...proposed, firstPublishedDate:'2026-11-14' }, today],
   ['invalid November calendar day', { ...proposed, firstPublishedDate:'2026-11-31' }, { todayUtc:'2026-12-01' }],
+  ['new invalid editorial review date', { ...approvedDate, lastReviewed:'2026-11-31' }, { todayUtc:'2026-12-01' }],
+  ['future editorial review date', { ...approvedDate, lastReviewed:'2026-11-14' }, today],
+  ['legacy first publication backfill', { ...allLegacy[0], firstPublishedDate:'2026-11-13' }, today],
+  ['legacy empty first publication', { ...allLegacy[0], firstPublishedDate:'' }, today],
   ['bad format', { ...proposed, firstPublishedDate:'2026-11-6' }, today],
   ['bad creation timestamp', { ...proposed, firstPublishedDate:'2026-11-13', generatedAt:'invalid' }, today],
   ['legacy slug reused with new event', { ...allLegacy[0], eventKey:'new-event', firstPublishedDate:undefined }, today],
@@ -91,8 +101,10 @@ assert.ok(schema.includes("import { catalystFirstPublicationIssue } from './lib/
 assert.ok(schema.includes("firstPublishedDate: z.string().optional()"));
 assert.ok(schema.includes('superRefine((brief, ctx) => {'));
 assert.ok(schema.includes("const issue = catalystFirstPublicationIssue(brief);"));
-assert.ok(renderer.includes("import { catalystArticleDatePublished } from '../../../lib/catalyst-first-publication-policy.js'"));
+assert.ok(renderer.includes("import { catalystArticleDatePublished, catalystArticleDateModified } from '../../../lib/catalyst-first-publication-policy.js'"));
 assert.ok(renderer.includes('datePublished: catalystArticleDatePublished(entry.data),'));
+assert.ok(renderer.includes('dateModified: catalystArticleDateModified(entry.data),'));
+assert.ok(!renderer.includes('dateModified: entry.data.lastReviewed,'), 'Future publication cannot backdate Article modification date');
 assert.ok(!renderer.includes('datePublished: entry.data.generatedAt,'), 'Never use drafting time for a new public Catalyst');
 assert.ok(renderer.includes("entry.data.status === 'published'"), 'Unapproved review pages must not be routed');
 assert.ok(renderer.includes('publishedBySlug.size !== briefs.length'), 'Reject duplicate slugs masquerading as legacy-publication exemptions');

@@ -23,6 +23,13 @@ function validate(route, sitemap) {
   assert.ok(route.includes('data-preview-only="true"'));
   assert.ok(route.includes('data-publication-state="draft-source-not-served"'));
   assert.ok(route.includes('UNPUBLISHED REVIEW PREVIEW'));
+  assert.ok(route.includes('data-review-prepared-date="2026-11-13"'), 'Show real draft review date without backdating publication');
+  assert.ok(route.includes('Public first-publication date:</strong> Not assigned — unpublished Preview'), 'No invented first-publication timestamp');
+  assert.ok(route.includes('Among the official developments selected for this educational review'), 'Selected examples must not claim exhaustiveness');
+  assert.ok(!route.includes('This week brought two U.S. labor releases'), 'Remove misleading exhaustive weekly framing');
+  assert.ok(!route.includes('Any public release requires an accountable editor to approve'), 'Public AI disclosure must not contain internal workflow text');
+  assert.ok(route.includes('a:focus-visible { outline: 3px solid var(--navy);'), 'Links on light surfaces need dark focus ring');
+  assert.ok(route.includes('.hero a:focus-visible, .site-header a:focus-visible { outline-color: #f4e2bc; }'), 'Links on dark surfaces need light focus ring');
   assert.ok(route.includes('name="robots" content="noindex,nofollow,noarchive,nosnippet"'));
   assert.ok(route.includes('name="googlebot" content="noindex,nofollow,noarchive,nosnippet"'));
   assert.ok(route.includes('name="referrer" content="no-referrer"'));
@@ -44,6 +51,23 @@ function validate(route, sitemap) {
   assert.equal(existsSync(priorWeeklyRoute), true, 'Prior public Oct 30 independent Weekly is retained');
   return true;
 }
+function relativeLuminance(hex) {
+  const values = hex.slice(1).match(/.{2}/g).map(x => parseInt(x,16)/255);
+  const [r,g,b] = values.map(x => x <= 0.04045 ? x/12.92 : ((x+0.055)/1.055)**2.4);
+  return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+function focusContrast(a,b) {
+  const v = [relativeLuminance(a),relativeLuminance(b)].sort((x,y)=>x-y);
+  return (v[1]+0.05)/(v[0]+0.05);
+}
+assert.ok(src.includes('--navy: #071a33;') && src.includes('--gold: #c9a35b;'));
+for (const [outline,bg] of [
+  ['#071a33','#ffffff'],
+  ['#071a33','#f7f8fa'],
+  ['#f4e2bc','#071a33'],
+  ['#f4e2bc','#020a14'],
+]) assert.ok(focusContrast(outline,bg) >= 3, 'Focus indicator boundary must exceed 3:1');
+
 assert.equal(validate(src,config),true);
 const mutants = [
   ['weaken production gate',src.replace("VERCEL_ENV !== 'preview'","VERCEL_ENV !== 'production'"),config],
@@ -54,6 +78,12 @@ const mutants = [
   ['change issuer source',src.replace(issuer[0],'https://example.invalid/non-government-source'),config],
   ['inject external script',src.replace('</head>','<script src="https://example.invalid/analytics.js"></script></head>'),config],
   ['remove sitemap exclusion',src,config.replace("'/macro-reviews/weekly/review-2026-11-06-r2'","'/macro-reviews/weekly/not-this-preview'")],
+  ['remove prepared-on date',src.replace('data-review-prepared-date="2026-11-13"','data-review-prepared-date="unknown"'),config],
+  ['hide unpublished first-published boundary',src.replace('Public first-publication date:</strong> Not assigned — unpublished Preview','Public first-publication date:</strong> 6 Nov 2026'),config],
+  ['reintroduce exhaustive release claim',src.replace('Among the official developments selected for this educational review','This week brought two U.S. labor releases'),config],
+  ['restore internal AI workflow wording',src.replace('USD Impact is operated by KELA LEADS S.R.L.','USD Impact is operated by KELA LEADS S.R.L. Any public release requires an accountable editor to approve'),config],
+  ['restore low-contrast gold focus',src.replace('a:focus-visible { outline: 3px solid var(--navy);','a:focus-visible { outline: 3px solid var(--gold);'),config],
+  ['remove dark-surface contrast override',src.replace('.hero a:focus-visible, .site-header a:focus-visible { outline-color: #f4e2bc; }',''),config],
 ];
 let rejected=0;
 for (const [name,badSrc,badConfig] of mutants) {

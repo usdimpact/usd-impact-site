@@ -132,6 +132,9 @@ assert.ok(renderer.includes('publishedBySlug.size !== briefs.length'), 'Reject d
 assert.ok(newsLanding.includes('b.data.firstPublishedDate ?? b.data.generatedAt'), 'Landing should order new public briefs by their real first-publication day');
 assert.ok(rss.includes('sortKey: entry.data.firstPublishedDate ?? entry.data.generatedAt'), 'RSS sorting must not misuse a new brief drafting timestamp');
 assert.ok(latestJson.includes('(b.data.firstPublishedDate ?? b.data.generatedAt).localeCompare(a.data.firstPublishedDate ?? a.data.generatedAt)'), 'Latest JSON must use the same Catalyst publication-date ordering');
+assert.ok(latestJson.includes('firstPublishedDate: entry.data.firstPublishedDate,'), 'Latest JSON must expose actual first-publication date for newly public Catalyst briefs');
+assert.equal(JSON.stringify({ slug: 'legacy', firstPublishedDate: undefined }), JSON.stringify({ slug: 'legacy' }), 'Legacy JSON payloads must not acquire an invented publication-date field');
+assert.equal(JSON.parse(JSON.stringify({ slug: 'new', firstPublishedDate: '2026-11-13' })).firstPublishedDate, '2026-11-13', 'New public Catalyst JSON must include its reviewed date');
 const ordered = [
   { sortKey: '2026-11-12T20:00:00Z', id: 'old' },
   { sortKey: '2026-11-13', id: 'new' },

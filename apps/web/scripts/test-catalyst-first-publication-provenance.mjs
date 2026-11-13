@@ -1,7 +1,10 @@
 // Offline compatibility and fail-closed future publication contract.
-// No Vercel, GitHub, provider, paid model, filesystem mutation or network calls.
+// No Vercel, GitHub, provider, paid model or network calls; one temp fixture is cleaned.
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import {
@@ -94,6 +97,21 @@ const rejected = [
 for (const [label, fixture, clock] of rejected) {
   assert.ok(catalystFirstPublicationIssue(fixture, clock), 'Fail closed: '+label);
   if (fixture.status === 'published') assert.throws(() => catalystArticleDatePublished(fixture,clock), Error);
+}
+
+// Astro loads **/*.md. The flat-path validator must refuse unexpected nested
+// candidates instead of quietly omitting them from source and quality checks.
+const temporary = mkdtempSync(path.join(os.tmpdir(), 'usdimpact-catalyst-nested-'));
+try {
+  const nested = path.join(temporary, 'src/content/catalyst-briefs/nested');
+  mkdirSync(nested, { recursive: true });
+  writeFileSync(path.join(nested, 'unvalidated.md'), '---\nstatus: "published"\n---\n');
+  const validatorPath = fileURLToPath(new URL('./validate-catalyst-briefs.mjs', import.meta.url));
+  const attempted = spawnSync(process.execPath, [validatorPath], { cwd: temporary, encoding: 'utf8' });
+  assert.notEqual(attempted.status, 0, 'Nested Catalyst files must never escape validation');
+  assert.match(attempted.stderr, /nested Catalyst Brief files are unsupported/);
+} finally {
+  rmSync(temporary, { recursive: true, force: true });
 }
 
 // Defend the integration boundary as well as the pure policy function.

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { hasOpenCatalystReviewPr } from './check-open-catalyst-pr.mjs';
 
 const workflow = await readFile(new URL('../../../.github/workflows/catalyst-brief.yml', import.meta.url), 'utf8');
 
@@ -8,6 +9,41 @@ assert.match(workflow, /cron: '45 22 \* \* \*'/, 'outcome check must run every d
 assert.match(workflow, /select-important-catalyst\.mjs/, 'workflow must deterministically select an eligible catalyst');
 assert.match(workflow, /catalyst-brief-source/, 'workflow must fetch fresh source-backed analysis');
 assert.match(workflow, /for attempt in 1 2;/, 'research must have one bounded retry');
+
+assert.match(workflow, /gh api --paginate --slurp/, 'all open PR pages must be checked before any paid research');
+assert.match(workflow, /check-open-catalyst-pr\.mjs/, 'the fail-closed read-only dedupe parser must be invoked');
+assert.match(workflow, /needs_research=false/, 'an existing PR must suppress paid research');
+assert.match(workflow, /needs_research=true/, 'a new slug may proceed only after a complete open-PR scan');
+assert.match(workflow, /- name: Fetch and analyze the catalyst\n\s*if: steps\.candidate\.outputs\.has_candidate == 'true' && steps\.pending_catalyst\.outputs\.needs_research == 'true'/, 'no paid research without complete duplicate check');
+assert.match(workflow, /- name: Check publication eligibility\n\s*if: steps\.candidate\.outputs\.has_candidate == 'true' && steps\.pending_catalyst\.outputs\.needs_research == 'true'/, 'no eligibility read after a skipped duplicate');
+const candidatePos = workflow.indexOf('- name: Select one important catalyst');
+const duplicatePos = workflow.indexOf('- name: Skip duplicate Catalyst PR before paid research');
+const paidPos = workflow.indexOf('- name: Fetch and analyze the catalyst');
+assert.ok(candidatePos >= 0 && candidatePos < duplicatePos && duplicatePos < paidPos, 'cost gate must precede paid endpoint invocation');
+assert.doesNotMatch(workflow, /Skip duplicate Catalyst PR before paid research[\s\S]*?continue-on-error: true/, 'duplicate-check errors must stop research');
+
+const selected = { candidate: { slug: '2026-11-12-eia-wpsr-outcome' } };
+const branch = 'automation/catalyst-brief-2026-11-12-eia-wpsr-outcome-123456789';
+const otherPhase = 'automation/catalyst-brief-2026-11-12-eia-wpsr-preview-999';
+const owned = ref => ({ state: 'open', head: { ref, repo: { full_name: 'usdimpact/usd-impact-site' } }, base: { ref: 'main' } });
+assert.equal(hasOpenCatalystReviewPr(selected, [[owned('automation/catalyst-brief-unrelated-preview-111')], [owned(branch)]], 'usdimpact/usd-impact-site'), true, 'page two must suppress duplicate paid generation');
+assert.equal(hasOpenCatalystReviewPr(selected, [[owned(otherPhase)]], 'usdimpact/usd-impact-site'), false, 'a preview must not suppress an outcome');
+assert.equal(hasOpenCatalystReviewPr(selected, [[], []], 'usdimpact/usd-impact-site'), false, 'complete empty scan permits first research');
+assert.equal(hasOpenCatalystReviewPr(selected, [[owned(branch+'-extra')]], 'usdimpact/usd-impact-site'), false, 'non-numeric suffix must not suppress a candidate');
+assert.equal(hasOpenCatalystReviewPr(selected, [[{...owned(branch),head:{ref:branch,repo:{full_name:'external/fork'}}}]], 'usdimpact/usd-impact-site'), false, 'fork head must not impersonate review branch');
+for(const badPages of [null, {}, [{head: {ref: branch}}], [[null]], [[{state:'open',head:null}]]]) {
+  assert.throws(() => hasOpenCatalystReviewPr(selected, badPages, 'usdimpact/usd-impact-site'), Error, 'invalid/incomplete pagination must fail closed');
+}
+assert.throws(() => hasOpenCatalystReviewPr({candidate:{slug:'../escape'}}, [[]], 'usdimpact/usd-impact-site'), Error);
+for(const [label, mutated] of [
+  ['cost gate removed', workflow.replace("id: pending_catalyst", "id: cancelled_catalyst")],
+  ['paid fetch guard bypassed', workflow.replace("if: steps.candidate.outputs.has_candidate == 'true' && steps.pending_catalyst.outputs.needs_research == 'true'", "if: steps.candidate.outputs.has_candidate == 'true'")],
+  ['PR scan unpaginated', workflow.replace("gh api --paginate --slurp", "gh api")],
+]) {
+  assert.notEqual(mutated, workflow, label + ' must mutate the fixture');
+  assert.ok(!mutated.includes('id: pending_catalyst') || !mutated.includes("if: steps.candidate.outputs.has_candidate == 'true' && steps.pending_catalyst.outputs.needs_research == 'true'") || !mutated.includes('gh api --paginate --slurp'), label + ' must be caught by policy assertions');
+}
+
 assert.match(workflow, /import-catalyst-brief\.mjs[^\n]*--review-only --skip-published/, 'scheduled importer must be review-only and preserve calendar checks');
 assert.doesNotMatch(workflow, /import-catalyst-brief\.mjs[^\n]*--publish/, 'scheduled Catalyst must never claim published status');
 assert.match(workflow, /gh pr create[\s\S]*?--draft/, 'Catalyst automation must create a Draft review-only PR');

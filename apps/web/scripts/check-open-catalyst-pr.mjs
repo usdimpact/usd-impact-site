@@ -11,7 +11,7 @@ export function hasOpenCatalystReviewPr(payload, pages, repository) {
   if (typeof repository !== 'string' || !/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repository)) {
     throw new Error('A verified repository name is mandatory before paid research.');
   }
-  if (!Array.isArray(pages) || !pages.every(Array.isArray)) {
+  if (!Array.isArray(pages) || pages.length === 0 || !pages.every(Array.isArray)) {
     throw new Error('Open-PR pagination is incomplete or malformed; paid research refused.');
   }
 

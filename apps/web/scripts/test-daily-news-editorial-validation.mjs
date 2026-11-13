@@ -585,11 +585,11 @@ failedNov13StyleDraft.summary = 'The next FOMC decision remains on the watchlist
 const originalNov13StyleBytes = JSON.stringify(failedNov13StyleDraft);
 const nov13LengthIssues = collectRepairLengthIssues(failedNov13StyleDraft);
 assert.ok(
-  nov13LengthIssues.some((issue) => /Highlight 1 headline exceeds 140 characters \\(141\\)/.test(issue)),
+  nov13LengthIssues.some((issue) => issue.includes('Highlight 1 headline exceeds 140 characters (141)')),
   'the exact 141-character headline violation must be diagnosed for bounded repair',
 );
 assert.ok(
-  nov13LengthIssues.some((issue) => /Highlight 2 whyItMatters exceeds 700 characters \\(701\\)/.test(issue)),
+  nov13LengthIssues.some((issue) => issue.includes('Highlight 2 whyItMatters exceeds 700 characters (701)')),
   'a second independent overlong field must not be hidden by the first error',
 );
 assert.equal(JSON.stringify(failedNov13StyleDraft), originalNov13StyleBytes, 'advisory diagnostics must not mutate or truncate content');
@@ -614,7 +614,7 @@ assert.doesNotThrow(
 assert.match(sourceHandler, /Prefer a compact complete answer to avoid model output exhaustion/);
 assert.match(sourceHandler, /hard maximum of 140/);
 assert.match(sourceHandler, /Apply an explicit forward-looking FOMC and central-bank check/);
-assert.match(repairHandler, /collectRepairLengthIssues\\(draft\\)/);
+assert.ok(repairHandler.includes('collectRepairLengthIssues(draft)'));
 assert.match(repairHandler, /For an unsupported forward-looking FOMC or central-bank decision/);
 assert.match(repairHandler, /never fabricate a new catalyst, source, or date/);
 assert.match(repairHandler, /MAX_REPAIR_ATTEMPTS = 2/);

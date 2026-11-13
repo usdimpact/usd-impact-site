@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { hasOpenCatalystReviewPr } from './check-open-catalyst-pr.mjs';
+import './test-catalyst-prepaid-dedupe-shell.mjs';
 
 const workflow = await readFile(new URL('../../../.github/workflows/catalyst-brief.yml', import.meta.url), 'utf8');
 

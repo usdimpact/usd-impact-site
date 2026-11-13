@@ -41,7 +41,11 @@ for(const [label, mutated] of [
   ['PR scan unpaginated', workflow.replace("gh api --paginate --slurp", "gh api")],
 ]) {
   assert.notEqual(mutated, workflow, label + ' must mutate the fixture');
-  assert.ok(!mutated.includes('id: pending_catalyst') || !mutated.includes("if: steps.candidate.outputs.has_candidate == 'true' && steps.pending_catalyst.outputs.needs_research == 'true'") || !mutated.includes('gh api --paginate --slurp'), label + ' must be caught by policy assertions');
+  const stillGuarded = mutated.includes('id: pending_catalyst')
+    && mutated.includes('gh api --paginate --slurp')
+    && /- name: Fetch and analyze the catalyst\n\s*if: [^\n]*needs_research == 'true'/.test(mutated)
+    && /- name: Check publication eligibility\n\s*if: [^\n]*needs_research == 'true'/.test(mutated);
+  assert.equal(stillGuarded, false, label + ' must be caught by policy assertions');
 }
 
 assert.match(workflow, /import-catalyst-brief\.mjs[^\n]*--review-only --skip-published/, 'scheduled importer must be review-only and preserve calendar checks');

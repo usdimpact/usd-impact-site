@@ -18,6 +18,8 @@ import {
 const root = fileURLToPath(new URL('../src/content/catalyst-briefs/', import.meta.url));
 const schema = readFileSync(fileURLToPath(new URL('../src/content.config.ts', import.meta.url)), 'utf8');
 const renderer = readFileSync(fileURLToPath(new URL('../src/pages/news/catalysts/[slug].astro', import.meta.url)), 'utf8');
+const newsLanding = readFileSync(fileURLToPath(new URL('../src/pages/news/index.astro', import.meta.url)), 'utf8');
+const rss = readFileSync(fileURLToPath(new URL('../src/pages/news/feed.xml.js', import.meta.url)), 'utf8');
 const files = readdirSync(root).filter(x => x.endsWith('.md')).sort();
 const today = { todayUtc: '2026-11-13' };
 const readFrontmatter = filename => {
@@ -126,4 +128,12 @@ assert.ok(!renderer.includes('dateModified: entry.data.lastReviewed,'), 'Future 
 assert.ok(!renderer.includes('datePublished: entry.data.generatedAt,'), 'Never use drafting time for a new public Catalyst');
 assert.ok(renderer.includes("entry.data.status === 'published'"), 'Unapproved review pages must not be routed');
 assert.ok(renderer.includes('publishedBySlug.size !== briefs.length'), 'Reject duplicate slugs masquerading as legacy-publication exemptions');
+assert.ok(newsLanding.includes('b.data.firstPublishedDate ?? b.data.generatedAt'), 'Landing should order new public briefs by their real first-publication day');
+assert.ok(rss.includes('sortKey: entry.data.firstPublishedDate ?? entry.data.generatedAt'), 'RSS sorting must not misuse a new brief drafting timestamp');
+const ordered = [
+  { sortKey: '2026-11-12T20:00:00Z', id: 'old' },
+  { sortKey: '2026-11-13', id: 'new' },
+].sort((a,b)=>b.sortKey.localeCompare(a.sortKey));
+assert.equal(ordered[0].id,'new', 'Later first-publication date must precede older prepared articles');
+
 console.log('Catalyst publication-date provenance PASS: 15 unchanged historical pages, 1 valid future date, '+rejected.length+' fail-closed cases');

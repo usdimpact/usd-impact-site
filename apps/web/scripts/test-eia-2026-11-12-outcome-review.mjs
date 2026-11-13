@@ -61,6 +61,11 @@ function verify(raw) {
     '322,000 barrels', '95.2%',
   ]) assert.ok(facts.includes(exact), 'Missing or modified verified fact ' + exact);
   assert.match(data.summary, /No observed market reaction is asserted/i);
+  assert.match(raw, /The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public\./);
+  assert.ok(!raw.includes('The article remains an **unpublished review candidate**'), 'No internal draft-only wording may leak into later approved copy');
+  assert.ok(!raw.includes('This educational outcome was assembled for review'), 'Release copy cannot imply draft preparation is a publication date');
+  assert.match(data.generatedAt, /^2026-11-13T17:08:00Z$/, 'Keep the original drafting timestamp distinct from future publication metadata');
+  assert.equal(data.status, 'review', 'A later publication PR must separately prove the true first-publication time');
   assert.match(raw, /Data week|week ending/i);
   assert.ok(!/\b(?:guaranteed return|risk-free profit|must buy|must sell)\b/i.test(raw));
   // Exact, explicit forbidden pointers avoid a host-unanchored URL regex.
@@ -120,6 +125,7 @@ const mutants = [
   ['missing fact source', content.replace('      - "eia-wpsr-20261112-archive"', '      - "invented-fact-source-id"')],
   ['altered crude stock change', content.replace('increased 4.7 million barrels to', 'increased 5.7 million barrels to')],
   ['altered refinery utilization', content.replace('at 95.2% capacity utilization', 'at 96.2% capacity utilization')],
+  ['remove historical date separation', content.replace('The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public.', 'This page was first published on the original EIA release date.')],
 ];
 let rejected = 0;
 for (const [label, mutant] of mutants) {

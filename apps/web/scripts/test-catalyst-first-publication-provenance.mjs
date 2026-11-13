@@ -20,6 +20,7 @@ const schema = readFileSync(fileURLToPath(new URL('../src/content.config.ts', im
 const renderer = readFileSync(fileURLToPath(new URL('../src/pages/news/catalysts/[slug].astro', import.meta.url)), 'utf8');
 const newsLanding = readFileSync(fileURLToPath(new URL('../src/pages/news/index.astro', import.meta.url)), 'utf8');
 const rss = readFileSync(fileURLToPath(new URL('../src/pages/news/feed.xml.js', import.meta.url)), 'utf8');
+const latestJson = readFileSync(fileURLToPath(new URL('../src/pages/news/latest.json.js', import.meta.url)), 'utf8');
 const files = readdirSync(root).filter(x => x.endsWith('.md')).sort();
 const today = { todayUtc: '2026-11-13' };
 const readFrontmatter = filename => {
@@ -130,6 +131,7 @@ assert.ok(renderer.includes("entry.data.status === 'published'"), 'Unapproved re
 assert.ok(renderer.includes('publishedBySlug.size !== briefs.length'), 'Reject duplicate slugs masquerading as legacy-publication exemptions');
 assert.ok(newsLanding.includes('b.data.firstPublishedDate ?? b.data.generatedAt'), 'Landing should order new public briefs by their real first-publication day');
 assert.ok(rss.includes('sortKey: entry.data.firstPublishedDate ?? entry.data.generatedAt'), 'RSS sorting must not misuse a new brief drafting timestamp');
+assert.ok(latestJson.includes('(b.data.firstPublishedDate ?? b.data.generatedAt).localeCompare(a.data.firstPublishedDate ?? a.data.generatedAt)'), 'Latest JSON must use the same Catalyst publication-date ordering');
 const ordered = [
   { sortKey: '2026-11-12T20:00:00Z', id: 'old' },
   { sortKey: '2026-11-13', id: 'new' },

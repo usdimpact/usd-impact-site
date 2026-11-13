@@ -4,9 +4,9 @@ import {
   createLaunchEmailDispatchIntent,
   createResendLaunchEmailAdapter,
   dispatchEnqueuedLaunchEmail,
-  enqueueLaunchEmailIntent,
   lifecycleEmailDispatchEnabled,
 } from './launch-email-dispatch.js';
+import { enqueuePurchaseAccessReadyAtomic } from './purchase-access-ready-atomic-ledger.js';
 
 export const PURCHASE_ACCESS_READY_EMAIL_MESSAGE_ID = 'purchase_access_ready';
 export const PURCHASE_ACCESS_READY_EMAIL_BUSINESS_OBJECT_TYPE = 'purchase';
@@ -117,8 +117,11 @@ export async function deliverPurchaseAccessReadyEmail({
   nowMs = Date.now(),
 }) {
   const prepared = createPurchaseAccessReadyEmailIntent({ accessResult });
-  const state = await enqueueLaunchEmailIntent({
-    intent: prepared.intent,
+  // An outbox-only insert is forbidden for purchase-access-ready mail.
+  // The atomic RPC also freezes its locale, recipient and template.
+  const state = await enqueuePurchaseAccessReadyAtomic({
+    accessResult,
+    prepared,
     environment,
     fetchImpl: ledgerFetchImpl,
   });
@@ -140,4 +143,56 @@ export async function deliverPurchaseAccessReadyEmail({
     nowMs,
   });
   return Object.freeze({ enabled: true, state, delivery });
+}
+
+
+/**
+ * A verified completed purchase must never be reversed or reprocessed because
+ * a secondary customer notification could not be queued or dispatched.
+ *
+ * This wrapper intentionally accepts only an already VERIFIED accessResult.
+ * The caller must finish the commercial grant and verify the purchase-linked
+ * entitlement first. A HOLD here requires independent notification reconciliation;
+ * it is not evidence that the buyer failed to obtain access or that an email sent.
+ */
+export async function attemptNonBlockingPurchaseAccessReadyEmail({
+  accessResult,
+  environment = process.env,
+  ledgerFetchImpl = fetch,
+  providerFetchImpl = fetch,
+  nowMs = Date.now(),
+  deliveryImpl = deliverPurchaseAccessReadyEmail,
+  reportImpl = console.error,
+}) {
+  try {
+    const outcome = await deliveryImpl({
+      accessResult,
+      environment,
+      ledgerFetchImpl,
+      providerFetchImpl,
+      nowMs,
+    });
+    if (!outcome || typeof outcome.enabled !== 'boolean') {
+      throw new LaunchEmailDispatchError(
+        'The notification dispatcher returned an unrecognized result.',
+        'PURCHASE_ACCESS_READY_RESULT_INVALID',
+      );
+    }
+    return Object.freeze({
+      status: outcome.enabled ? 'delivery_attempted' : 'dispatch_disabled',
+    });
+  } catch (error) {
+    // Never include recipient address, purchase details, keys, or provider text
+    // in operational logs. Do not throw even when the logger is unavailable.
+    const code = typeof error?.code === 'string'
+      && /^[A-Z][A-Z0-9_]{2,79}$/.test(error.code)
+      ? error.code
+      : 'PURCHASE_ACCESS_READY_NOTIFICATION_UNAVAILABLE';
+    try {
+      reportImpl('Purchase access-ready notification HOLD after verified access.', { code });
+    } catch {
+      // Observability failures cannot affect the authoritative purchase.
+    }
+    return Object.freeze({ status: 'hold', code });
+  }
 }

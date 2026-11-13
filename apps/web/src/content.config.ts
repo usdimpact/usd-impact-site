@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import fs from 'node:fs';
+import { catalystFirstPublicationIssue } from './lib/catalyst-first-publication-policy.js';
 
 const publicationStatus = z.enum(['draft', 'review', 'ready-for-build', 'published']);
 
@@ -195,6 +196,7 @@ const catalystBriefs = defineCollection({
     sourceEditionDate: z.string(),
     phase: z.enum(['preview', 'outcome']),
     generatedAt: z.string(),
+    firstPublishedDate: z.string().optional(),
     lastReviewed: z.string(),
     status: publicationStatus,
     category: z.literal('USD Impact Catalyst Brief'),
@@ -209,7 +211,10 @@ const catalystBriefs = defineCollection({
     complianceNote: z.string(),
   }).refine((brief) => !brief.archiveNote || (
     brief.phase === 'preview' && brief.archiveNote.addedAt > brief.eventDate
-  ), { message: 'Archive notes belong to previews and must be dated after the event date', path: ['archiveNote'] }),
+  ), { message: 'Archive notes belong to previews and must be dated after the event date', path: ['archiveNote'] }).superRefine((brief, ctx) => {
+    const issue = catalystFirstPublicationIssue(brief);
+    if (issue) ctx.addIssue({ code: 'custom', message: issue, path: ['firstPublishedDate'] });
+  }),
 });
 
 const weeklyReports = defineCollection({

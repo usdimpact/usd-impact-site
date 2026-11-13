@@ -91,14 +91,15 @@ check('only the five reviewed platform steps are conditional', () => {
 });
 for (const [name, source, opening] of [
   ['Daily', daily, 'Open and validate publication pull request'],
-  ['Catalyst', catalyst, 'Open publication pull request'],
+  ['Catalyst', catalyst, 'Open protected Draft review pull request'],
 ]) {
   const list = steps(source);
+  const preflightName = name === 'Catalyst' ? 'Validate review content preflight' : 'Validate publication content preflight';
   check(`${name}: content preflight replaces only the pre-PR validate/build`, () => {
-    const body = step(list, 'Validate publication content preflight');
+    const body = step(list, preflightName);
     assert.match(body, /run: node scripts\/validate-publication-content\.mjs --preflight/);
     assert.doesNotMatch(source, /npm run build|npm run validate(?:\s|$)/);
-    assert.ok(list.findIndex((s) => s.name === 'Validate publication content preflight') < list.findIndex((s) => s.name === opening));
+    assert.ok(list.findIndex((s) => s.name === preflightName) < list.findIndex((s) => s.name === opening));
   });
   check(`${name}: dispatch binds exact head/base and only selects fresh runs`, () => {
     const body = step(list, opening);
@@ -118,8 +119,10 @@ for (const [name, source, opening] of [
       assert.match(source, /failing source, calendar, security, Preview or timing gate leaves the PR open for protected owner review/);
       assert.match(source, /Required exact-head security checks, original-source validation and Preview remain separate from generator success/);
     } else {
-      assert.match(source, /human.*review.*merge/);
-      assert.match(source, /Required PR-event checks, editorial facts\/calendar review, Preview and exact-version release approval remain separate gates/);
+      assert.match(source, /--review-only --skip-published/, 'Catalyst must stage only review content');
+      assert.match(source, /gh pr create[\s\S]*?--draft/, 'A source-verified Catalyst must open a Draft PR');
+      assert.doesNotMatch(source, /gh issue close/, 'Draft review is never a public-release recovery receipt');
+      assert.match(source, /Review-only PR is not a publication authorization/);
     }
   });
 }
@@ -134,7 +137,8 @@ check('schedules and generation retry budgets remain unchanged', () => {
 });
 check('import and publication-eligibility protections remain', () => {
   assert.match(daily, /import-daily-news\.mjs.*--replace --skip-published --publish/);
-  assert.match(catalyst, /import-catalyst-brief\.mjs.*--publish --skip-published/);
+  assert.match(catalyst, /import-catalyst-brief\.mjs.*--review-only --skip-published/);
+  assert.doesNotMatch(catalyst, /import-catalyst-brief\.mjs.*--publish/, 'Automation cannot bypass publication-date metadata policy');
   assert.match(daily, /pr_scan_complete=false[\s\S]*pulls\?state=all&base=main&per_page=100&page=\$pr_page[\s\S]*pr_scan_complete=true[\s\S]*pr_scan_complete" != true/);
   assert.match(catalyst, /if: steps\.eligibility\.outputs\.publishable == 'true'/);
 });

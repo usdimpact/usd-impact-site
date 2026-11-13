@@ -6,9 +6,11 @@ import path from 'node:path';
 
 const inputPath = process.argv[2];
 const publish = process.argv.includes('--publish');
+const reviewOnly = process.argv.includes('--review-only');
 const skipPublished = process.argv.includes('--skip-published');
+if (publish && reviewOnly) throw new Error('Choose --review-only or --publish, never both.');
 if (!inputPath) {
-  console.error('Usage: node scripts/import-catalyst-brief.mjs <bundle.json> [--publish] [--skip-published]');
+  console.error('Usage: node scripts/import-catalyst-brief.mjs <bundle.json> [--review-only | --publish] [--skip-published]');
   process.exit(1);
 }
 
@@ -219,7 +221,7 @@ if (existing) throw new Error(`${outputPath} already exists and requires editori
 
 await validateHistoricalSourceDates(sources, outputPath);
 
-if (publish) {
+if (publish || reviewOnly) {
   try {
     const supportedBls = explicitBlsMonthlyLabel(payload.event);
     if (!supportedBls && /\bBLS\b/i.test(String(payload.event ?? '')) && mentionsSupportedBlsSeries(payload.event)) {
@@ -245,4 +247,4 @@ if (publish) {
 }
 
 await writeFile(outputPath, `${lines.join('\n')}\n`, 'utf8');
-console.log(`Imported Catalyst Brief to ${outputPath} with status ${publish ? 'published' : 'review'}.`);
+console.log(`Imported Catalyst Brief to ${outputPath} with status ${publish ? 'published' : 'review'}${reviewOnly ? ' (calendar-verified review-only)' : ''}.`);

@@ -104,7 +104,7 @@ export async function persistResearchMembershipTransition({
     error.status = response.status;
     throw error;
   }
-  if (!payload || !['applied', 'duplicate'].includes(payload.action)) {
+  if (!payload || !['applied', 'duplicate', 'held_stale', 'held_nonactive'].includes(payload.action)) {
     throw new Error('Research Membership persistence returned an invalid result.');
   }
   return Object.freeze({ ...payload });

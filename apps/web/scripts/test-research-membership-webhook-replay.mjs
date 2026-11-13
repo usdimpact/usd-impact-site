@@ -54,9 +54,9 @@ function archived(value = payload(), subscription = base) {
     actor_type: 'provider_webhook', occurred_at: e.occurredAt, metadata: { ...e.metadata },
   };
 }
-function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply } = {}) {
+function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply } = {}) {
   const originalLibrary = Object.freeze({ product_id: 'read-the-dollar-first-guided-interactive-edition', state: 'active' });
-  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], ledgerReads: 0, library: originalLibrary };
+  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], ledgerReads: 0, library: originalLibrary };
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
   ctx.fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -85,6 +85,19 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       ctx.ledgerReads += 1;
       if (ledgerReplies) return ledgerReplies(ctx, json, key.slice(3));
       return json(ctx.rows.filter((r) => r.event_key === key.slice(3)));
+    }
+    if (u.pathname === '/rest/v1/rpc/record_research_paid_binding_refusal') {
+      assert.equal(init.method, 'POST');
+      const evidence = JSON.parse(init.body);
+      assert.deepEqual(evidence, {
+        p_provider: 'lemon-squeezy',
+        p_provider_subscription_id: 'sub_fixture',
+        p_claimed_account_id: accountId,
+        p_checkout_key: null,
+        p_reason_code: 'SIGNED_BOUND_LIFECYCLE_REJECTED',
+      });
+      ctx.quarantines.push(evidence);
+      return quarantineReply ? quarantineReply(ctx, json) : json('99999999-9999-4999-8999-999999999999');
     }
     assert.equal(u.pathname, '/rest/v1/rpc/apply_research_membership_transition', 'no other surface may be accessed');
     assert.equal(init.method, 'POST');
@@ -149,6 +162,67 @@ for (const state of ['active', 'past_due', 'cancel_scheduled', 'disputed', 'canc
     assert.deepEqual(ctx.current, before);
   });
 }
+function staleLedgerRecord() {
+  const record = archived();
+  record.to_state = record.from_state;
+  record.metadata.researchP1StaleHeld = true;
+  record.metadata.researchP1OriginalToState = archived().to_state;
+  record.metadata.researchP1LatestAt = '2026-10-02T00:00:00.000Z';
+  return record;
+}
+await test('signed provider event held for chronology replays without a grant', async () => {
+  const ctx = fixture({ rows: [staleLedgerRecord()] });
+  const original = structuredClone(ctx.current);
+  assert.equal((await ctx.run()).action, 'held_stale');
+  ctx.assertReadOnly();
+  assert.deepEqual(ctx.current, original);
+});
+await test('held-stale RPC acknowledgement requires a matching committed event', async () => {
+  const ctx = fixture({ rpcReply: (c, json) => {
+    c.rows.push(staleLedgerRecord());
+    return json({ action: 'held_stale' });
+  } });
+  assert.equal((await ctx.run()).action, 'held_stale');
+  assert.equal(ctx.calls.filter(c => c.method === 'POST').length, 1);
+  assert.equal(ctx.writes.length, 0);
+});
+await test('forged chronology marker cannot bypass signed replay verification', async () => {
+  const row = staleLedgerRecord();
+  row.metadata.researchP1OriginalToState = 'cancelled';
+  const ctx = fixture({ rows: [row] });
+  await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT' });
+  ctx.assertReadOnly();
+});
+function nonactiveLedgerRecord() {
+  const record = archived();
+  record.to_state = record.from_state;
+  record.metadata.researchP1NonactiveHeld = true;
+  record.metadata.researchP1OriginalToState = archived().to_state;
+  return record;
+}
+await test('signed renewal for a nonactive profile is retained, not applied', async () => {
+  const ctx = fixture({ rows: [nonactiveLedgerRecord()] });
+  const before = structuredClone(ctx.current);
+  assert.equal((await ctx.run()).action, 'held_nonactive');
+  ctx.assertReadOnly();
+  assert.deepEqual(ctx.current, before);
+});
+await test('held-nonactive acknowledgement requires matching committed evidence', async () => {
+  const ctx = fixture({ rpcReply: (c, json) => {
+    c.rows.push(nonactiveLedgerRecord());
+    return json({ action: 'held_nonactive' });
+  } });
+  assert.equal((await ctx.run()).action, 'held_nonactive');
+  assert.equal(ctx.calls.filter(c => c.method === 'POST').length, 1);
+  assert.equal(ctx.writes.length, 0);
+});
+await test('forged nonactive event marker cannot bypass signed verification', async () => {
+  const row = nonactiveLedgerRecord();
+  row.metadata.researchP1OriginalToState = 'charged_back';
+  const ctx = fixture({ rows: [row] });
+  await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT' });
+  ctx.assertReadOnly();
+});
 await test('initial event is persisted once; replay after terminal transition never calls RPC', async () => {
   const ctx = fixture();
   assert.equal((await ctx.run()).action, 'applied');
@@ -173,10 +247,34 @@ await test('existing pre-fingerprint ledger row matches only its stored evidence
 for (const state of ['cancelled', 'refunded', 'charged_back']) {
   await test(`genuinely new webhook after ${state} stays rejected`, async () => {
     const ctx = fixture({ state });
+    const prior = structuredClone(ctx.current);
     await assert.rejects(() => ctx.run(), { code: 'RESEARCH_MEMBERSHIP_INVALID_TRANSITION' });
-    ctx.assertReadOnly();
+    assert.equal(ctx.quarantines.length, 1,
+      'signed event rejected by planner must create durable financial custody');
+    assert.equal(ctx.writes.length, 0, 'no entitlement or subscription mutation');
+    assert.deepEqual(ctx.current, prior);
+    assert.equal(ctx.library.product_id, 'read-the-dollar-first-guided-interactive-edition');
   });
 }
+await test('failed signed-bound quarantine is retryable and cannot be acknowledged', async () => {
+  const ctx = fixture({
+    state: 'cancelled',
+    quarantineReply: (_ctx, json) => json({ code: '55000' }, 503),
+  });
+  await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_QUARANTINE_FAILED', status: 503 });
+  assert.equal(ctx.quarantines.length, 1);
+  assert.equal(ctx.writes.length, 0);
+});
+await test('lookalike Development Supabase hostname is denied before any request', async () => {
+  const ctx = fixture();
+  await assert.rejects(
+    () => ctx.run(payload(), { environment: {
+      ...environment, SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.attacker.invalid',
+    } }),
+    { code: 'RESEARCH_WEBHOOK_DATABASE_MISMATCH' },
+  );
+  assert.equal(ctx.calls.length, 0);
+});
 for (const [field, bad] of [
   ['subscription_id', '33333333-3333-4333-8333-333333333333'],
   ['account_id', '33333333-3333-4333-8333-333333333333'], ['product_id', 'library-pass'],

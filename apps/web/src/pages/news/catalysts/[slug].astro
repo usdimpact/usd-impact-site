@@ -12,6 +12,9 @@ export async function getStaticPaths() {
     ? (await getCollection('catalystBriefs')).filter((entry) => entry.data.status === 'published')
     : [];
   const publishedBySlug = new Map(briefs.map((entry) => [entry.data.slug, entry]));
+  if (publishedBySlug.size !== briefs.length) {
+    throw new Error('Published Catalyst URL slugs must be unique; duplicate route refused.');
+  }
   for (const entry of briefs) {
     for (const link of entry.data.archiveNote?.links ?? []) {
       if (!link.href.startsWith('/')) continue;

@@ -88,7 +88,7 @@ const OUTPUT_SCHEMA = {
         additionalProperties: false,
         required: ['headline', 'development', 'whyItMatters', 'assets', 'importance', 'sourceIds'],
         properties: {
-          headline: { type: 'string' },
+          headline: { type: 'string', description: 'Single factual claim; target 90-110 characters and never exceed 140 including spaces. Do not imply a future event without a verified matching catalyst.' },
           development: { type: 'string' },
           whyItMatters: { type: 'string' },
           assets: { type: 'array', items: { type: 'string', enum: [...ALLOWED_ASSETS] } },
@@ -134,7 +134,7 @@ const OUTPUT_SCHEMA = {
         },
       },
     },
-    body: { type: 'string' },
+    body: { type: 'string', description: 'Concise finished editorial Markdown, target 1500-3500 characters and never exceed 9000. Avoid repetitive source inventory and unsupported forward-looking assertions.' },
   },
 };
 
@@ -494,9 +494,11 @@ Rules:
 - Every catalyst date must be confirmed by an authoritative primary schedule source and fall between ${editionDate} and ${addUtcDays(editionDate, 7)} inclusive.
 - Check official calendars for event discovery (BLS for Employment Situation and CPI, BEA for PCE, and Federal Reserve for FOMC). BLS annual/month-specific schedule pages are mutable discovery indexes and must NOT appear as dated sources in the published ledger: their Last Modified historical citations conflict. Cite independently verified dated BLS releases or documents for the associated claims; omit claims without verifiable source documents. Include every Employment Situation, CPI, PCE, and FOMC event that falls inside the seven-day catalyst window only when an independently verified dated supporting source is available; otherwise hold the unsupported event rather than inventing a date.
 - Treat FOMC, Federal Reserve policy decision, or central-bank decision language as central-bank catalyst mentions; CPI, Consumer Price Index, PCE, or personal consumption expenditures language as inflation catalyst mentions; and Employment Situation, nonfarm payrolls, or payrolls language as labor catalyst mentions. If the summary or a schedule-focused highlight discusses any such upcoming or next event, include the matching catalyst backed by an authoritative primary schedule source. Otherwise remove the forward-looking mention.
+- Apply an explicit forward-looking FOMC and central-bank check across the summary, each highlight (headline, development and whyItMatters), and body. If a sentence presents an upcoming, next, scheduled, calendar, or watchlist policy decision without an in-window matching catalyst backed by an authoritative original schedule source, remove that forward-looking sentence across every field. Never manufacture a date or turn an old policy statement into a future event merely to pass the check.
 - For quarterly refunding or 3-year, 10-year, and 30-year refunding auctions, use the current quarterly refunding release rather than an earlier quarter's tentative schedule, and verify the exact auction date and announced size.
 - Do not cite the reusable Treasury /system/files/221/Tentative-Auction-Schedule.pdf URL (including query-string variants) as a new dated release: historical editions cite conflicting dates for the same PDF pointer. Instead use an actually verified, dated official auction announcement or version-specific Treasury document; if unavailable, omit the unsupported source and associated claims. Never change source dates or append parameters to evade validation.
 - Before returning the bundle, inspect every highlight for Treasury refunding, 3-year, 10-year, or 30-year auction language. If that highlight does not cite a current Treasury refunding or auction source published within the prior 14 days, remove the entire highlight and every related sentence from the summary and body. Never retain the claim merely to satisfy the 3-highlight minimum; research a different fully supported development instead.
+- Prefer a compact complete answer to avoid model output exhaustion: three to five highest-value source-backed highlights, three to eight distinct used source documents, and roughly 1,500-3,500 characters of finished Markdown body. Preserve the mandatory three highlights and three independently grounded sources; do not omit a material verified event merely to shorten the answer. Keep each headline to one factual clause, target 90-110 characters including spaces and punctuation, with a hard maximum of 140; shorten filler before generation instead of truncating a completed sourced claim.
 - Before returning the bundle, confirm the summary is at most 700 characters, every headline is at most 140 characters, every development and highlight whyItMatters is at most 700 characters, every catalyst whyItMatters is at most 500 characters, and the body is at most 9,000 characters.
 - Apply the unsupported-absence and current-Treasury-source rules to the summary and body as well as the highlights. Do not claim that a release, decision, or source was not found.
 - Write the body as finished publication copy. Do not include assistant conversation, first-person offers, "If you want" sections, follow-up questions, or offers to rerun, expand, add, or provide more material.

@@ -219,6 +219,55 @@ def reflow(browser, route):
     finally:
         ctx.close()
 
+def oct30_weekly_keyboard_and_reflow(browser):
+    """Real compiled Oct 30 Weekly Chrome focus and 375px/desktop QA.
+
+    This historical noindex article uses its own .skip/#main anchors, not
+    the generic BaseLayout .skip-link/#main-content used elsewhere.
+    """
+    route = "/macro-reviews/weekly/2026-10-30/"
+    assert (dist / "macro-reviews/weekly/2026-10-30/index.html").is_file()
+    observations = []
+    for width in (375, 1280):
+        ctx, page = setup(browser, width=width, js=False)
+        try:
+            response = page.goto(origin + route, wait_until="load", timeout=30000)
+            assert response and response.status == 200, f"Oct30 {width}px HTTP failure"
+            assert page.locator("html").get_attribute("lang") == "en"
+            assert page.locator("body").get_attribute("data-period-end") == "2026-10-30"
+            assert "noindex" in (page.locator('meta[name="robots"]').get_attribute("content") or "")
+            assert page.locator("h1").count() == 1
+            assert page.locator("main#main").count() == 1
+            assert page.locator("main a[href]").count() >= 2
+            bounds = page.evaluate("""() => ({
+                client: document.documentElement.clientWidth,
+                scroll: document.documentElement.scrollWidth
+            })""")
+            assert bounds["scroll"] <= bounds["client"] + 2, f"Oct30 horizontal overflow at {width}px: {bounds}"
+            page.keyboard.press("Tab")
+            assert page.evaluate("document.activeElement?.classList?.contains('skip') === true"), "First Tab must reach the visible skip link"
+            skip = page.evaluate("""() => {
+                const e = document.activeElement, r = e.getBoundingClientRect(), c = getComputedStyle(e);
+                return {color:c.outlineColor, width:c.outlineWidth, x:r.left, right:r.right};
+            }""")
+            assert skip["color"] == "rgb(244, 226, 188)" and skip["width"] == "3px", f"Skip link must show a cream 3px focus outline: {skip}"
+            assert skip["x"] >= 0 and skip["right"] <= width, f"Skip link must be visible onscreen at {width}px: {skip}"
+            page.keyboard.press("Tab")
+            assert page.evaluate("document.activeElement?.classList?.contains('brand') === true"), "Second Tab should reach header brand"
+            assert page.evaluate("getComputedStyle(document.activeElement).outlineColor") == "rgb(244, 226, 188)", "Header link must show cream focus ring"
+            page.locator("main a[href]").first.focus()
+            page.keyboard.press("Tab")
+            assert page.evaluate("document.activeElement?.closest('main#main') !== null"), "Keyboard must enter main content"
+            assert page.evaluate("getComputedStyle(document.activeElement).outlineColor") == "rgb(7, 26, 51)", "Light-background article link must show navy focus ring"
+            page.goto(origin + route, wait_until="load", timeout=30000)
+            page.keyboard.press("Tab")
+            page.keyboard.press("Enter")
+            assert page.url.endswith("#main"), "Enter on skip link must reach main anchor"
+            observations.append({"width":width, "tab":"skip/brand/article", "skipEnter":"#main", "overflow":False})
+        finally:
+            ctx.close()
+    return {"route":route,"checks":observations,"javascript":False}
+
 try:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=chrome, headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
@@ -238,6 +287,7 @@ try:
                 check(f"{language.upper()} JS collapsed-header boundary {width}px",
                       lambda width=width, language=language: js_collapsed(browser, language, width))
         check("synthetic Score Lab native slider/CSV/reset", lambda: synthetic_score_lab_interaction(browser))
+        check("Oct30 Weekly real Chrome keyboard and 375px/desktop reflow", lambda: oct30_weekly_keyboard_and_reflow(browser))
         for route in ("/", "/es/", "/news/", "/reports/", "/learn/", "/quiz/"):
             check("reflow " + route, lambda route=route: reflow(browser, route))
         browser.close()

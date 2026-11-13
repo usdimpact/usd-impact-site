@@ -12,7 +12,7 @@ const latest = editions[0];
 const catalystBriefs = hasCatalystBriefFiles
   ? (await getCollection('catalystBriefs'))
       .filter((entry) => entry.data.status === 'published')
-      .sort((a, b) => b.data.generatedAt.localeCompare(a.data.generatedAt))
+      .sort((a, b) => (b.data.firstPublishedDate ?? b.data.generatedAt).localeCompare(a.data.firstPublishedDate ?? a.data.generatedAt))
   : [];
 // Only independently verified, published static Friday Weeklies can be promoted.
 // The dedicated freshness contract rejects a stale date whenever a new Friday

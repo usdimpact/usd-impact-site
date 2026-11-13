@@ -5,12 +5,16 @@ import ComplianceNote from '../../../components/ComplianceNote.astro';
 import SourceLedger from '../../../components/SourceLedger.astro';
 import { hasCatalystBriefFiles } from '../../../lib/catalyst-brief-content.js';
 import { articleStructuredData } from '../../../lib/structured-data.js';
+import { catalystArticleDatePublished, catalystArticleDateModified } from '../../../lib/catalyst-first-publication-policy.js';
 
 export async function getStaticPaths() {
   const briefs = hasCatalystBriefFiles
     ? (await getCollection('catalystBriefs')).filter((entry) => entry.data.status === 'published')
     : [];
   const publishedBySlug = new Map(briefs.map((entry) => [entry.data.slug, entry]));
+  if (publishedBySlug.size !== briefs.length) {
+    throw new Error('Published Catalyst URL slugs must be unique; duplicate route refused.');
+  }
   for (const entry of briefs) {
     for (const link of entry.data.archiveNote?.links ?? []) {
       if (!link.href.startsWith('/')) continue;
@@ -33,8 +37,8 @@ const structuredData = [articleStructuredData({
   headline: entry.data.title,
   description: entry.data.metaDescription,
   pathname: entry.data.slug,
-  datePublished: entry.data.generatedAt,
-  dateModified: entry.data.lastReviewed,
+  datePublished: catalystArticleDatePublished(entry.data),
+  dateModified: catalystArticleDateModified(entry.data),
 })];
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',

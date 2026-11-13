@@ -114,8 +114,28 @@ jobs:
             echo "No unpublished high-impact catalyst is due in the $PHASE window."
           fi
 
-      - name: Fetch and analyze the catalyst
+      - name: Skip duplicate Catalyst PR before paid research
         if: steps.candidate.outputs.has_candidate == 'true'
+        id: pending_catalyst
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Query every open PR page; any API/JSON failure blocks research.
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" > "$RUNNER_TEMP/open-catalyst-prs.json"
+          already_pending="$(node scripts/check-open-catalyst-pr.mjs "$RUNNER_TEMP/catalyst-candidate.json" "$RUNNER_TEMP/open-catalyst-prs.json" "$GITHUB_REPOSITORY")"
+          if [ "$already_pending" = "true" ]; then
+            echo 'needs_research=false' >> "$GITHUB_OUTPUT"
+            echo 'Existing open Catalyst Draft PR for this exact slug. No paid research or new PR.'
+          elif [ "$already_pending" = "false" ]; then
+            echo 'needs_research=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Catalyst pre-research de-duplication failed closed.'
+            exit 1
+          fi
+
+      - name: Fetch and analyze the catalyst
+        if: steps.candidate.outputs.has_candidate == 'true' && steps.pending_catalyst.outputs.needs_research == 'true'
         env:
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
@@ -137,7 +157,7 @@ jobs:
           exit 1
 
       - name: Check publication eligibility
-        if: steps.candidate.outputs.has_candidate == 'true'
+        if: steps.candidate.outputs.has_candidate == 'true' && steps.pending_catalyst.outputs.needs_research == 'true'
         id: eligibility
         run: |
           publishable="$(node -p "Boolean(JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).publishable)")"

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { classifyDailyWorkflowFailure } from './daily-news-failure-stage.mjs';
 
 const read = (name) => readFileSync(new URL(`../../../.github/workflows/${name}`, import.meta.url), 'utf8');
@@ -37,6 +38,12 @@ check('IndexNow is gated by Vercel Production success without provider credentia
   assert.match(indexnow, /git diff --name-only "\$DEPLOY_SHA\^" "\$DEPLOY_SHA"/);
   assert.doesNotMatch(indexnow, /USDIMPACT_WATCHDOG_VERCEL|VERCEL_TOKEN|api\.vercel\.com/);
   assert.doesNotMatch(indexnow, /src\/content\/es|\/es\//);
+});
+check('IndexNow excludes review, draft and invalid publications before network calls', () => {
+  const fixture = fileURLToPath(new URL('../../../scripts/test-indexnow-after-production.mjs', import.meta.url));
+  const result = spawnSync(process.execPath, [fixture], { encoding: 'utf8' });
+  assert.equal(result.status, 0, (result.stderr || '') + '\n' + (result.stdout || ''));
+  assert.match(result.stdout, /IndexNow published-only offline fixtures PASS/);
 });
 check('routing runs trusted main policy before installing project code', () => {
   const selection = step(qSteps, 'Select publication validation route');

@@ -107,3 +107,7 @@ The 12 November archive is the authoritative original for this historical issue.
 The underlying government report was released on **12 November 2026** for the week ending **6 November 2026**. The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public. The historical inventory results do not establish a same-day market-price response.
 
 Later EIA corrections or revisions must be considered as separately dated source evidence. The educational discussion does not establish consensus surprises, returns, investment signals or a causal reaction in WTI, Brent, DXY or Treasury yields.
+
+## AI-assisted preparation and source attribution
+
+**AI-assisted preparation.** AI tools assisted in preparing this educational analysis. The dated U.S. Energy Information Administration archive, release-specific summary and Table 1 are the sources for the reported inventory figures and release dates. The WTI, Brent and USD transmission discussion is USD Impact's conditional educational interpretation, not a verified observed market-price reaction. USD Impact is operated by KELA LEADS S.R.L. The EIA does not endorse this analysis.

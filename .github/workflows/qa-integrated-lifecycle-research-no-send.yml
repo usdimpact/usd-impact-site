@@ -1,0 +1,73 @@
+name: Integrated lifecycle and Research no-send release holds
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/web/src/lib/account-deletion-finalizer.js'
+      - 'apps/web/src/lib/research-membership-*.js'
+      - 'apps/web/scripts/test-account-deletion-*.mjs'
+      - 'apps/web/scripts/test-lifecycle-qa-route.mjs'
+      - 'apps/web/scripts/test-research-membership-*.mjs'
+      - 'apps/web/scripts/test-progress-email-readiness.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-canary.mjs'
+      - '.github/workflows/weekly-newsletter-canary.yml'
+      - '.github/workflows/qa-integrated-lifecycle-research-no-send.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integrated-lifecycle-no-send-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  offline-lifecycle-security-and-release-holds:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout exact proposed PR snapshot without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Deny real credentials and live email configuration
+        run: |
+          test "$GITHUB_EVENT_NAME" = "pull_request"
+          test "$GITHUB_BASE_REF" = "main"
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${LEMON_SQUEEZY_API_KEY:-}"
+          test -z "${DEV_POSTGREST_SECRET_KEY:-}"
+          test -z "${DEV_PGPASSWORD:-}"
+          node --check src/lib/account-deletion-finalizer.js
+          node --check src/lib/research-membership-persistence.js
+          node --check src/lib/research-membership-webhook-handler.js
+      - name: Verify fail-closed Weekly and Progress activation holds
+        run: |
+          node scripts/test-weekly-newsletter-canary.mjs
+          node scripts/test-progress-email-readiness.mjs
+      - name: Verify Research Membership persistence and signed replay barriers
+        run: |
+          node scripts/test-research-membership-persistence.mjs
+          node scripts/test-research-membership-webhook-execution.mjs
+          node scripts/test-research-membership-webhook-replay.mjs
+      - name: Verify account deletion Auth/REST and recovery without identity calls
+        run: |
+          node scripts/test-account-deletion-finalizer.mjs
+          node scripts/test-account-deletion-finalizer-batch-bound.mjs
+          node scripts/test-account-deletion-scheduler-contract.mjs
+          node scripts/test-lifecycle-qa-route.mjs

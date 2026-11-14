@@ -117,8 +117,10 @@ async function serviceRequest({ config, path, method = 'GET', body, prefer, fetc
     method,
     headers: {
       ...JSON_HEADERS,
+      // The server config requires an opaque sb_secret_ API key, not a JWT.
+      // Supabase accepts this on apikey; Bearer sb_secret_ is not a JWT and
+      // can be rejected by PostgREST. Never emit it as Authorization.
       apikey: config.secretKey,
-      Authorization: `Bearer ${config.secretKey}`,
       ...(prefer ? { Prefer: prefer } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -172,35 +174,77 @@ async function beginReceipt({ config, verified, fetchImpl }) {
     return Object.freeze({ receipt: existing, duplicate: true, complete: true });
   }
 
-  const attemptCount = Number.isInteger(existing.attempt_count) ? existing.attempt_count + 1 : 2;
+  const observedAttempt = existing.attempt_count;
+  if (!Number.isSafeInteger(observedAttempt) || observedAttempt < 1
+      || !['received', 'failed'].includes(existing.status)) {
+    throw new WebhookProcessingError(
+      'Webhook receipt retry state is invalid.',
+      'INVALID_WEBHOOK_RECEIPT_STATE',
+    );
+  }
+  const attemptCount = observedAttempt + 1;
+  // Reclaim an incomplete receipt only if status AND attempt count are still
+  // the values read above. A concurrent completion must never become received.
   const updated = await serviceRequest({
     config,
-    path: `/rest/v1/webhook_receipts?id=eq.${encodeURIComponent(existing.id)}`,
+    path: `/rest/v1/webhook_receipts?id=eq.${encodeURIComponent(existing.id)}&status=eq.${existing.status}&attempt_count=eq.${observedAttempt}&select=id,status,attempt_count`,
     method: 'PATCH',
     body: { status: 'received', attempt_count: attemptCount, last_error: null },
     prefer: 'return=representation',
     fetchImpl,
   });
-  return Object.freeze({
-    receipt: Array.isArray(updated) && updated.length ? updated[0] : { ...existing, attempt_count: attemptCount, status: 'received' },
-    duplicate: true,
-    complete: false,
-  });
+  if (!Array.isArray(updated) || updated.length > 1
+      || updated.some((row) => row?.id !== existing.id
+        || row.status !== 'received' || row.attempt_count !== attemptCount)) {
+    throw new WebhookProcessingError('Webhook receipt compare-and-set returned invalid evidence.',
+      'INVALID_WEBHOOK_RECEIPT_UPDATE');
+  }
+  if (updated.length === 0) {
+    const latest = await loadReceipt(config, verified.svixId, fetchImpl);
+    if (!latest || latest.payload_sha256 !== verified.payloadSha256
+        || latest.event_type !== verified.event.type) {
+      throw new WebhookProcessingError('Webhook receipt identity changed during retry.',
+        'WEBHOOK_RECEIPT_CONFLICT');
+    }
+    if (latest.status === 'processed' || latest.status === 'ignored') {
+      return Object.freeze({ receipt: latest, duplicate: true, complete: true });
+    }
+    throw new WebhookProcessingError('Webhook receipt changed during retry.',
+      'WEBHOOK_RECEIPT_CONTENDED');
+  }
+  return Object.freeze({ receipt: updated[0], duplicate: true, complete: false });
 }
 
-async function finishReceipt({ config, receiptId, status, lastError = null, fetchImpl, now = new Date() }) {
-  await serviceRequest({
+async function finishReceipt({ config, receipt, status, lastError = null, fetchImpl, now = new Date() }) {
+  if (!receipt || typeof receipt.id !== 'string'
+      || !Number.isSafeInteger(receipt.attempt_count) || receipt.attempt_count < 1) {
+    throw new WebhookProcessingError('Webhook receipt identity is invalid.',
+      'INVALID_WEBHOOK_RECEIPT_STATE');
+  }
+  // Only the attempt that owns the observed receipt version can finish it.
+  // A stale success or failure must not overwrite a later terminal result.
+  const updated = await serviceRequest({
     config,
-    path: `/rest/v1/webhook_receipts?id=eq.${encodeURIComponent(receiptId)}`,
+    path: `/rest/v1/webhook_receipts?id=eq.${encodeURIComponent(receipt.id)}&status=eq.received&attempt_count=eq.${receipt.attempt_count}&select=id,status,attempt_count`,
     method: 'PATCH',
     body: {
       status,
       processed_at: status === 'processed' || status === 'ignored' ? now.toISOString() : null,
       last_error: lastError,
     },
-    prefer: 'return=minimal',
+    prefer: 'return=representation',
     fetchImpl,
   });
+  if (!Array.isArray(updated) || updated.length > 1
+      || updated.some((row) => row?.id !== receipt.id
+        || row.status !== status || row.attempt_count !== receipt.attempt_count)) {
+    throw new WebhookProcessingError('Webhook receipt completion returned invalid evidence.',
+      'INVALID_WEBHOOK_RECEIPT_UPDATE');
+  }
+  if (updated.length === 0) {
+    throw new WebhookProcessingError('Webhook receipt changed before completion.',
+      'WEBHOOK_RECEIPT_CONTENDED');
+  }
 }
 
 async function readOutboxMatch(config, emailId, fetchImpl) {
@@ -379,7 +423,7 @@ export async function handleResendWebhook(request, response, options = {}) {
     const result = await applyDeliveryEvent({ config, verified, fetchImpl, environment });
     await finishReceipt({
       config,
-      receiptId: receiptState.receipt.id,
+      receipt: receiptState.receipt,
       status: result.outcome,
       fetchImpl,
       now: new Date(nowMs),
@@ -406,7 +450,7 @@ export async function handleResendWebhook(request, response, options = {}) {
       try {
         await finishReceipt({
           config,
-          receiptId: receiptState.receipt.id,
+          receipt: receiptState.receipt,
           status: 'failed',
           lastError: error?.code || 'WEBHOOK_PROCESSING_FAILED',
           fetchImpl,
@@ -418,7 +462,7 @@ export async function handleResendWebhook(request, response, options = {}) {
     }
     const status = error?.code === 'WEBHOOK_RECEIPT_CONFLICT'
       ? 409
-      : ['OUTBOX_CORRELATION_PENDING', 'OUTBOX_UPDATE_CONTENDED'].includes(error?.code)
+      : ['OUTBOX_CORRELATION_PENDING', 'OUTBOX_UPDATE_CONTENDED', 'WEBHOOK_RECEIPT_CONTENDED'].includes(error?.code)
         ? 503
         : 500;
     return sendJson(

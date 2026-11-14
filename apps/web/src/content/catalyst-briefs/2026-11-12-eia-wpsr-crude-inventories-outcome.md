@@ -1,5 +1,5 @@
 ---
-title: "EIA 12 November WPSR: Crude inventories rise 4.7 million barrels — Verified Outcome"
+title: "EIA WPSR (12 November 2026): U.S. crude stocks rise 4.7 million barrels"
 metaTitle: "EIA 12 Nov 2026 WPSR Outcome: Crude +4.7m Barrels | USD Impact"
 metaDescription: "The archived EIA Weekly Petroleum Status Report, released 12 November 2026 for the week ending 6 November, shows crude stocks +4.7m barrels, gasoline +1.8m and distillate +4.1m. Primary-source educational analysis."
 slug: "/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome"
@@ -105,7 +105,7 @@ DXY is included only as a **conditional cross-asset transmission watch item**, n
 
 The 12 November archive is the authoritative original for this historical issue. The EIA's reusable publication schedule, current WPSR landing page and rolling full-PDF pointers are useful for discovery but are **not eligible as release-dated source documents** in this brief. The three cited originals are different documents from **one government publisher**, not three independent publishers.
 
-The underlying government report was released on **12 November 2026** for the week ending **6 November 2026**. The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public. The historical inventory results do not establish a same-day market-price response.
+The underlying government report was released on **12 November 2026** for the week ending **6 November 2026**. The historical inventory results do not establish a same-day market-price response.
 
 Later EIA corrections or revisions must be considered as separately dated source evidence. The educational discussion does not establish consensus surprises, returns, investment signals or a causal reaction in WTI, Brent, DXY or Treasury yields.
 

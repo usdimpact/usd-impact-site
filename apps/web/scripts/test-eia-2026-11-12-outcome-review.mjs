@@ -73,7 +73,9 @@ function verify(raw) {
     '322,000 barrels', '95.2%',
   ]) assert.ok(facts.includes(exact), 'Missing or modified verified fact ' + exact);
   assert.match(data.summary, /No observed market reaction is asserted/i);
-  assert.match(raw, /The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public\./);
+  assert.equal(data.title, 'EIA WPSR (12 November 2026): U.S. crude stocks rise 4.7 million barrels', 'Public headline must state the reported fact without internal verification-state or publication claims');
+  assert.ok(!raw.includes('must be recorded accurately when it is first made public'), 'Internal publication workflow instructions must not enter public editorial copy');
+  assert.match(raw, /The underlying government report was released on \*\*12 November 2026\*\* for the week ending \*\*6 November 2026\*\*\. The historical inventory results do not establish a same-day market-price response\./);
   assert.ok(!raw.includes('The article remains an **unpublished review candidate**'), 'No internal draft-only wording may leak into later approved copy');
   assert.ok(!raw.includes('This educational outcome was assembled for review'), 'Release copy cannot imply draft preparation is a publication date');
   assert.match(data.generatedAt, /^2026-11-13T17:08:00Z$/, 'Keep the original drafting timestamp distinct from future publication metadata');
@@ -148,7 +150,9 @@ const mutants = [
   ['missing fact source', content.replace('      - "eia-wpsr-20261112-archive"', '      - "invented-fact-source-id"')],
   ['altered crude stock change', content.replace('increased 4.7 million barrels to', 'increased 5.7 million barrels to')],
   ['altered refinery utilization', content.replace('at 95.2% capacity utilization', 'at 96.2% capacity utilization')],
-  ['remove historical date separation', content.replace('The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public.', 'This page was first published on the original EIA release date.')],
+  ['misstate historical date separation', content.replace('The underlying government report was released on **12 November 2026** for the week ending **6 November 2026**.', 'This page was first published on the original EIA release date.')],
+  ['reintroduce unapproved Verified Outcome title', content.replace('title: "EIA WPSR (12 November 2026): U.S. crude stocks rise 4.7 million barrels"', 'title: "EIA 12 November WPSR: Crude inventories rise 4.7 million barrels — Verified Outcome"')],
+  ['reintroduce internal publication process sentence', content.replace('The historical inventory results do not establish a same-day market-price response.', 'The timing of this USD Impact analysis must be recorded accurately when it is first made public. The historical inventory results do not establish a same-day market-price response.')],
   ['remove AI-assistance disclosure', content.replace('**AI-assisted preparation.** AI tools assisted', '**Manual preparation.** Editors assisted')],
   ['remove operator attribution', content.replace('USD Impact is operated by KELA LEADS S.R.L.', 'USD Impact has no named operator.')],
   ['remove EIA nonendorsement', content.replace('The EIA does not endorse this analysis.', 'The EIA endorses this analysis.')],

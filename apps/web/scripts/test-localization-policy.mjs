@@ -103,8 +103,8 @@ assert.match(baseLayout, /<ConsentClient\s+locale=\{locale\}[\s\S]*privacyHref=\
 assert.match(baseLayout, /analyticsEnabled=\{analyticsEnabled\}/);
 assert.doesNotMatch(baseLayout, /\{analyticsEnabled && \(\s*<ConsentClient/);
 assert.match(baseLayout, /<button id="privacy-settings-button" class="footer-privacy-settings" type="button">Opciones de privacidad<\/button>/);
-assert.match(baseLayout, /\{analyticsEnabled && <GoogleAnalyticsClient \/>\}/);
-assert.match(baseLayout, /\{analyticsEnabled && <TelemetryClient \/>\}/);
+assert.match(baseLayout, /\{measurementClientsEnabled && <GoogleAnalyticsClient \/>\}/);
+assert.match(baseLayout, /\{measurementClientsEnabled && <TelemetryClient \/>\}/);
 assert.match(baseLayout, /\{locale === 'en' && <PwaClient \/>\}/);
 assert.match(baseLayout, /locale === 'en' && <script is:inline src="\/assets\/session-entry\.js" defer><\/script>/);
 assert.match(englishContentRoute, /SPANISH_ALTERNATE_BY_ENGLISH_SLUG/);

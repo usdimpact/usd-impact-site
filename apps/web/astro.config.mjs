@@ -23,6 +23,7 @@ const privatePaths = new Set([
   '/internal/checklist-analytics',
   '/internal/ask-usd-impact',
   '/internal/localization/spanish-privacy-review',
+  '/internal/review-catalysts/eia-2026-11-12-wpsr-outcome', // EIA owner Preview; never indexed, even on a preview build
   '/macro-reviews/weekly/2026-10-30', // first independent Weekly: public but noindex-first pending separate SEO authorization
   '/score/lab', // fictional Score exercise: noindex-first; separate release/SEO review required
 ]);

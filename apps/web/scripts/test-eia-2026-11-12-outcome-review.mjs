@@ -1,15 +1,17 @@
 // Exact archived EIA release and unpublished-route regression for the
 // review-only November 12 WPSR outcome. No provider calls or network access.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { sourceDateAttributionIssue } from '../src/lib/source-date-basis.js';
 
 const filename = fileURLToPath(new URL(
-  '../src/content/catalyst-briefs/2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication-outcome.md',
+  '../src/content/catalyst-briefs/2026-11-12-eia-wpsr-crude-inventories-outcome.md',
   import.meta.url,
 ));
+const retiredFile = fileURLToPath(new URL('../src/content/catalyst-briefs/2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication-outcome.md', import.meta.url));
+assert.equal(existsSync(retiredFile), false, 'The old filename must not remain, or the prospective IndexNow candidate could map to an obsolete URL');
 const routeFile = fileURLToPath(new URL('../src/pages/news/catalysts/[slug].astro', import.meta.url));
 const content = readFileSync(filename, 'utf8');
 const route = readFileSync(routeFile, 'utf8');
@@ -29,9 +31,14 @@ function verify(raw) {
   assert.equal(data.statusLabel, 'released');
   assert.equal(data.eventDate, '2026-11-12');
   assert.equal(data.sourceEditionDate, '2026-11-12', 'Data week 2026-11-06 must not replace government release date');
-  assert.equal(data.lastReviewed, '2026-11-13');
+  assert.equal(data.lastReviewed, '2026-11-14', 'Editorial verification actually renewed on 14 November');
   assert.equal(data.eventKey, '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication');
-  assert.equal(data.slug, '/news/catalysts/' + data.eventKey + '-outcome');
+  assert.equal(data.slug, '/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome', 'Public-facing URL must be neutral, while the original eventKey may preserve a real holiday timing fact');
+  assert.equal(data.slug.split('/').at(-1) + '.md', '2026-11-12-eia-wpsr-crude-inventories-outcome.md', 'IndexNow filename and publication slug must match when separately approved for release');
+  assert.deepEqual(data.assets, ['WTI', 'Brent'], 'Unobserved DXY must not be presented as an affected asset');
+  assert.match(raw, /DXY is included only as a \*\*conditional cross-asset transmission watch item\*\*/);
+  assert.match(raw, /\*\*Government-data attribution\.\*\* Source: U\.S\. Energy Information Administration/);
+  assert.match(raw, /Weekly Petroleum Status Report \(released 12 November 2026; data week ending 6 November 2026\)/);
   assert.match(data.complianceNote, /not investment.*not a recommendation/i);
   assert.match(raw, /## AI-assisted preparation and source attribution\s+\*\*AI-assisted preparation\.\*\* AI tools assisted in preparing this educational analysis\./);
   assert.match(raw, /USD Impact is operated by KELA LEADS S\.R\.L\./);
@@ -143,6 +150,9 @@ const mutants = [
   ['remove AI-assistance disclosure', content.replace('**AI-assisted preparation.** AI tools assisted', '**Manual preparation.** Editors assisted')],
   ['remove operator attribution', content.replace('USD Impact is operated by KELA LEADS S.R.L.', 'USD Impact has no named operator.')],
   ['remove EIA nonendorsement', content.replace('The EIA does not endorse this analysis.', 'The EIA endorses this analysis.')],
+  ['reintroduce unobserved DXY asset', content.replace('  - "Brent"\nverifiedFacts:', '  - "Brent"\n  - "DXY"\nverifiedFacts:')],
+  ['restore obsolete public slug', content.replace('slug: "/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome"', 'slug: "/news/catalysts/2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication-outcome"')],
+  ['remove dated EIA acknowledgment', content.replace('**Government-data attribution.** Source:', '**Unattributed government data.**')],
 ];
 let rejected = 0;
 for (const [label, mutant] of mutants) {

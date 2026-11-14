@@ -1,15 +1,15 @@
 ---
 title: "EIA 12 November WPSR: Crude inventories rise 4.7 million barrels — Verified Outcome"
 metaTitle: "EIA 12 Nov 2026 WPSR Outcome: Crude +4.7m Barrels | USD Impact"
-metaDescription: "The archived EIA Weekly Petroleum Status Report, released 12 November 2026 for the week ending 6 November, shows crude stocks +4.7m barrels, gasoline +1.8m and distillate +4.1m. Primary-source educational review."
-slug: "/news/catalysts/2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication-outcome"
+metaDescription: "The archived EIA Weekly Petroleum Status Report, released 12 November 2026 for the week ending 6 November, shows crude stocks +4.7m barrels, gasoline +1.8m and distillate +4.1m. Primary-source educational analysis pending release."
+slug: "/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome"
 eventKey: "2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication"
-event: "EIA Weekly Petroleum Status Report — Veterans Day-adjusted publication"
+event: "EIA Weekly Petroleum Status Report — 12 November 2026 release"
 eventDate: "2026-11-12"
 sourceEditionDate: "2026-11-12"
 phase: "outcome"
 generatedAt: "2026-11-13T17:08:00Z"
-lastReviewed: "2026-11-13"
+lastReviewed: "2026-11-14"
 status: "review"
 category: "USD Impact Catalyst Brief"
 statusLabel: "released"
@@ -17,7 +17,6 @@ summary: "EIA's 12 November 2026 WPSR, covering the week ending 6 November, repo
 assets:
   - "WTI"
   - "Brent"
-  - "DXY"
 verifiedFacts:
   - statement: "EIA identifies November 12, 2026 as the actual release date of its Weekly Petroleum Status Report for the data week ending November 6, 2026. These are different dates."
     verification: "verified-primary"
@@ -100,6 +99,8 @@ An increase in commercial crude inventories can be relevant to near-term balance
 
 Likewise, a sustained oil-price move could affect inflation expectations and rates, and rates may sometimes affect the U.S. dollar. This is a **conditional transmission framework**, not an assertion that the 12 November WPSR caused a particular WTI, Brent, DXY or Treasury-yield change.
 
+DXY is included only as a **conditional cross-asset transmission watch item**, not as an empirically affected asset. The EIA inventory report does not establish any observed dollar-market reaction.
+
 ## Verification and date boundaries
 
 The 12 November archive is the authoritative original for this historical issue. The EIA's reusable publication schedule, current WPSR landing page and rolling full-PDF pointers are useful for discovery but are **not eligible as release-dated source documents** in this brief. The three cited originals are different documents from **one government publisher**, not three independent publishers.
@@ -111,3 +112,5 @@ Later EIA corrections or revisions must be considered as separately dated source
 ## AI-assisted preparation and source attribution
 
 **AI-assisted preparation.** AI tools assisted in preparing this educational analysis. The dated U.S. Energy Information Administration archive, release-specific summary and Table 1 are the sources for the reported inventory figures and release dates. The WTI, Brent and USD transmission discussion is USD Impact's conditional educational interpretation, not a verified observed market-price reaction. USD Impact is operated by KELA LEADS S.R.L. The EIA does not endorse this analysis.
+
+**Government-data attribution.** Source: U.S. Energy Information Administration, [Weekly Petroleum Status Report (released 12 November 2026; data week ending 6 November 2026)](https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_11_12/wpsr_2026_11_12.php).

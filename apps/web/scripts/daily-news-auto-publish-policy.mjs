@@ -66,12 +66,24 @@ export function validateSourceRun(run, jobs, mainSha, now = new Date()) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)
       || day !== now.toISOString().slice(0, 10)
       || [0, 6].includes(now.getUTCDay())) return 'not-current-utc-weekday';
-  if (!beforeUsFirstRelease(now)) return 'after-first-us-release-cutoff';
-  if (!Array.isArray(jobs) || jobs.length !== 1
-      || jobs[0].name !== 'build-and-publish'
-      || jobs[0].conclusion !== 'success') return 'generator-job-not-successful';
+  // GitHub can deliver a native schedule long after the publication cutoff.
+  // A fully skipped successful generator job has nothing to publish. Record
+  // that authenticated source as NOOP rather than a spurious late-publisher
+  // failure. Do not treat partial skips, missing steps or failures as this case.
+  // Crucially, fully generated runs still face the unchanged 08:30 ET cutoff.
+  const job = Array.isArray(jobs) && jobs.length === 1 ? jobs[0] : null;
+  const trustedJob = job?.name === 'build-and-publish' && job?.conclusion === 'success';
+  const allRequiredSkipped = trustedJob && REQUIRED_GENERATOR_STEPS.every((name) => {
+    const matches = (job.steps || []).filter((step) => step.name === name);
+    return matches.length === 1 && matches[0].conclusion === 'skipped';
+  });
+  if (!beforeUsFirstRelease(now)) {
+    if (allRequiredSkipped) return 'generator-required-step-missing-or-failed';
+    return 'after-first-us-release-cutoff';
+  }
+  if (!trustedJob) return 'generator-job-not-successful';
   for (const name of REQUIRED_GENERATOR_STEPS) {
-    const matches = (jobs[0].steps || []).filter((step) => step.name === name);
+    const matches = (job.steps || []).filter((step) => step.name === name);
     if (matches.length !== 1 || matches[0].conclusion !== 'success') return 'generator-required-step-missing-or-failed';
   }
   return null;

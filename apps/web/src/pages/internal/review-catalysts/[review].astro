@@ -13,7 +13,7 @@ export async function getStaticPaths() {
     ? (await getCollection('catalystBriefs')).filter(
       (entry) => entry.data.status === 'review'
         && entry.data.phase === 'outcome'
-        && entry.data.eventKey === '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication',
+        && entry.data.eventKey === '2026-11-12-eia-wpsr-crude-inventories',
     )
     : [];
   if (briefs.length !== 1) throw new Error('EIA November 12 review Preview requires exactly one review-status outcome');

@@ -32,9 +32,11 @@ function verify(raw) {
   assert.equal(data.eventDate, '2026-11-12');
   assert.equal(data.sourceEditionDate, '2026-11-12', 'Data week 2026-11-06 must not replace government release date');
   assert.equal(data.lastReviewed, '2026-11-14', 'Editorial verification actually renewed on 14 November');
-  assert.equal(data.eventKey, '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication');
-  assert.equal(data.slug, '/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome', 'Public-facing URL must be neutral, while the original eventKey may preserve a real holiday timing fact');
+  assert.equal(data.eventKey, '2026-11-12-eia-wpsr-crude-inventories', 'Event identity and neutral filename must satisfy the strict Catalyst path validator');
+  assert.equal(data.slug, '/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome', 'Public-facing slug must be neutral and match the changed event identity');
   assert.equal(data.slug.split('/').at(-1) + '.md', '2026-11-12-eia-wpsr-crude-inventories-outcome.md', 'IndexNow filename and publication slug must match when separately approved for release');
+  assert.equal(data.slug, '/news/catalysts/' + data.eventKey + '-' + data.phase, 'The strict Catalyst validator requires eventKey-phase to match the filename');
+  assert.ok(!data.metaDescription.includes('pending release'), 'Future public meta description must never retain review-status copy');
   assert.deepEqual(data.assets, ['WTI', 'Brent'], 'Unobserved DXY must not be presented as an affected asset');
   assert.match(raw, /DXY is included only as a \*\*conditional cross-asset transmission watch item\*\*/);
   assert.match(raw, /\*\*Government-data attribution\.\*\* Source: U\.S\. Energy Information Administration/);
@@ -103,7 +105,7 @@ function verifyPreviewGate(page, config, layout = layoutSource) {
   assert.ok(page.includes("entry.data.status === 'review'"),
     'The preview must render only review-state content, never an already released article');
   assert.ok(page.includes("entry.data.phase === 'outcome'"));
-  assert.ok(page.includes("entry.data.eventKey === '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication'"));
+  assert.ok(page.includes("entry.data.eventKey === '2026-11-12-eia-wpsr-crude-inventories'"));
   assert.ok(page.includes("review: 'eia-2026-11-12-wpsr-outcome'"));
   assert.ok(page.includes("noindex={true}"), 'Brand layout must force robots noindex and omit canonical/JSON-LD');
   assert.ok(page.includes('data-review-only="true"'));

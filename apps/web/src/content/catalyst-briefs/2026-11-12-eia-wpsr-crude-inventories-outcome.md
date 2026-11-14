@@ -1,9 +1,9 @@
 ---
 title: "EIA 12 November WPSR: Crude inventories rise 4.7 million barrels — Verified Outcome"
 metaTitle: "EIA 12 Nov 2026 WPSR Outcome: Crude +4.7m Barrels | USD Impact"
-metaDescription: "The archived EIA Weekly Petroleum Status Report, released 12 November 2026 for the week ending 6 November, shows crude stocks +4.7m barrels, gasoline +1.8m and distillate +4.1m. Primary-source educational analysis pending release."
+metaDescription: "The archived EIA Weekly Petroleum Status Report, released 12 November 2026 for the week ending 6 November, shows crude stocks +4.7m barrels, gasoline +1.8m and distillate +4.1m. Primary-source educational analysis."
 slug: "/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome"
-eventKey: "2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication"
+eventKey: "2026-11-12-eia-wpsr-crude-inventories"
 event: "EIA Weekly Petroleum Status Report — 12 November 2026 release"
 eventDate: "2026-11-12"
 sourceEditionDate: "2026-11-12"

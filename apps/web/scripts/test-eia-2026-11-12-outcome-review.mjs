@@ -142,6 +142,7 @@ const mutants = [
   ['remove historical date separation', content.replace('The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public.', 'This page was first published on the original EIA release date.')],
   ['remove AI-assistance disclosure', content.replace('**AI-assisted preparation.** AI tools assisted', '**Manual preparation.** Editors assisted')],
   ['remove operator attribution', content.replace('USD Impact is operated by KELA LEADS S.R.L.', 'USD Impact has no named operator.')],
+  ['remove EIA nonendorsement', content.replace('The EIA does not endorse this analysis.', 'The EIA endorses this analysis.')],
 ];
 let rejected = 0;
 for (const [label, mutant] of mutants) {

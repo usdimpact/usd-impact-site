@@ -33,6 +33,9 @@ function verify(raw) {
   assert.equal(data.eventKey, '2026-11-12-eia-weekly-petroleum-status-report-veterans-day-adjusted-publication');
   assert.equal(data.slug, '/news/catalysts/' + data.eventKey + '-outcome');
   assert.match(data.complianceNote, /not investment.*not a recommendation/i);
+  assert.match(raw, /## AI-assisted preparation and source attribution\s+\*\*AI-assisted preparation\.\*\* AI tools assisted in preparing this educational analysis\./);
+  assert.match(raw, /USD Impact is operated by KELA LEADS S\.R\.L\./);
+  assert.match(raw, /The EIA does not endorse this analysis\./);
   assert.equal(data.sources.length, 3, 'Use exactly the 3 archived originals, not schedule/rolling pointers');
 
   const ids = new Set();
@@ -86,7 +89,8 @@ const previewPath = fileURLToPath(new URL(
 const sitemapPath = fileURLToPath(new URL('../astro.config.mjs', import.meta.url));
 const reviewPageSource = readFileSync(previewPath, 'utf8');
 const sitemapSource = readFileSync(sitemapPath, 'utf8');
-function verifyPreviewGate(page, config) {
+const layoutSource = readFileSync(fileURLToPath(new URL('../src/layouts/BaseLayout.astro', import.meta.url)), 'utf8');
+function verifyPreviewGate(page, config, layout = layoutSource) {
   assert.ok(page.includes("if (process.env.VERCEL_ENV !== 'preview') return [];"),
     'Only Vercel Preview may create the review route');
   assert.ok(page.includes("entry.data.status === 'review'"),
@@ -97,17 +101,27 @@ function verifyPreviewGate(page, config) {
   assert.ok(page.includes("noindex={true}"), 'Brand layout must force robots noindex and omit canonical/JSON-LD');
   assert.ok(page.includes('data-review-only="true"'));
   assert.ok(page.includes('UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION'));
+  assert.ok(page.includes('suppressReviewMeasurement={true}'), 'The review page must opt out of measurement');
+  assert.ok(layout.includes('suppressReviewMeasurement = false'), 'Unrelated routes must preserve their current measurement defaults');
+  assert.ok(layout.includes('const measurementClientsEnabled = analyticsEnabled && !suppressReviewMeasurement;'), 'Review measurement must fail closed');
+  assert.ok(layout.includes('{measurementClientsEnabled && <GoogleAnalyticsClient />}'));
+  assert.ok(layout.includes('{measurementClientsEnabled && <TelemetryClient />}'));
+  assert.ok(layout.includes('analyticsEnabled={analyticsEnabled}'), 'Consent UI remains unchanged');
   assert.ok(!page.includes('structuredData={structuredData}'));
   assert.ok(config.includes("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'"),
     'Sitemap must omit the review page in all environments');
   return true;
 }
 assert.equal(verifyPreviewGate(reviewPageSource, sitemapSource), true);
+const unsafeLayout = layoutSource.replace('analyticsEnabled && !suppressReviewMeasurement', 'analyticsEnabled && suppressReviewMeasurement');
+assert.notEqual(unsafeLayout, layoutSource, 'Layout mutation fixture must modify source');
+assert.throws(() => verifyPreviewGate(reviewPageSource, sitemapSource, unsafeLayout), { name: 'AssertionError' }, 'A reversed opt-out must fail closed');
 const previewMutants = [
   ['production build route leak', reviewPageSource.replace("VERCEL_ENV !== 'preview'", "VERCEL_ENV !== 'production'"), sitemapSource],
   ['published article in preview', reviewPageSource.replace("entry.data.status === 'review'", "entry.data.status === 'published'"), sitemapSource],
   ['indexed review preview', reviewPageSource.replace('noindex={true}', 'noindex={false}'), sitemapSource],
   ['missing release warning', reviewPageSource.replace('UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION', 'Ready for publication'), sitemapSource],
+  ['review measurement accidentally re-enabled', reviewPageSource.replace('suppressReviewMeasurement={true}', 'suppressReviewMeasurement={false}'), sitemapSource],
   ['missing sitemap hold', reviewPageSource, sitemapSource.replace("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'", "'/internal/review-catalysts/some-other-page'")],
 ];
 for (const [label, badPage, badConfig] of previewMutants) {
@@ -126,6 +140,9 @@ const mutants = [
   ['altered crude stock change', content.replace('increased 4.7 million barrels to', 'increased 5.7 million barrels to')],
   ['altered refinery utilization', content.replace('at 95.2% capacity utilization', 'at 96.2% capacity utilization')],
   ['remove historical date separation', content.replace('The timing of this USD Impact analysis is separate from both EIA dates and must be recorded accurately when it is first made public.', 'This page was first published on the original EIA release date.')],
+  ['remove AI-assistance disclosure', content.replace('**AI-assisted preparation.** AI tools assisted', '**Manual preparation.** Editors assisted')],
+  ['remove operator attribution', content.replace('USD Impact is operated by KELA LEADS S.R.L.', 'USD Impact has no named operator.')],
+  ['remove EIA nonendorsement', content.replace('The EIA does not endorse this analysis.', 'The EIA endorses this analysis.')],
 ];
 let rejected = 0;
 for (const [label, mutant] of mutants) {

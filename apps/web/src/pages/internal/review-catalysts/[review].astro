@@ -30,7 +30,7 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 }).format(new Date(`${value}T12:00:00Z`));
 ---
-<BaseLayout title={`UNPUBLISHED REVIEW — ${entry.data.metaTitle}`} description={entry.data.metaDescription} noindex={true}>
+<BaseLayout title={`UNPUBLISHED REVIEW — ${entry.data.metaTitle}`} description={entry.data.metaDescription} noindex={true} suppressReviewMeasurement={true}>
   <aside class="container" role="status" data-review-only="true" aria-label="Unpublished review-only content">
     <strong>UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION</strong>
     <p>Source verification and editorial review only. This preview does not authorize changes to Production or the article publication status.</p>

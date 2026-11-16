@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { localizationManifest } from '../src/data/localization-manifest.js';
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
@@ -103,8 +104,12 @@ assert.match(baseLayout, /<ConsentClient\s+locale=\{locale\}[\s\S]*privacyHref=\
 assert.match(baseLayout, /analyticsEnabled=\{analyticsEnabled\}/);
 assert.doesNotMatch(baseLayout, /\{analyticsEnabled && \(\s*<ConsentClient/);
 assert.match(baseLayout, /<button id="privacy-settings-button" class="footer-privacy-settings" type="button">Opciones de privacidad<\/button>/);
-assert.match(baseLayout, /\{analyticsEnabled && <GoogleAnalyticsClient \/>\}/);
-assert.match(baseLayout, /\{analyticsEnabled && <TelemetryClient \/>\}/);
+assert.match(baseLayout, /\{measurementClientsEnabled && <GoogleAnalyticsClient \/>\}/);
+assert.match(baseLayout, /\{measurementClientsEnabled && <TelemetryClient \/>\}/);
+assert.match(baseLayout, /suppressReviewMeasurement = false,/);
+assert.match(baseLayout, /const measurementClientsEnabled = analyticsEnabled && !suppressReviewMeasurement;/);
+assert.equal(localizationManifest.locales.en.analyticsEnabled, true);
+assert.equal(localizationManifest.locales.es.analyticsEnabled, false);
 assert.match(baseLayout, /\{locale === 'en' && <PwaClient \/>\}/);
 assert.match(baseLayout, /locale === 'en' && <script is:inline src="\/assets\/session-entry\.js" defer><\/script>/);
 assert.match(englishContentRoute, /SPANISH_ALTERNATE_BY_ENGLISH_SLUG/);

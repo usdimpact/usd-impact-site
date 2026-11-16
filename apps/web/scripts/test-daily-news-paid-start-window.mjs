@@ -65,6 +65,7 @@ try {
     'if [ "$1" = "-u" ]; then',
     '  if [ "$2" = "+%F" ]; then printf "%s\\n" "$MOCK_UTC_DAY"; exit 0; fi',
     '  if [ "$2" = "+%u" ]; then printf "%s\\n" "$MOCK_UTC_WEEKDAY"; exit 0; fi',
+    '  if [ "$2" = "+%s" ]; then printf "%s\\n" "1731770000"; exit 0; fi',
     'fi',
     'if [ "$1" = "+%F" ]; then printf "%s\\n" "$MOCK_US_DAY"; exit 0; fi',
     'if [ "$1" = "+%H:%M" ]; then printf "%s\\n" "$MOCK_US_TIME"; exit 0; fi',

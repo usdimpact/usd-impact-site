@@ -28,10 +28,13 @@ const {
   locale: requestedLocale = 'en',
   currentPath: requestedCurrentPath = null,
   responsiveTables = false,
+  // Only explicitly approved unpublished review pages opt out of measurement.
+  suppressReviewMeasurement = false,
 } = Astro.props;
 const locale = requestedLocale === 'es' ? 'es' : 'en';
 const shellCopy = siteShellCopyForLocale(locale);
 const analyticsEnabled = localizationManifest.locales[locale]?.analyticsEnabled === true;
+const measurementClientsEnabled = analyticsEnabled && !suppressReviewMeasurement;
 const noindex = pageNoindex || isSearchUtilityPath(Astro.url.pathname);
 const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
 const alternateLocaleUrl = !noindex && typeof alternateLocaleHref === 'string' && alternateLocaleHref.startsWith('/')
@@ -362,8 +365,8 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
       privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
       analyticsEnabled={analyticsEnabled}
     />
-    {analyticsEnabled && <GoogleAnalyticsClient />}
-    {analyticsEnabled && <TelemetryClient />}
+    {measurementClientsEnabled && <GoogleAnalyticsClient />}
+    {measurementClientsEnabled && <TelemetryClient />}
     {locale === 'en' && <PwaClient />}
   </body>
 </html>

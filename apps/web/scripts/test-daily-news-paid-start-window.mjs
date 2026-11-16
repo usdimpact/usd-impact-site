@@ -26,6 +26,33 @@ assert.match(
   'a second guard must be immediately before the billed provider request',
 );
 
+// The single bounded full-regeneration POST is also a paid provider request.
+// Its authorization must be rechecked after polling, not inherited from an
+// initial start that may have occurred before the launch cutoff.
+const pollStartAt = workflow.indexOf('- name: Poll background news generation');
+const importAt = workflow.indexOf('- name: Import as published content');
+assert.ok(pollStartAt > paidStartAt && importAt > pollStartAt);
+const pollStep = workflow.slice(pollStartAt, importAt);
+const retryStartAt = pollStep.indexOf('if [ "$regeneration_used" = "false" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then');
+assert.ok(retryStartAt > 0, 'bounded retry eligibility must remain in the poll step');
+const retryBlock = pollStep.slice(retryStartAt);
+const retryGuard = retryBlock.indexOf('bash scripts/guard-daily-news-paid-start.sh');
+const retryCurl = retryBlock.indexOf('curl --fail --silent --show-error --location');
+const retryPost = retryBlock.indexOf('--request POST');
+assert.ok(retryGuard >= 0, 'retry must run the same fail-closed paid-start guard');
+assert.ok(retryCurl > retryGuard && retryPost > retryCurl,
+  'retry guard must run immediately before the paid regeneration request');
+assert.match(
+  retryBlock.slice(0, retryPost),
+  /echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt\."\n\s+bash scripts\/guard-daily-news-paid-start\.sh\n\s+curl --fail/,
+  'no other command may interpose between regeneration cutoff check and paid POST');
+assert.equal((pollStep.match(/--request POST/g) || []).length, 1,
+  'only one bounded full-regeneration POST may be present in the poll step');
+assert.doesNotMatch(pollStep.slice(0, retryStartAt), /--request POST/,
+  'polling a prior response must not generate new paid requests');
+assert.match(retryBlock, /regeneration_used=true[\s\S]*generation_attempt=2/,
+  'exactly one regeneration remains the existing upper bound');
+
 const guardPath = fileURLToPath(new URL('./guard-daily-news-paid-start.sh', import.meta.url));
 const guardText = await readFile(guardPath, 'utf8');
 assert.match(guardText, /TZ=America\/New_York date \+%H:%M/);

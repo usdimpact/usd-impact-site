@@ -57,9 +57,9 @@ const guardPath = fileURLToPath(new URL('./guard-daily-news-paid-start.sh', impo
 const guardText = await readFile(guardPath, 'utf8');
 assert.match(guardText, /TZ=America\/New_York date \+%H:%M/);
 assert.match(guardText, /07:10/);
-assert.match(guardText, /date \\+%Z/);
-assert.match(guardText, /date \\+%z/);
-assert.match(guardText, /EST:-0500\\|EDT:-0400/);
+assert.match(guardText, /date \+%Z/);
+assert.match(guardText, /date \+%z/);
+assert.match(guardText, /EST:-0500\|EDT:-0400/);
 assert.match(guardText, /time-zone data could not be verified/);
 
 const mockDir = await mkdtemp(join(tmpdir(), 'usd-impact-daily-pre-spend-'));

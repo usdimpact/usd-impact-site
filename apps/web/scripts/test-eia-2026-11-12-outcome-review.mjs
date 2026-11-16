@@ -1,10 +1,15 @@
-// Exact archived EIA release and unpublished-route regression for the
-// review-only November 12 WPSR outcome. No provider calls or network access.
+// Exact archived EIA release and published-state regression for the
+// 12 Nov WPSR outcome; source/IndexNow selection only, no external requests.
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { sourceDateAttributionIssue } from '../src/lib/source-date-basis.js';
+import { catalystFirstPublicationIssue, catalystArticleDatePublished, catalystArticleDateModified, LEGACY_CATALYST_PUBLICATION_PINS } from '../src/lib/catalyst-first-publication-policy.js';
+import { selectIndexNowUrls } from '../../../scripts/submit-indexnow-after-production.mjs';
+import { createHash } from 'node:crypto';
+const APPROVED_D = '2026-11-16';
+const BASELINE_GIT_BLOB = '1c6dd65c20efbee5493f1249b1e81f18cb77eed9';
 
 const filename = fileURLToPath(new URL(
   '../src/content/catalyst-briefs/2026-11-12-eia-wpsr-crude-inventories-outcome.md',
@@ -26,7 +31,11 @@ function verify(raw) {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
   assert.ok(match, 'Catalyst outcome must have YAML frontmatter');
   const data = yaml.load(match[1]);
-  assert.equal(data.status, 'review', 'No public publication until owner exact-head release');
+  assert.equal(data.status, 'published', 'Owner-authorized publication Draft status must be published');
+  assert.equal(data.firstPublishedDate, APPROVED_D, 'Date must match exact owner-confirmed UTC publication day; refuse backdating');
+  assert.equal(catalystFirstPublicationIssue(data, { todayUtc: APPROVED_D }), null, 'Date and preparation policy must pass');
+  assert.equal(catalystArticleDatePublished(data, { todayUtc: APPROVED_D }), APPROVED_D);
+  assert.equal(catalystArticleDateModified(data, { todayUtc: APPROVED_D }), undefined, 'Pre-publication editorial review must not claim a post-publication edit');
   assert.equal(data.phase, 'outcome', 'This is a post-release outcome, not a stale pre-event preview');
   assert.equal(data.statusLabel, 'released');
   assert.equal(data.eventDate, '2026-11-12');
@@ -74,12 +83,13 @@ function verify(raw) {
   ]) assert.ok(facts.includes(exact), 'Missing or modified verified fact ' + exact);
   assert.match(data.summary, /No observed market reaction is asserted/i);
   assert.equal(data.title, 'EIA WPSR (12 November 2026): U.S. crude stocks rise 4.7 million barrels', 'Public headline must state the reported fact without internal verification-state or publication claims');
+  assert.equal(data.metaTitle, 'EIA 12 Nov 2026 WPSR Outcome: Crude +4.7m Barrels | USD Impact', 'Approved SEO title remains unchanged');
   assert.ok(!raw.includes('must be recorded accurately when it is first made public'), 'Internal publication workflow instructions must not enter public editorial copy');
   assert.match(raw, /The underlying government report was released on \*\*12 November 2026\*\* for the week ending \*\*6 November 2026\*\*\. The historical inventory results do not establish a same-day market-price response\./);
   assert.ok(!raw.includes('The article remains an **unpublished review candidate**'), 'No internal draft-only wording may leak into later approved copy');
   assert.ok(!raw.includes('This educational outcome was assembled for review'), 'Release copy cannot imply draft preparation is a publication date');
   assert.match(data.generatedAt, /^2026-11-13T17:08:00Z$/, 'Keep the original drafting timestamp distinct from future publication metadata');
-  assert.equal(data.status, 'review', 'A later publication PR must separately prove the true first-publication time');
+  assert.equal(data.status, 'published', 'This regression applies to the publication-state Draft only');
   assert.match(raw, /Data week|week ending/i);
   assert.ok(!/\b(?:guaranteed return|risk-free profit|must buy|must sell)\b/i.test(raw));
   // Exact, explicit forbidden pointers avoid a host-unanchored URL regex.
@@ -91,58 +101,63 @@ function verify(raw) {
   }
   assert.match(route, /\.filter\(\(entry\) => entry\.data\.status === 'published'\)/,
     'Live Catalyst route must exclude review candidates');
+  // Byte-for-byte preserved historical evidence: reconstruct the reviewed original
+  // frontmatter and compare the exact Git blob digest of the original brief.
+  const original = raw.replace('status: "published"\nfirstPublishedDate: "' + APPROVED_D + '"\n', 'status: "review"\n');
+  assert.notEqual(original, raw, 'Publication status/date anchors must be uniquely reversible');
+  const gitBlobSha = createHash('sha1').update('blob ' + Buffer.byteLength(original) + '\0').update(original).digest('hex');
+  assert.equal(gitBlobSha, BASELINE_GIT_BLOB, 'All original EIA facts, dated issuer sources, statements and disclaimers must remain byte-identical to #1266');
   return true;
 }
 
-const previewPath = fileURLToPath(new URL(
-  '../src/pages/internal/review-catalysts/[review].astro', import.meta.url,
-));
+// The formerly unpublished noindex EIA Preview route must be retired.
+const formerReviewRoute = fileURLToPath(new URL('../src/pages/internal/review-catalysts/[review].astro', import.meta.url));
 const sitemapPath = fileURLToPath(new URL('../astro.config.mjs', import.meta.url));
-const reviewPageSource = readFileSync(previewPath, 'utf8');
 const sitemapSource = readFileSync(sitemapPath, 'utf8');
 const layoutSource = readFileSync(fileURLToPath(new URL('../src/layouts/BaseLayout.astro', import.meta.url)), 'utf8');
-function verifyPreviewGate(page, config, layout = layoutSource) {
-  assert.ok(page.includes("if (process.env.VERCEL_ENV !== 'preview') return [];"),
-    'Only Vercel Preview may create the review route');
-  assert.ok(page.includes("entry.data.status === 'review'"),
-    'The preview must render only review-state content, never an already released article');
-  assert.ok(page.includes("entry.data.phase === 'outcome'"));
-  assert.ok(page.includes("entry.data.eventKey === '2026-11-12-eia-wpsr-crude-inventories'"));
-  assert.ok(page.includes("review: 'eia-2026-11-12-wpsr-outcome'"));
-  assert.ok(page.includes("noindex={true}"), 'Brand layout must force robots noindex and omit canonical/JSON-LD');
-  assert.ok(page.includes('data-review-only="true"'));
-  assert.ok(page.includes('UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION'));
-  assert.ok(page.includes('suppressReviewMeasurement={true}'), 'The review page must opt out of measurement');
-  assert.ok(layout.includes('suppressReviewMeasurement = false'), 'Unrelated routes must preserve their current measurement defaults');
-  assert.ok(layout.includes('const measurementClientsEnabled = analyticsEnabled && !suppressReviewMeasurement;'), 'Review measurement must fail closed');
+function verifyPublishedSurfaces({ reviewExists = existsSync(formerReviewRoute), config = sitemapSource, publicRoute = route, layout = layoutSource } = {}) {
+  assert.equal(reviewExists, false, 'The former EIA owner-only review page must be deleted');
+  assert.ok(!config.includes("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'"), 'Obsolete sitemap hold must be removed');
+  assert.ok(!config.includes('review-catalysts'), 'No EIA review-only route may survive in sitemap configuration');
+  assert.ok(layout.includes('suppressReviewMeasurement = false'), 'Public routes retain standard consent-gated analytics default');
+  assert.ok(layout.includes('const measurementClientsEnabled = analyticsEnabled && !suppressReviewMeasurement;'), 'Measurement opt-out must stay fail-closed for any future review surfaces');
   assert.ok(layout.includes('{measurementClientsEnabled && <GoogleAnalyticsClient />}'));
   assert.ok(layout.includes('{measurementClientsEnabled && <TelemetryClient />}'));
-  assert.ok(layout.includes('analyticsEnabled={analyticsEnabled}'), 'Consent UI remains unchanged');
-  assert.ok(!page.includes('structuredData={structuredData}'));
-  assert.ok(config.includes("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'"),
-    'Sitemap must omit the review page in all environments');
+  assert.ok(layout.includes('analyticsEnabled={analyticsEnabled}'));
+  assert.ok(publicRoute.includes('datePublished: catalystArticleDatePublished(entry.data)'), 'Structured Article must use truthful first-publication date');
+  assert.ok(publicRoute.includes('dateModified: catalystArticleDateModified(entry.data)'), 'Structured Article must retain genuine date-modified policy');
+  assert.ok(publicRoute.includes('articleStructuredData({'), 'Public route must emit Article structured data');
+  assert.ok(publicRoute.includes('structuredData={structuredData}'), 'Public route must pass structured data to BaseLayout');
+  assert.ok(!publicRoute.includes('noindex={true}'), 'Public article cannot be forced noindex');
+  assert.ok(!publicRoute.includes('suppressReviewMeasurement={true}'), 'Public article must use normal consent-gated analytics');
+  assert.match(publicRoute, /\.filter\(\(entry\) => entry\.data\.status === 'published'\)/, 'Public route selects published records only');
   return true;
 }
-assert.equal(verifyPreviewGate(reviewPageSource, sitemapSource), true);
-const unsafeLayout = layoutSource.replace('analyticsEnabled && !suppressReviewMeasurement', 'analyticsEnabled && suppressReviewMeasurement');
-assert.notEqual(unsafeLayout, layoutSource, 'Layout mutation fixture must modify source');
-assert.throws(() => verifyPreviewGate(reviewPageSource, sitemapSource, unsafeLayout), { name: 'AssertionError' }, 'A reversed opt-out must fail closed');
-const previewMutants = [
-  ['production build route leak', reviewPageSource.replace("VERCEL_ENV !== 'preview'", "VERCEL_ENV !== 'production'"), sitemapSource],
-  ['published article in preview', reviewPageSource.replace("entry.data.status === 'review'", "entry.data.status === 'published'"), sitemapSource],
-  ['indexed review preview', reviewPageSource.replace('noindex={true}', 'noindex={false}'), sitemapSource],
-  ['missing release warning', reviewPageSource.replace('UNPUBLISHED REVIEW PREVIEW — NOT APPROVED FOR PUBLICATION', 'Ready for publication'), sitemapSource],
-  ['review measurement accidentally re-enabled', reviewPageSource.replace('suppressReviewMeasurement={true}', 'suppressReviewMeasurement={false}'), sitemapSource],
-  ['missing sitemap hold', reviewPageSource, sitemapSource.replace("'/internal/review-catalysts/eia-2026-11-12-wpsr-outcome'", "'/internal/review-catalysts/some-other-page'")],
+assert.equal(verifyPublishedSurfaces(), true);
+const surfaceMutants = [
+  ['N6: reintroduce review Astro route', { reviewExists: true }],
+  ['N7: restore the private sitemap entry', { config: sitemapSource.replace("  '/macro-reviews/weekly/2026-10-30',", "  '/internal/review-catalysts/eia-2026-11-12-wpsr-outcome',\n  '/macro-reviews/weekly/2026-10-30',") }],
+  ['N13: suppress public consent-gated measurement', { publicRoute: route.replace('structuredData={structuredData}', 'structuredData={structuredData} suppressReviewMeasurement={true}') }],
+  ['force public article noindex', { publicRoute: route.replace('structuredData={structuredData}', 'structuredData={structuredData} noindex={true}') }],
+  ['discard datePublished structured data', { publicRoute: route.replace('datePublished: catalystArticleDatePublished(entry.data)', 'datePublished: entry.data.generatedAt') }],
+  ['allow review records as public pages', { publicRoute: route.replace("entry.data.status === 'published'", "entry.data.status === 'review'") }],
+  ['reverse measurement privacy guard', { layout: layoutSource.replace('analyticsEnabled && !suppressReviewMeasurement', 'analyticsEnabled && suppressReviewMeasurement') }],
 ];
-for (const [label, badPage, badConfig] of previewMutants) {
-  assert.ok(badPage !== reviewPageSource || badConfig !== sitemapSource, 'Bad fixture: ' + label);
-  assert.throws(() => verifyPreviewGate(badPage, badConfig), { name: 'AssertionError' }, 'Fail closed: ' + label);
+for (const [label, changes] of surfaceMutants) {
+  const input = changes.publicRoute ?? changes.config ?? changes.layout ?? (changes.reviewExists === true ? 'true' : '');
+  const originalSource = changes.publicRoute ? route : changes.config ? sitemapSource : changes.layout ? layoutSource : 'false';
+  assert.notEqual(input, originalSource, 'Mutation fixture failed to change source: ' + label);
+  assert.throws(() => verifyPublishedSurfaces(changes), { name: 'AssertionError' }, 'Fail closed: ' + label);
 }
 
 assert.equal(verify(content), true);
 const mutants = [
-  ['premature release', content.replace('status: "review"', 'status: "published"')],
+  ['N1: revert to review state', content.replace('status: "published"', 'status: "review"')],
+  ['N2: first-publication date removed', content.replace(/^firstPublishedDate:.*\n/m, '')],
+  ['N3a: backdate to previous UTC day', content.replace('firstPublishedDate: "2026-11-16"', 'firstPublishedDate: "2026-11-15"')],
+  ['N3b: backdate to original draft date', content.replace('firstPublishedDate: "2026-11-16"', 'firstPublishedDate: "2026-11-13"')],
+  ['N4: future first-publication date', content.replace('firstPublishedDate: "2026-11-16"', 'firstPublishedDate: "2099-12-31"')],
+  ['N5: post-publication editorial review fabricated', content.replace('lastReviewed: "2026-11-14"', 'lastReviewed: "2099-12-31"')],
   ['pre-event relabel', content.replace('phase: "outcome"', 'phase: "preview"')],
   ['event date confusion', content.replace('eventDate: "2026-11-12"', 'eventDate: "2026-11-06"')],
   ['incorrect source date', content.replace('publishedAt: "2026-11-12"', 'publishedAt: "2026-11-06"')],
@@ -166,4 +181,18 @@ for (const [label, mutant] of mutants) {
   assert.throws(() => verify(mutant), { name: 'AssertionError' }, 'Must reject ' + label);
   rejected += 1;
 }
-console.log('EIA WPSR review-only archived-source contract PASS: 1 positive, ' + rejected + ' negative mutations');
+assert.equal(LEGACY_CATALYST_PUBLICATION_PINS.length, 15, 'Preserve 15 historical Catalyst first-publication exceptions');
+const indexNowCandidates = [
+  'apps/web/src/content/catalyst-briefs/2026-11-12-eia-wpsr-crude-inventories-outcome.md',
+];
+// Selection-only test, never call notifyChangedPublicationUrls or dispatch.
+// Trap global network attempts for this offline test as a separate safety net.
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async () => { throw new Error('EIA selection-only test forbids all network requests'); };
+try {
+  const urls = await selectIndexNowUrls(indexNowCandidates, { readSource: async () => content });
+  assert.deepEqual(urls, ['https://www.usd-impact.com/news/catalysts/2026-11-12-eia-wpsr-crude-inventories-outcome'], 'Only owner-approved neutral EIA URL is eligible for automatic IndexNow after a separately authorized Production release');
+} finally {
+  globalThis.fetch = originalFetch;
+}
+console.log('EIA WPSR publication-state source/SEO/IndexNow offline contract PASS: 1 source-positive, ' + rejected + ' source-negative mutations, ' + surfaceMutants.length + ' page/SEO/consent-negative mutations');

@@ -21,6 +21,25 @@ assert.equal(
 );
 assert.equal(
   classifyDailyPayloadFailure({
+    code: 'regeneration-withheld-cutoff',
+    error: 'Paid regeneration withheld before provider POST',
+    status: 'failed',
+  }).gate,
+  'paid-regeneration-cutoff',
+);
+assert.equal(
+  classifyDailyWorkflowFailure({
+    startOutcome: 'success',
+    pollOutcome: 'failure',
+    importOutcome: 'skipped',
+    validateOutcome: 'skipped',
+    publishOutcome: 'skipped',
+    payload: { code: 'regeneration-withheld-cutoff', error: 'Withheld before provider POST' },
+  }).gate,
+  'paid-regeneration-cutoff',
+);
+assert.equal(
+  classifyDailyPayloadFailure({
     code: 'invalid-catalyst-window',
     reason: 'Every catalyst must use a date inside the seven-day window.',
   }).stage,

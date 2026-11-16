@@ -400,3 +400,5 @@ await import('./test-daily-news-schedule-wake.mjs');
 // bot, edited-file, workflow-failure and duplicate-PR receipts. No network.
 await import('./test-daily-health-auto-close-evidence.mjs');
 await import('./test-daily-news-early-advisory.mjs');
+// Also exercise the live Daily's fail-closed pre-spend UTC/New York window.
+await import('./test-daily-news-paid-start-window.mjs');

@@ -22,8 +22,8 @@ const paidStart = workflow.slice(
 );
 assert.match(
   paidStart,
-  /run: \|\n\s+bash scripts\/guard-daily-news-paid-start\.sh[\s\S]*?curl --fail[\s\S]*?--request POST/,
-  'a second guard must be immediately before the billed provider request',
+  /run: \|\n\s+if ! bash scripts\/guard-daily-news-paid-start\.sh; then[\s\S]*?exit 1[\s\S]*?fi[\s\S]*?curl --fail[\s\S]*?--request POST/,
+  'the initial guard must explicitly exit before any billed provider request',
 );
 
 // The single bounded full-regeneration POST is also a paid provider request.
@@ -44,8 +44,8 @@ assert.ok(retryCurl > retryGuard && retryPost > retryCurl,
   'retry guard must run immediately before the paid regeneration request');
 assert.match(
   retryBlock.slice(0, retryPost),
-  /echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt\."\n\s+bash scripts\/guard-daily-news-paid-start\.sh\n\s+curl --fail/,
-  'no other command may interpose between regeneration cutoff check and paid POST');
+  /if ! bash scripts\/guard-daily-news-paid-start\.sh; then[\s\S]*?regeneration-withheld-cutoff[\s\S]*?exit 1\n\s+fi\n\s+echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt\."\n\s+curl --fail/,
+  'retry guard must explicitly abort, classify withheld spend, and precede the paid POST');
 assert.equal((pollStep.match(/--request POST/g) || []).length, 1,
   'only one bounded full-regeneration POST may be present in the poll step');
 assert.doesNotMatch(pollStep.slice(0, retryStartAt), /--request POST/,
@@ -99,6 +99,71 @@ try {
     assert.equal(run.error, undefined, s.name + ': subprocess error');
     assert.equal(run.status, s.exit, s.name + ': ' + run.stdout + run.stderr);
   }
+  // Execute the ACTUAL YAML shell bodies under bash without errexit, as if
+  // a future edit added set +e or changed the step to shell: bash {0}.
+  // Fake date and curl ensure zero external network or provider charges.
+  const makeShell = (section) => {
+    const block = section.match(/        run: \|\n([\s\S]*)/);
+    assert.ok(block, 'run body must exist for shell-negative test');
+    return block[1].split('\n')
+      .map((line) => line.startsWith('          ') ? line.slice(10) : line)
+      .join('\n');
+  };
+  await writeFile(join(mockDir, 'curl'), [
+    '#!/bin/sh',
+    'printf "%s\\n" "$*" >> "$MOCK_CURL_CALLS"',
+    'case " $* " in *" --request POST "*) exit 97 ;; esac',
+    'out=""',
+    'prev=""',
+    'for token in "$@"; do',
+    '  if [ "$prev" = "--output" ]; then out="$token"; fi',
+    '  prev="$token"',
+    'done',
+    '[ -n "$out" ] || exit 95',
+    'printf \'{"code":"insufficient-grounded-sources","error":"fewer than three grounded urls","status":"failed"}\\n\' > "$out"',
+    'printf "422"',
+    '',
+  ].join('\n'), { mode: 0o755 });
+  const testEnv = {
+    ...process.env,
+    PATH: mockDir + ':' + process.env.PATH,
+    MOCK_UTC_DAY: '2026-11-16',
+    MOCK_UTC_WEEKDAY: '1',
+    MOCK_US_DAY: '2026-11-16',
+    MOCK_US_TIME: '07:10',
+    NEWSFEED_ENDPOINT: 'https://example.invalid/daily-news-source',
+    NEWSFEED_BEARER_TOKEN: 'synthetic-not-a-secret',
+    BACKGROUND_ENDPOINT: 'https://example.invalid/daily-news-grounded-background',
+    EDITION_DATE: '2026-11-16',
+    OPENAI_RESPONSE_ID: 'resp_synthetic1234567',
+    RUNNER_TEMP: mockDir,
+    GITHUB_ENV: join(mockDir, 'github-env'),
+    MOCK_CURL_CALLS: join(mockDir, 'curl-calls'),
+  };
+  const cwd = fileURLToPath(new URL('../', import.meta.url));
+  const actualStart = spawnSync('bash', ['-c', 'set +e\n' + makeShell(paidStart)], {
+    cwd, env: testEnv, encoding: 'utf8', timeout: 5000,
+  });
+  assert.equal(actualStart.error, undefined);
+  assert.equal(actualStart.status, 1, 'initial guard must exit even with errexit disabled');
+  await assert.rejects(readFile(testEnv.MOCK_CURL_CALLS),
+    'blocked initial generation must make zero HTTP calls');
+
+  const actualPoll = spawnSync('bash', ['-c', 'set +e\n' + makeShell(pollStep)], {
+    cwd, env: testEnv, encoding: 'utf8', timeout: 5000,
+  });
+  assert.equal(actualPoll.error, undefined);
+  assert.equal(actualPoll.status, 1, 'retry guard must exit even with errexit disabled');
+  const calls = (await readFile(testEnv.MOCK_CURL_CALLS, 'utf8')).trim().split('\n');
+  assert.equal(calls.length, 1, 'retry must only poll the prior response, no new POST');
+  assert.doesNotMatch(calls.join('\n'), /--request POST/,
+    'a withheld regeneration must never make the second paid POST');
+  const heldPayload = JSON.parse(await readFile(join(mockDir, 'daily-usd-impact-poll.json'), 'utf8'));
+  assert.equal(heldPayload.code, 'regeneration-withheld-cutoff',
+    'incident evidence must distinguish withheld from paid failed regeneration');
+  assert.match(actualPoll.stderr + actualPoll.stdout, /Paid regeneration withheld/,
+    'a blocked retry must emit an unambiguous hold message');
+
 } finally {
   await rm(mockDir, { recursive: true, force: true });
 }

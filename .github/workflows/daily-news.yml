@@ -95,10 +95,6 @@ jobs:
           echo "needed=true" >> "$GITHUB_OUTPUT"
           echo "reason=missing" >> "$GITHUB_OUTPUT"
 
-      - name: Refuse late paid Daily generation before configuration
-        if: steps.preflight.outputs.needed == 'true'
-        run: bash scripts/guard-daily-news-paid-start.sh
-
       - name: Check newsfeed configuration
         id: config
         env:
@@ -113,6 +109,9 @@ jobs:
             echo "::notice::Daily publication preflight requires no new generation; downstream publication steps are skipped."
             exit 0
           fi
+
+          # Recheck the paid-start cutoff before reading provider configuration.
+          bash scripts/guard-daily-news-paid-start.sh
 
           if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"

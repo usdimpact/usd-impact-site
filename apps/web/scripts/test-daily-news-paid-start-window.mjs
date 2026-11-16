@@ -11,12 +11,10 @@ const workflow = await readFile(
 const config = workflow.indexOf('- name: Check newsfeed configuration');
 const paidStartAt = workflow.indexOf('- name: Start background news generation');
 assert.ok(config > 0 && paidStartAt > config, 'configuration precedes paid source start');
+// Existing no-spend configuration fixtures must remain unchanged; the
+// clock gate is immediately before the first source POST instead.
 const configStep = workflow.slice(config, paidStartAt);
-assert.match(
-  configStep,
-  /if \[ "\$PUBLICATION_NEEDED" != "true" \]; then[\s\S]*?exit 0[\s\S]*?bash scripts\/guard-daily-news-paid-start\.sh[\s\S]*?NEWSFEED_ENDPOINT/,
-  'configuration must fail closed after no-op and before provider access',
-);
+assert.doesNotMatch(configStep, /curl --fail[\s\S]*?--request POST/);
 
 const paidStart = workflow.slice(
   workflow.indexOf('- name: Start background news generation'),

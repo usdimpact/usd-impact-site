@@ -255,6 +255,7 @@ jobs:
 
               if [ "$regeneration_used" = "false" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then
                 echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt."
+                bash scripts/guard-daily-news-paid-start.sh
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
                   -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \

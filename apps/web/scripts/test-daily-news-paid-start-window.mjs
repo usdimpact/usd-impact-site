@@ -57,6 +57,10 @@ const guardPath = fileURLToPath(new URL('./guard-daily-news-paid-start.sh', impo
 const guardText = await readFile(guardPath, 'utf8');
 assert.match(guardText, /TZ=America\/New_York date \+%H:%M/);
 assert.match(guardText, /07:10/);
+assert.match(guardText, /date \\+%Z/);
+assert.match(guardText, /date \\+%z/);
+assert.match(guardText, /EST:-0500\\|EDT:-0400/);
+assert.match(guardText, /time-zone data could not be verified/);
 
 const mockDir = await mkdtemp(join(tmpdir(), 'usd-impact-daily-pre-spend-'));
 try {
@@ -69,6 +73,8 @@ try {
     'fi',
     'if [ "$1" = "+%F" ]; then printf "%s\\n" "$MOCK_US_DAY"; exit 0; fi',
     'if [ "$1" = "+%H:%M" ]; then printf "%s\\n" "$MOCK_US_TIME"; exit 0; fi',
+    'if [ "$1" = "+%Z" ]; then printf "%s\\n" "$MOCK_US_ZONE"; exit 0; fi',
+    'if [ "$1" = "+%z" ]; then printf "%s\\n" "$MOCK_US_OFFSET"; exit 0; fi',
     'exit 88',
     '',
   ].join('\n'), { mode: 0o755 });
@@ -83,6 +89,12 @@ try {
     { name: 'UTC and New York day differ', utc: '2026-11-16', weekday: '1', ny: '2026-11-15', time: '23:15', exit: 1 },
     { name: 'weekend', utc: '2026-11-14', weekday: '6', ny: '2026-11-14', time: '06:45', exit: 1 },
     { name: 'invalid local time', utc: '2026-11-16', weekday: '1', ny: '2026-11-16', time: '29:59', exit: 1 },
+    // At 2026-11-17T01:00Z it is 20:00 Monday in New York, not
+    // 01:00 Tuesday. Missing tzdata must never authorize this paid POST.
+    { name: 'missing tzdata UTC fallback after local cutoff', utc: '2026-11-17', weekday: '2', ny: '2026-11-17', time: '01:00', zone: 'America', offset: '+0000', exit: 1 },
+    { name: 'invalid EST offset', utc: '2026-11-16', weekday: '1', ny: '2026-11-16', time: '06:45', zone: 'EST', offset: '-0400', exit: 1 },
+    { name: 'invalid EDT offset', utc: '2026-09-14', weekday: '1', ny: '2026-09-14', time: '06:45', zone: 'EDT', offset: '-0500', exit: 1 },
+    { name: 'unavailable abbreviation', utc: '2026-11-16', weekday: '1', ny: '2026-11-16', time: '06:45', zone: 'UTC', offset: '+0000', exit: 1 },
   ];
   for (const s of scenarios) {
     const run = spawnSync('bash', [guardPath], {
@@ -95,6 +107,8 @@ try {
         MOCK_UTC_WEEKDAY: s.weekday,
         MOCK_US_DAY: s.ny,
         MOCK_US_TIME: s.time,
+        MOCK_US_ZONE: s.zone ?? (s.utc === '2026-09-14' ? 'EDT' : 'EST'),
+        MOCK_US_OFFSET: s.offset ?? (s.utc === '2026-09-14' ? '-0400' : '-0500'),
       },
     });
     assert.equal(run.error, undefined, s.name + ': subprocess error');
@@ -132,6 +146,8 @@ try {
     MOCK_UTC_WEEKDAY: '1',
     MOCK_US_DAY: '2026-11-16',
     MOCK_US_TIME: '07:10',
+    MOCK_US_ZONE: 'EST',
+    MOCK_US_OFFSET: '-0500',
     NEWSFEED_ENDPOINT: 'https://example.invalid/daily-news-source',
     NEWSFEED_BEARER_TOKEN: 'synthetic-not-a-secret',
     BACKGROUND_ENDPOINT: 'https://example.invalid/daily-news-grounded-background',
@@ -168,4 +184,4 @@ try {
 } finally {
   await rm(mockDir, { recursive: true, force: true });
 }
-console.log('daily paid-start cutoff: 9/9 synthetic cases passed');
+console.log('daily paid-start cutoff: 13/13 synthetic cases passed');

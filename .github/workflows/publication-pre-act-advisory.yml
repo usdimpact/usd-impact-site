@@ -1,0 +1,66 @@
+# Manual advisory only. It does not satisfy a required PR status check.
+# The workflow is inert until separately reviewed, merged to main, and explicitly run.
+name: USD Impact publication pre-act advisory (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Choose an advisory, not an authorization
+        required: true
+        type: choice
+        options:
+          - pre-merge
+          - pre-alias
+      pr_number:
+        description: Pre-merge PR number (leave blank for pre-alias)
+        required: false
+        type: string
+      expected_head_sha:
+        description: Pre-merge exact 40-hex PR head
+        required: false
+        type: string
+      expected_base_sha:
+        description: Pre-merge exact 40-hex main/base SHA
+        required: false
+        type: string
+      target_sha:
+        description: Pre-alias exact 40-hex target commit SHA
+        required: false
+        type: string
+      expected_main_sha:
+        description: Pre-alias exact 40-hex current main SHA
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  manual-publication-pre-act-advisory:
+    name: S1 manual publication pre-act advisory (not a release check)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Check publication timing and exact revision (read-only)
+        working-directory: apps/web
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          S1_MODE: ${{ inputs.mode }}
+          S1_PR: ${{ inputs.pr_number }}
+          S1_HEAD: ${{ inputs.expected_head_sha }}
+          S1_BASE: ${{ inputs.expected_base_sha }}
+          S1_TARGET: ${{ inputs.target_sha }}
+          S1_MAIN: ${{ inputs.expected_main_sha }}
+        run: node scripts/publication-pre-act-advisory.mjs

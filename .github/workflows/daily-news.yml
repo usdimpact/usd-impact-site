@@ -152,7 +152,10 @@ jobs:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
-          bash scripts/guard-daily-news-paid-start.sh
+          if ! bash scripts/guard-daily-news-paid-start.sh; then
+            echo "::error::Initial paid generation withheld by the launch cutoff; no provider POST sent."
+            exit 1
+          fi
           background_endpoint="$(node -e '
             const url = new URL(process.env.NEWSFEED_ENDPOINT);
             if (!/\/daily-news-source\/?$/.test(url.pathname)) {
@@ -254,8 +257,12 @@ jobs:
               fi
 
               if [ "$regeneration_used" = "false" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then
+                if ! bash scripts/guard-daily-news-paid-start.sh; then
+                  printf '{"code":"regeneration-withheld-cutoff","error":"Bounded paid regeneration was withheld by the 07:10 America/New_York cutoff before provider POST","status":"failed","generationAttempt":1}\n' > "$poll_payload"
+                  echo "::error::Paid regeneration withheld by cutoff; no second provider POST sent."
+                  exit 1
+                fi
                 echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt."
-                bash scripts/guard-daily-news-paid-start.sh
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
                   -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \

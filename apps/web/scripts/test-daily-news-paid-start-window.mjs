@@ -8,12 +8,15 @@ import { fileURLToPath } from 'node:url';
 const workflow = await readFile(
   new URL('../../../.github/workflows/daily-news.yml', import.meta.url), 'utf8',
 );
-const beforeConfig = workflow.indexOf('- name: Refuse late paid Daily generation before configuration');
 const config = workflow.indexOf('- name: Check newsfeed configuration');
-assert.ok(beforeConfig > 0 && beforeConfig < config, 'pre-spend guard must run before configuration');
-const first = workflow.slice(beforeConfig, config);
-assert.match(first, /if: steps\.preflight\.outputs\.needed == 'true'/);
-assert.match(first, /run: bash scripts\/guard-daily-news-paid-start\.sh/);
+const paidStartAt = workflow.indexOf('- name: Start background news generation');
+assert.ok(config > 0 && paidStartAt > config, 'configuration precedes paid source start');
+const configStep = workflow.slice(config, paidStartAt);
+assert.match(
+  configStep,
+  /if \[ "\$PUBLICATION_NEEDED" != "true" \]; then[\s\S]*?exit 0[\s\S]*?bash scripts\/guard-daily-news-paid-start\.sh[\s\S]*?NEWSFEED_ENDPOINT/,
+  'configuration must fail closed after no-op and before provider access',
+);
 
 const paidStart = workflow.slice(
   workflow.indexOf('- name: Start background news generation'),

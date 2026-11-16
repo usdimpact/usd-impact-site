@@ -8,6 +8,15 @@ utc_day="$(date -u +%F)"
 utc_weekday="$(date -u +%u)"
 us_day="$(TZ=America/New_York date +%F)"
 us_time="$(TZ=America/New_York date +%H:%M)"
+# GNU date silently treats an unavailable America/New_York zone as UTC.
+# Require a recognized local abbreviation AND matching UTC offset; if the
+# system zone database is absent, fail closed before either paid POST.
+us_zone="$(TZ=America/New_York date +%Z 2>/dev/null || true)"
+us_offset="$(TZ=America/New_York date +%z 2>/dev/null || true)"
+case "$us_zone:$us_offset" in
+  EST:-0500|EDT:-0400) ;;
+  *) echo '::error::America/New_York time-zone data could not be verified; HOLD without provider call.'; exit 1 ;;
+esac
 
 if [[ ! "$utc_day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] \
   || [[ ! "$utc_weekday" =~ ^[1-7]$ ]] \

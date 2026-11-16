@@ -95,6 +95,10 @@ jobs:
           echo "needed=true" >> "$GITHUB_OUTPUT"
           echo "reason=missing" >> "$GITHUB_OUTPUT"
 
+      - name: Refuse late paid Daily generation before configuration
+        if: steps.preflight.outputs.needed == 'true'
+        run: bash scripts/guard-daily-news-paid-start.sh
+
       - name: Check newsfeed configuration
         id: config
         env:
@@ -152,6 +156,7 @@ jobs:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
+          bash scripts/guard-daily-news-paid-start.sh
           background_endpoint="$(node -e '
             const url = new URL(process.env.NEWSFEED_ENDPOINT);
             if (!/\/daily-news-source\/?$/.test(url.pathname)) {

@@ -87,7 +87,7 @@ Commercial crude oil inventories excluding the Strategic Petroleum Reserve rose 
 The release-specific [EIA summary](https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_11_12/download/summary.txt) and [Table 1 CSV](https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_11_12/download/table1.csv) independently identify the same published inventory changes after rounding.
 
 | Petroleum measure | Prior week, million barrels | Week ending 6 Nov, million barrels | Difference |
-| --- | ---: | ---: | ---: |
+| --- | --- | --- | --- |
 | Commercial crude excluding SPR | 409.760 | 414.417 | +4.657 (about +4.7) |
 | Total motor gasoline | 208.958 | 210.757 | +1.799 (about +1.8) |
 | Distillate fuel oil | 99.259 | 103.330 | +4.071 (about +4.1) |

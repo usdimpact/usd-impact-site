@@ -103,7 +103,15 @@ function verify(raw) {
     'Live Catalyst route must exclude review candidates');
   // Byte-for-byte preserved historical evidence: reconstruct the reviewed original
   // frontmatter and compare the exact Git blob digest of the original brief.
-  const original = raw.replace('status: "published"\nfirstPublishedDate: "' + APPROVED_D + '"\n', 'status: "review"\n');
+  // Only the owner-approved Markdown table alignment delimiter may differ.
+  // Restore the original delimiter before checking the entire frozen Git blob.
+  const approvedDivider = '| --- | --- | --- | --- |';
+  const frozenDivider = '| --- | ---: | ---: | ---: |';
+  assert.equal(raw.split(approvedDivider).length - 1, 1, 'Exactly one approved alignment-free table divider must exist');
+  assert.ok(!raw.includes(frozenDivider), 'The former right-aligned divider must not remain');
+  const original = raw
+    .replace('status: "published"\nfirstPublishedDate: "' + APPROVED_D + '"\n', 'status: "review"\n')
+    .replace(approvedDivider, frozenDivider);
   assert.notEqual(original, raw, 'Publication status/date anchors must be uniquely reversible');
   const gitBlobSha = createHash('sha1').update('blob ' + Buffer.byteLength(original) + '\0').update(original).digest('hex');
   assert.equal(gitBlobSha, BASELINE_GIT_BLOB, 'All original EIA facts, dated issuer sources, statements and disclaimers must remain byte-identical to #1266');
@@ -153,6 +161,7 @@ for (const [label, changes] of surfaceMutants) {
 assert.equal(verify(content), true);
 const mutants = [
   ['N1: revert to review state', content.replace('status: "published"', 'status: "review"')],
+  ['reject unapproved table alignment', content.replace('| --- | --- | --- | --- |', '| --- | :--- | --- | --- |')],
   ['N2: first-publication date removed', content.replace(/^firstPublishedDate:.*\n/m, '')],
   ['N3a: backdate to previous UTC day', content.replace('firstPublishedDate: "2026-11-16"', 'firstPublishedDate: "2026-11-15"')],
   ['N3b: backdate to original draft date', content.replace('firstPublishedDate: "2026-11-16"', 'firstPublishedDate: "2026-11-13"')],

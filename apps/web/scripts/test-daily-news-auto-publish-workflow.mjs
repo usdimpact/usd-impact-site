@@ -3,6 +3,7 @@ import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
@@ -380,7 +381,33 @@ assert.match(auto, /workflow_run:[\s\S]*workflows: \["Daily USD Impact publicati
 assert.match(auto, /branches: \[main\]/);
 assert.match(auto, /cancel-in-progress: false/);
 assert.match(auto, /github\.event\.workflow_run\.conclusion == 'success'/);
-assert.match(auto, /vars\.DAILY_NEWS_AUTO_PUBLISH_DISABLED != 'true'/);
+assert.doesNotMatch(auto, /[^\x0A\x20-\x7E]/,
+  'Publisher workflow must be printable ASCII with LF line endings');
+const requirePublisherYaml = createRequire(import.meta.url);
+assert.equal(requirePublisherYaml('js-yaml/package.json').version, '4.3.2',
+  'Publisher YAML parser changes require independent review');
+const { load: parsePublisherYaml, FAILSAFE_SCHEMA: publisherFailsafeSchema } = requirePublisherYaml('js-yaml');
+const publisherDocument = parsePublisherYaml(auto, {
+  schema: publisherFailsafeSchema, json: false, maxDepth: 50,
+  onWarning: (warning) => { throw warning; },
+});
+assert.ok(publisherDocument && typeof publisherDocument === 'object'
+  && !Array.isArray(publisherDocument), 'Publisher workflow must be a YAML mapping');
+assert.ok(publisherDocument.jobs && typeof publisherDocument.jobs === 'object'
+  && !Array.isArray(publisherDocument.jobs), 'Publisher jobs must be a mapping');
+assert.deepEqual(Object.keys(publisherDocument),
+  ['name', 'run-name', 'on', 'permissions', 'concurrency', 'jobs'],
+  'Unexpected top-level publisher workflow key');
+assert.deepEqual(Object.keys(publisherDocument.jobs), ['publish-verified-daily'],
+  'An additional job could bypass the publication pause');
+assert.deepEqual(Object.keys(publisherDocument.jobs['publish-verified-daily']),
+  ['if', 'runs-on', 'timeout-minutes', 'steps'],
+  'Unexpected publisher job key');
+assert.equal(publisherDocument.jobs['publish-verified-daily'].if,
+  "${{ vars.DAILY_NEWS_AUTO_PUBLISH_DISABLED == 'false' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}",
+  'The parsed publisher condition must require explicit false');
+assert.doesNotMatch(auto, /DAILY_NEWS_AUTO_PUBLISH_DISABLED\s*!=\s*'true'/i,
+  'Do not reintroduce fail-open publisher admission');
 assert.match(auto, /persist-credentials: false/);
 assert.match(auto, /node apps\/web\/scripts\/daily-news-auto-publish\.mjs/);
 assert.doesNotMatch(auto, /checkout.*head_sha|gh pr merge --admin/);

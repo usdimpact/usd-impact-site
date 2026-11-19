@@ -153,6 +153,9 @@ async function setStatus(pr, evaluatedResult, holds) {
     if (!Array.isArray(statuses) || statuses.length > 100) throw new Error('HOLD_STATUS_LIST_SHAPE');
     historyComplete = true;
   } catch (error) {
+    // Treat a malformed or oversized 200 response like an unavailable history.
+    // Never inspect or dedupe against a response whose shape was rejected.
+    statuses = null;
     const hold = `HOLD_GUARD_STATUS_READ_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`;
     // Known BLOCKs must still get one conservative failure POST even when
     // status history is unavailable; no uncertain positive status is permitted.
@@ -175,7 +178,7 @@ async function setStatus(pr, evaluatedResult, holds) {
       holds.push(hold);
     } else if (previous?.state === state && previous?.description === description
       && (previous?.target_url ?? null) === (pr.html_url ?? null)) {
-      return { written: false, result, statusHistoryComplete: true };
+      return { written: false, result, statusHistoryComplete: historyComplete };
     }
   }
   try {

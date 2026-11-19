@@ -771,4 +771,80 @@ assert.ok(driftShared.summary?.holds?.some((h) => h.startsWith('HOLD_PRESERVED_S
 assert.equal(driftShared.posted.length, 0);
 assert.equal(Boolean(driftShared.close), false);
 
-console.log('publication calendar PR enforcer API tests pass (48 offline scenarios; 288 pinned-head replay sweeps)');
+// 49: A 200 JSON object is an invalid status-history result. The guarded
+// expired BLS BLOCK must still get one failure POST, but no automatic close.
+const malformedHistoryBody = await scenario(49, {
+  headRef: 'automation/catalyst-brief-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  statusHistoryOverride: { invalid: 'not an array' },
+});
+assert.match(malformedHistoryBody.failure ?? '',
+  /HOLD_GUARD_STATUS_READ_PR_123_HOLD_STATUS_LIST_SHAPE/);
+assert.equal(malformedHistoryBody.summary?.complete, false);
+assert.equal(malformedHistoryBody.posted.length, 1);
+assert.equal(malformedHistoryBody.posted[0].body.state, 'failure');
+assert.equal(Boolean(malformedHistoryBody.close), false,
+  'invalid 200 status history may not authorize auto-close');
+
+// 50: A 101-entry history with the most recent matching failure is a shape
+// violation, not confirmed history. Do not dedupe into a successful close.
+const oversizedMatchingHistory = await scenario(50, {
+  headRef: 'automation/catalyst-brief-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  statusHistoryOverride: [{
+    context: 'publication-calendar-freshness', state: 'failure',
+    description: 'Blocked: verified BLS preview release instant has passed.',
+    target_url: 'https://github.com/usdimpact/usd-impact-site/pull/123',
+  }, ...Array.from({ length: 100 }, (_, i) => ({
+    context: 'other-' + i, state: 'success',
+  }))],
+});
+assert.match(oversizedMatchingHistory.failure ?? '',
+  /HOLD_GUARD_STATUS_READ_PR_123_HOLD_STATUS_LIST_SHAPE/);
+assert.equal(oversizedMatchingHistory.summary?.complete, false);
+assert.equal(oversizedMatchingHistory.posted.length, 1);
+assert.equal(oversizedMatchingHistory.posted[0].body.state, 'failure');
+assert.equal(Boolean(oversizedMatchingHistory.close), false,
+  'an over-cap history cannot authorize close via the deduplication fast path');
+
+// 51: An unpinned historical-style NON-BLS automation PR stays unaffected
+// during a clean sweep. This restores the coverage moved by scenario 35.
+const unpinnedTreasurySha = '9'.repeat(40);
+const unpinnedTreasuryPr = {
+  number: 8123, ref: 'automation/catalyst-brief-unpinned-treasury',
+  sha: unpinnedTreasurySha, files: [catalystPath],
+  contents: { [catalystPath]: source({
+    releaseAt: '2000-01-01T13:30:00.000Z',
+    event: 'Treasury 10-year note auction', calendar: false,
+  }) },
+};
+const unpinnedTreasuryClean = await scenario(51, {
+  multiPrs: [unpinnedTreasuryPr],
+});
+assert.equal(unpinnedTreasuryClean.failure, null);
+assert.equal(unpinnedTreasuryClean.summary?.complete, true);
+assert.equal(unpinnedTreasuryClean.summary?.prs?.[0]?.reason, 'PASS_NOT_APPLICABLE');
+assert.equal(unpinnedTreasuryClean.posted.length, 0);
+assert.equal(unpinnedTreasuryClean.requests.some((r) => r.method === 'PATCH'), false);
+
+// 52: Deferred RS-3: a transient read error on an unpinned NON-BLS
+// automation PR writes one conservative red; a later clean sweep does not
+// heal it. Document the residual rather than manufacturing green.
+const unpinnedTreasuryReadError = await scenario(52, {
+  multiPrs: [unpinnedTreasuryPr], contentHttp: 503,
+});
+assert.match(unpinnedTreasuryReadError.failure ?? '',
+  /HOLD_PR_8123_HOLD_GITHUB_API_GET_503/);
+assert.equal(unpinnedTreasuryReadError.posted.length, 1);
+assert.equal(unpinnedTreasuryReadError.posted[0].body.state, 'failure');
+assert.equal(unpinnedTreasuryReadError.requests.some((r) => r.method === 'PATCH'), false);
+const unpinnedTreasuryRecovery = await scenario(52001, {
+  multiPrs: [unpinnedTreasuryPr],
+  initialStatuses: unpinnedTreasuryReadError.statuses,
+});
+assert.equal(unpinnedTreasuryRecovery.failure, null);
+assert.equal(unpinnedTreasuryRecovery.posted.length, 0);
+assert.equal(unpinnedTreasuryRecovery.statuses[0]?.state, 'failure',
+  'RS-3 sticky red for non-BLS is deferred; the clean sweep must not mint green');
+
+console.log('publication calendar PR enforcer API tests pass (52 offline scenarios; 288 pinned-head replay sweeps)');

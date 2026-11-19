@@ -45,6 +45,18 @@ async function scenario(index, {
   const requests = [];
   const statuses = initialStatuses.map((x) => ({ ...x }));
   const realNow = Date.now;
+  // The enforcer intentionally throws only the first HOLD after emitting the
+  // complete machine-readable sweep summary. Observe that summary directly.
+  const realLog = console.log;
+  let summary = null;
+  console.log = (...args) => {
+    const value = String(args[0] ?? '');
+    if (args.length === 1 && value.startsWith('{"schema":"publication-calendar-pr-guard/')) {
+      summary = JSON.parse(value);
+    } else {
+      realLog(...args);
+    }
+  };
   let clock = clockStartMs === null ? null : clockStartMs;
   if (clock !== null) Date.now = () => clock;
   let pullReads = 0;
@@ -153,10 +165,11 @@ async function scenario(index, {
     failure = String(error?.message ?? error);
   } finally {
     Date.now = realNow;
+    console.log = realLog;
   }
   const status = requests.find((item) => item.path.endsWith('/statuses/' + headSha));
   const close = requests.find((item) => item.method === 'PATCH' && item.path.endsWith('/pulls/123'));
-  return { status: status?.body, close, requests, failure, statuses,
+  return { status: status?.body, close, requests, failure, statuses, summary,
     posted: requests.filter((item) => item.method === 'POST') };
 }
 
@@ -499,7 +512,11 @@ const movedBeforeFailure = await scenario(31, {
   headRef: 'editorial/moved-head', releaseAt: '2000-01-01T13:30:00.000Z',
   contentHttp: 404, driftBeforeStatus: true,
 });
-assert.match(movedBeforeFailure.failure ?? '', /HOLD_PR_123_HOLD_PR_HEAD_MOVED/);
+assert.match(movedBeforeFailure.failure ?? '', /HOLD_PR_123_HOLD_GITHUB_API_GET_404/,
+  'the thrown error retains the first HOLD');
+assert.equal(movedBeforeFailure.summary?.complete, false);
+assert.ok(movedBeforeFailure.summary?.holds?.includes('HOLD_PR_123_HOLD_PR_HEAD_MOVED'),
+  'the complete machine-readable summary must also report the head movement');
 assert.equal(movedBeforeFailure.posted.length, 0);
 assert.equal(Boolean(movedBeforeFailure.close), false);
 

@@ -34,6 +34,7 @@ async function scenario(index, {
   advanceMsPerRequest = 0, duplicatePrPage = false, omitFirstHead = false,
   contentHttp = 200, driftBeforeStatus = false, statusReadAdvanceMs = 0,
   statusPostAdvanceMs = 0, filePageShape = false,
+  filePageHttpByPage = null, filePageMalformedByPage = null,
 }) {
   process.env.GITHUB_TOKEN = 'fixture-token';
   process.env.GITHUB_REPOSITORY = 'usdimpact/usd-impact-site';
@@ -119,6 +120,10 @@ async function scenario(index, {
     if (multiPrs && fileMatch) {
       const pr = multiPrs.find((p) => p.number === Number(fileMatch[1]));
       const page = Number(parsed.searchParams.get('page'));
+      const fileStatus = typeof filePageHttpByPage === 'function'
+        ? filePageHttpByPage(pr.number, page) : 200;
+      if (fileStatus !== 200) return json({ message: 'Synthetic file page failure' }, fileStatus);
+      if (filePageMalformedByPage?.(pr.number, page)) return json({ invalid: true });
       const files = pr.files.map((filename) => ({ filename, status: 'added' }));
       return json(files.slice((page - 1) * 100, page * 100));
     }
@@ -335,7 +340,8 @@ const blockOnReadOutage = await scenario(16, {
 assert.match(blockOnReadOutage.failure ?? '', /HOLD_GUARD_STATUS_READ_PR_123_HOLD_GITHUB_API_GET_502/);
 assert.equal(blockOnReadOutage.posted.length, 1);
 assert.equal(blockOnReadOutage.posted[0].body.state, 'failure');
-assert.equal(Boolean(blockOnReadOutage.close), true, 'known expired automation preview must still close after confirmed failure');
+assert.equal(Boolean(blockOnReadOutage.close), false,
+  'status-history GET failure must prohibit automatic close despite a confirmed failure POST');
 
 const hiddenContext = await scenario(17, {
   headRef: 'editorial/fresh', releaseAt: '2099-01-01T13:30:00.000Z',
@@ -554,20 +560,215 @@ const malformedListing = await scenario(34, {
 assert.match(malformedListing.failure ?? '', /HOLD_PR_FILE_PAGE_SHAPE/);
 assert.equal(malformedListing.posted.length, 0);
 
-// 35: Synthetic replicas of preserved legacy non-BLS PRs have zero write/close.
+// Owner-pinned historical heads: no permanent PR-number-only exemption.
+const preservedPins = new Map([
+  [916, '763bc389f0915107b03b913942a6c4021e49b48f'],
+  [939, '83b206217f813b6d542ba41efd310729b621938c'],
+  [1010, '908bc4099be2a4196f68a468f9a4dec4b6605982'],
+  [1203, '866df34078f839aed2af164fd371e2fdbbcd033f'],
+  [1206, '3d2d56fc7f16f11ab377cee33ba76bca0d4152e5'],
+  [1211, '1e6bc1176ae25a59fad9995c3851ddb3e5941d9c'],
+  [1225, '0242b360c49f82ad44cd6db3a5cd089a230d440b'],
+]);
+const preservedRecords = [...preservedPins].map(([number, sha]) => ({
+  number, ref: 'automation/catalyst-brief-legacy-' + number, sha,
+  files: [catalystPath],
+  contents: { [catalystPath]: source({
+    releaseAt: '2000-01-01T13:30:00.000Z', calendar: false,
+    event: 'Treasury or BEA historical non-BLS preview',
+  }) },
+}));
+// 35: Exact pinned heads are unchanged, never written or closed.
 const preservedLegacy = await scenario(35, {
   releaseAt: '2000-01-01T13:30:00.000Z',
-  multiPrs: [916, 939, 1010, 1203, 1206, 1211, 1225].map((number, i) => ({
-    number, ref: 'automation/catalyst-brief-legacy-' + number, sha: String(i + 1).repeat(40),
-    files: [catalystPath],
-    contents: { [catalystPath]: source({
-      releaseAt: '2000-01-01T13:30:00.000Z', calendar: false,
-      event: 'Treasury or BEA historical non-BLS preview',
-    }) },
-  })),
+  multiPrs: preservedRecords,
 });
 assert.equal(preservedLegacy.failure, null);
 assert.equal(preservedLegacy.posted.length, 0);
 assert.equal(preservedLegacy.requests.some((r) => r.method === 'PATCH'), false);
 
-console.log('publication calendar PR enforcer API tests pass (35 offline scenarios)');
+
+// 36: All seven exact PR+SHA pairs are skipped before any file/status endpoint.
+const protectedAll = await scenario(36, {
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  multiPrs: preservedRecords.map((p) => ({
+    ...p, contents: { [catalystPath]: expiredSource },
+  })),
+  initialStatuses: [{
+    sha: preservedPins.get(1203), context: 'publication-calendar-freshness',
+    state: 'success', description: 'Historical status must remain untouched',
+  }],
+});
+assert.equal(protectedAll.failure, null);
+assert.equal(protectedAll.summary?.complete, true);
+assert.equal(protectedAll.posted.length, 0);
+assert.equal(protectedAll.requests.some((r) => r.method === 'PATCH'), false);
+assert.equal(protectedAll.requests.some((r) => /\/files\?/.test(r.path)), false,
+  'exact pinned historical heads must not need file or content API reads');
+assert.equal(protectedAll.summary?.prs?.filter((p) => p.decision === 'SKIP').length, 7);
+assert.equal(protectedAll.statuses.length, 1, 'existing status remains untouched');
+
+// 37: Changing a protected PR head is a HOLD, never a number-only exemption.
+const driftHead = 'd'.repeat(40);
+const preservedDrift = await scenario(37, {
+  multiPrs: preservedRecords.map((p) => p.number === 1203 ? { ...p, sha: driftHead } : p),
+});
+assert.match(preservedDrift.failure ?? '', /HOLD_PRESERVED_HEAD_DRIFT_PR_1203/);
+assert.equal(preservedDrift.summary?.complete, false);
+assert.equal(preservedDrift.summary?.prs?.find((p) => p.number === 1203)?.reason,
+  'HOLD_PRESERVED_HEAD_DRIFT');
+assert.equal(preservedDrift.posted.length, 0);
+assert.equal(preservedDrift.requests.some((r) => r.method === 'PATCH'), false);
+
+// 38: Even if the original pinned PR is missing from the listing, its SHA
+// must not receive a status through a different PR.
+const invisiblePin = await scenario(38, {
+  multiPrs: [{
+    number: 123, ref: 'editorial/aliased-head', sha: preservedPins.get(916),
+    files: [catalystPath], contents: { [catalystPath]: expiredSource },
+  }],
+});
+assert.match(invisiblePin.failure ?? '', /HOLD_PRESERVED_SHARED_SHA_/);
+assert.equal(invisiblePin.posted.length, 0);
+assert.equal(Boolean(invisiblePin.close), false);
+
+// 39: A visible preserved PR and another PR sharing the pinned SHA are
+// both protected from any SHA-scoped status or auto-close.
+const sharedPin = await scenario(39, {
+  multiPrs: [
+    preservedRecords[0],
+    { number: 123, ref: 'automation/catalyst-brief-shared', sha: preservedPins.get(916),
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+  ],
+});
+assert.match(sharedPin.failure ?? '', /HOLD_PRESERVED_SHARED_SHA_/);
+assert.equal(sharedPin.posted.length, 0);
+assert.equal(sharedPin.requests.some((r) => r.method === 'PATCH'), false);
+assert.equal(sharedPin.summary?.prs?.find((p) => p.number === 123)?.decision, 'BLOCK');
+
+// 40: A regular, unrelated expired automation preview still receives a
+// failure status and is closed only after a complete status-history read.
+const independentExpired = await scenario(40, {
+  multiPrs: [...preservedRecords,
+    { number: 123, ref: 'automation/catalyst-brief-new', sha: headSha,
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } }],
+});
+assert.equal(independentExpired.failure, null);
+assert.equal(independentExpired.posted.length, 1);
+assert.equal(independentExpired.posted[0].body.state, 'failure');
+assert.equal(independentExpired.posted[0].path.endsWith(headSha), true);
+assert.equal(Boolean(independentExpired.close), true);
+assert.equal(independentExpired.summary?.prs?.filter((p) => p.decision === 'SKIP').length, 7);
+
+// 41: Page 2 read failure does not discard expired BLS evidence from page 1.
+const laterErrorFiles = [catalystPath, ...Array.from({ length: 249 }, (_, i) => 'docs/late-' + i + '.md')];
+const observedExpired = await scenario(41, {
+  multiPrs: [{ number: 123, ref: 'automation/catalyst-brief-late-page', sha: headSha,
+    files: laterErrorFiles, contents: { [catalystPath]: expiredSource } }],
+  filePageHttpByPage: (_number, page) => page === 2 ? 502 : 200,
+});
+assert.match(observedExpired.failure ?? '', /HOLD_PR_123_HOLD_PR_FILE_PAGE_2_HOLD_GITHUB_API_GET_502/);
+assert.equal(observedExpired.posted.length, 1);
+assert.equal(observedExpired.posted[0].body.state, 'failure');
+assert.equal(Boolean(observedExpired.close), false);
+assert.equal(observedExpired.summary?.complete, false);
+
+// 42: The same partial-evidence behavior applies to a malformed later page.
+const observedMalformed = await scenario(42, {
+  multiPrs: [{ number: 123, ref: 'automation/catalyst-brief-bad-page', sha: headSha,
+    files: laterErrorFiles, contents: { [catalystPath]: expiredSource } }],
+  filePageMalformedByPage: (_number, page) => page === 2,
+});
+assert.match(observedMalformed.failure ?? '', /HOLD_PR_123_HOLD_PR_FILE_PAGE_2_HOLD_PR_FILE_PAGE_SHAPE/);
+assert.equal(observedMalformed.posted[0]?.body.state, 'failure');
+assert.equal(Boolean(observedMalformed.close), false);
+
+// 43: A fresh preview seen before a later-page failure cannot authorize
+// success; the incomplete inventory is recorded and never auto-closed.
+const observedFresh = await scenario(43, {
+  multiPrs: [{ number: 123, ref: 'automation/catalyst-brief-fresh-page', sha: headSha,
+    files: laterErrorFiles, contents: { [catalystPath]: freshSource } }],
+  filePageHttpByPage: (_number, page) => page === 2 ? 502 : 200,
+});
+assert.match(observedFresh.failure ?? '', /HOLD_PR_FILE_PAGE_2/);
+assert.equal(observedFresh.posted.some((r) => r.body.state === 'success'), false);
+assert.equal(observedFresh.posted[0]?.body.state, 'failure');
+assert.equal(Boolean(observedFresh.close), false);
+
+// 44: The reviewer V-22b (450 files and a fresh guarded brief) is now
+// explicitly included in the author suite.
+const truncatedFresh = await scenario(44, {
+  multiPrs: [{ number: 123, ref: 'automation/catalyst-brief-450-fresh', sha: headSha,
+    files: [catalystPath, ...Array.from({ length: 449 }, (_, i) => 'docs/fresh-' + i + '.md')],
+    contents: { [catalystPath]: freshSource } }],
+});
+assert.match(truncatedFresh.failure ?? '', /HOLD_PR_123_HOLD_PR_FILE_SCAN_TRUNCATED/);
+assert.equal(truncatedFresh.posted.length, 1);
+assert.equal(truncatedFresh.posted[0].body.state, 'failure');
+assert.equal(Boolean(truncatedFresh.close), false);
+
+// 45: N1 must still POST one failure on status-history GET 502, but I-1
+// prohibits an automatic PR close while status history is unavailable.
+const historyOutage = await scenario(45, {
+  headRef: 'automation/catalyst-brief-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  statusReadHttp: 502,
+});
+assert.match(historyOutage.failure ?? '', /HOLD_GUARD_STATUS_READ_PR_123_HOLD_GITHUB_API_GET_502/);
+assert.equal(historyOutage.posted.length, 1);
+assert.equal(historyOutage.posted[0].body.state, 'failure');
+assert.equal(Boolean(historyOutage.close), false);
+
+// 46: A hidden guard context in a full 100-entry history is incomplete.
+// Known BLOCK still posts one failure but never auto-closes.
+const hiddenHistoryClose = await scenario(46, {
+  headRef: 'automation/catalyst-brief-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  statusHistoryOverride: Array.from({ length: 100 }, (_, i) => ({
+    context: 'unrelated-context-' + i, state: 'success',
+  })),
+});
+assert.match(hiddenHistoryClose.failure ?? '', /HOLD_STATUS_CONTEXT_UNVERIFIED_PR_123/);
+assert.equal(hiddenHistoryClose.posted.length, 1);
+assert.equal(hiddenHistoryClose.posted[0].body.state, 'failure');
+assert.equal(Boolean(hiddenHistoryClose.close), false);
+
+// 47: Reviewer V-21: 288 synthetic 5-minute sweeps, with five injected
+// transient file/content failures. Exact pinned heads must have zero writes,
+// closes, historical status changes and file/content API reads for all sweeps.
+const legacyReplayFailures = new Set([5, 77, 140, 211, 260]);
+const legacySeed = [{
+  sha: preservedPins.get(1203), state: 'success',
+  context: 'publication-calendar-freshness', description: 'Historical lease untouched',
+}];
+for (let sweep = 0; sweep < 288; sweep++) {
+  const legacyReplay = await scenario(47000 + sweep, {
+    multiPrs: preservedRecords,
+    initialStatuses: legacySeed,
+    clockStartMs: Date.parse('2026-11-16T12:00:00.000Z') + sweep * 300000,
+    contentHttp: legacyReplayFailures.has(sweep) ? 503 : 200,
+    filePageHttpByPage: () => legacyReplayFailures.has(sweep) ? 503 : 200,
+  });
+  assert.equal(legacyReplay.failure, null, 'preserved replay sweep ' + sweep);
+  assert.equal(legacyReplay.posted.length, 0);
+  assert.equal(legacyReplay.requests.some((r) => r.method === 'PATCH'), false);
+  assert.equal(legacyReplay.requests.some((r) => /\/files\?|\/contents\//.test(r.path)), false);
+  assert.equal(legacyReplay.summary?.prs?.filter((p) => p.decision === 'SKIP').length, 7);
+  assert.equal(legacyReplay.statuses.length, 1);
+}
+
+// 48: A changed preserved head that shares its new SHA with an unrelated
+// guarded PR must HOLD, not inherit the old pin or allow a status/close.
+const driftShared = await scenario(48, {
+  multiPrs: [
+    { ...preservedRecords.find((p) => p.number === 1203), sha: driftHead },
+    { number: 123, ref: 'automation/catalyst-brief-drift-shared', sha: driftHead,
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+  ],
+});
+assert.match(driftShared.failure ?? '', /HOLD_PRESERVED_HEAD_DRIFT_PR_1203/);
+assert.ok(driftShared.summary?.holds?.some((h) => h.startsWith('HOLD_PRESERVED_SHARED_SHA_')));
+assert.equal(driftShared.posted.length, 0);
+assert.equal(Boolean(driftShared.close), false);
+
+console.log('publication calendar PR enforcer API tests pass (48 offline scenarios; 288 pinned-head replay sweeps)');

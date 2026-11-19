@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const headSha = 'a'.repeat(40);
 const catalystPath = 'apps/web/src/content/catalyst-briefs/2099-01-01-cpi-preview.md';
 
-function source({ releaseAt, calendar = true }) {
+function source({ releaseAt, calendar = true, event = 'BLS Consumer Price Index (CPI) — December 2098' }) {
   const calendarValue = calendar ? `calendar: ${JSON.stringify({
     publisher: 'BLS',
     series: 'CPI',
@@ -15,7 +15,7 @@ function source({ releaseAt, calendar = true }) {
     releaseAt,
   })}\n` : '';
   return `---
-event: "BLS Consumer Price Index (CPI) — December 2098"
+event: "${event}"
 phase: "preview"
 status: "published"
 statusLabel: "scheduled-confirmed"
@@ -25,10 +25,14 @@ Body
 `;
 }
 
-async function scenario(index, { headRef, releaseAt, calendar = true, driftBeforeClose = false }) {
+async function scenario(index, {
+  headRef, releaseAt, calendar = true, driftBeforeClose = false,
+  nonCatalyst = false, statusHttp = 201, fullFilePages = false,
+  fullPrPages = false, event = 'BLS Consumer Price Index (CPI) — December 2098',
+}) {
   process.env.GITHUB_TOKEN = 'fixture-token';
   process.env.GITHUB_REPOSITORY = 'usdimpact/usd-impact-site';
-  process.env.TARGET_PR = '123';
+  process.env.TARGET_PR = fullPrPages ? '' : '123';
   process.env.GUARD_WINDOW_MINUTES = '60';
   process.env.GUARD_STATUS_CONTEXT = 'publication-calendar-freshness';
   process.env.AUTOMATION_BRANCH_PREFIX = 'automation/catalyst-brief-';
@@ -44,6 +48,13 @@ async function scenario(index, { headRef, releaseAt, calendar = true, driftBefor
       status,
       headers: { 'Content-Type': 'application/json' },
     });
+    if (fullPrPages && parsed.pathname.endsWith('/pulls')) {
+      return json(Array.from({ length: 100 }, (_, i) => ({
+        number: i + 1, state: 'open',
+        html_url: 'https://github.com/usdimpact/usd-impact-site/pull/' + (i + 1),
+        head: { ref: 'editorial/test', sha: headSha, repo: { full_name: 'usdimpact/usd-impact-site' } },
+      })));
+    }
     if (parsed.pathname.endsWith('/pulls/123') && (init.method ?? 'GET') === 'GET') {
       pullReads += 1;
       return json({
@@ -58,21 +69,27 @@ async function scenario(index, { headRef, releaseAt, calendar = true, driftBefor
       });
     }
     if (parsed.pathname.endsWith('/pulls/123/files')) {
-      return json([{ filename: catalystPath, status: 'added' }]);
+      if (fullFilePages) return json(Array.from({ length: 100 }, () => ({ filename: catalystPath, status: 'added' })));
+      return json([{ filename: nonCatalyst ? 'README.md' : catalystPath, status: 'added' }]);
     }
     if (parsed.pathname.includes('/contents/')) {
-      const raw = source({ releaseAt, calendar });
+      const raw = source({ releaseAt, calendar, event });
       return json({ type: 'file', encoding: 'base64', content: Buffer.from(raw).toString('base64') });
     }
-    if (parsed.pathname.endsWith('/statuses/' + headSha) && init.method === 'POST') return json({}, 201);
+    if (parsed.pathname.endsWith('/statuses/' + headSha) && init.method === 'POST') return json({}, statusHttp);
     if (parsed.pathname.endsWith('/pulls/123') && init.method === 'PATCH') return json({ number: 123, state: 'closed' });
     throw new Error(`Unexpected request: ${init.method ?? 'GET'} ${parsed.pathname}`);
   };
 
-  await import(`./enforce-publication-calendar-prs.mjs?scenario=${index}`);
+  let failure = null;
+  try {
+    await import(`./enforce-publication-calendar-prs.mjs?scenario=${index}`);
+  } catch (error) {
+    failure = String(error?.message ?? error);
+  }
   const status = requests.find((item) => item.path.endsWith('/statuses/' + headSha));
   const close = requests.find((item) => item.method === 'PATCH' && item.path.endsWith('/pulls/123'));
-  return { status: status?.body, close };
+  return { status: status?.body, close, requests, failure };
 }
 
 const fresh = await scenario(1, {
@@ -112,4 +129,42 @@ const drifted = await scenario(5, {
 assert.equal(drifted.status.state, 'failure');
 assert.equal(Boolean(drifted.close), false, 'newer PR head must never be closed using an older evaluation');
 
-console.log('publication calendar PR enforcer API tests pass');
+const unrelated = await scenario(6, {
+  headRef: 'editorial/unrelated', releaseAt: '2099-01-01T13:30:00.000Z', nonCatalyst: true,
+});
+assert.equal(unrelated.failure, null);
+assert.equal(unrelated.status, undefined, 'unrelated PR must not receive a recurring success status');
+assert.equal(unrelated.requests.some((item) => item.path.includes('/contents/')), false);
+assert.equal(Boolean(unrelated.close), false);
+
+const otherIssuer = await scenario(7, {
+  headRef: 'editorial/eia-review', releaseAt: '2099-01-01T13:30:00.000Z',
+  calendar: false, event: 'EIA Weekly Petroleum Status Report',
+});
+assert.equal(otherIssuer.failure, null);
+assert.equal(otherIssuer.status, undefined, 'uncovered issuer cannot be given a BLS status');
+assert.equal(Boolean(otherIssuer.close), false);
+
+const outage = await scenario(8, {
+  headRef: 'automation/catalyst-brief-cpi-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z', statusHttp: 502,
+});
+assert.match(outage.failure ?? '', /HOLD_GUARD_STATUS_WRITE_PR_123_HOLD_GITHUB_API_POST_502/);
+assert.equal(outage.requests.filter((item) => item.method === 'POST').length, 1, 'ambiguous POST must not retry');
+assert.equal(Boolean(outage.close), false, 'failed status must not auto-close an automation PR');
+
+const incompleteFiles = await scenario(9, {
+  headRef: 'editorial/many-files', releaseAt: '2099-01-01T13:30:00.000Z',
+  fullFilePages: true,
+});
+assert.match(incompleteFiles.failure ?? '', /HOLD_PR_FILE_SCAN_TRUNCATED/);
+assert.equal(incompleteFiles.status, undefined);
+
+const incompletePrSweep = await scenario(10, {
+  headRef: 'editorial/many-prs', releaseAt: '2099-01-01T13:30:00.000Z',
+  fullPrPages: true,
+});
+assert.match(incompletePrSweep.failure ?? '', /HOLD_OPEN_PR_SCAN_TRUNCATED/);
+assert.equal(incompletePrSweep.requests.filter((item) => item.method === 'POST').length, 0);
+
+console.log('publication calendar PR enforcer API tests pass (10 offline scenarios)');

@@ -40,20 +40,24 @@ async function listOpenPrs() {
   const all = [];
   for (let page = 1; page <= 5; page++) {
     const batch = await github(`/repos/${repository}/pulls?state=open&per_page=100&page=${page}`);
+    if (!Array.isArray(batch) || batch.length > 100) throw new Error('HOLD_OPEN_PR_PAGE_SHAPE');
     all.push(...batch);
-    if (batch.length < 100) break;
+    if (batch.length < 100) return all;
   }
-  return all;
+  // A full last page does not prove that the sweep covered every open PR.
+  throw new Error('HOLD_OPEN_PR_SCAN_TRUNCATED');
 }
 
 async function listFiles(number) {
   const all = [];
   for (let page = 1; page <= 4; page++) {
     const batch = await github(`/repos/${repository}/pulls/${number}/files?per_page=100&page=${page}`);
+    if (!Array.isArray(batch) || batch.length > 100) throw new Error('HOLD_PR_FILE_PAGE_SHAPE');
     all.push(...batch);
-    if (batch.length < 100) break;
+    if (batch.length < 100) return all;
   }
-  return all;
+  // Do not conclude that a PR is unrelated after an incomplete file scan.
+  throw new Error('HOLD_PR_FILE_SCAN_TRUNCATED');
 }
 
 const encodePath = (path) => path.split('/').map(encodeURIComponent).join('/');
@@ -79,15 +83,24 @@ function statusDescription(result, guardMinutes) {
 }
 
 async function setStatus(pr, result) {
-  await github(`/repos/${repository}/statuses/${pr.head.sha}`, {
-    method: 'POST',
-    body: {
-      state: result.decision === 'BLOCK' ? 'failure' : 'success',
-      context,
-      description: statusDescription(result, guardMinutes),
-      target_url: pr.html_url,
-    },
-  });
+  // Unrelated PRs must not produce another success status every five minutes.
+  // A malformed relevant brief must still get BLOCK even with relevantCount=0.
+  if (result.decision === 'PASS' && result.relevantCount === 0) return false;
+  try {
+    await github(`/repos/${repository}/statuses/${pr.head.sha}`, {
+      method: 'POST',
+      body: {
+        state: result.decision === 'BLOCK' ? 'failure' : 'success',
+        context,
+        description: statusDescription(result, guardMinutes),
+        target_url: pr.html_url,
+      },
+    });
+  } catch (error) {
+    // Ambiguous GitHub 5xx is HOLD; no duplicate write retry or auto-close.
+    throw new Error(`HOLD_GUARD_STATUS_WRITE_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`);
+  }
+  return true;
 }
 
 async function closePr(pr, evaluatedHeadSha) {
@@ -130,7 +143,7 @@ for (const pr of await listOpenPrs()) {
     nowMs: Date.now(),
     guardWindowMs: guardMinutes * 60 * 1000,
   });
-  await setStatus(pr, result);
+  const statusWritten = await setStatus(pr, result);
   let closed = false;
   if (shouldAutoClosePublicationPr(descriptor, result, { automationBranchPrefix: branchPrefix })) {
     closed = await closePr(pr, descriptor.headSha);
@@ -142,6 +155,7 @@ for (const pr of await listOpenPrs()) {
     reason: result.reason,
     relevantCount: result.relevantCount,
     blockAt: result.blockAt,
+    statusWritten,
     closed,
   });
 }

@@ -36,16 +36,31 @@ async function github(path, { method = 'GET', body } = {}) {
 }
 
 async function listOpenPrs() {
-  if (targetPr) return [await github(`/repos/${repository}/pulls/${targetPr}`)];
+  if (targetPr) return { prs: [await github(`/repos/${repository}/pulls/${targetPr}`)], hold: null };
   const all = [];
+  const seen = new Set();
   for (let page = 1; page <= 5; page++) {
-    const batch = await github(`/repos/${repository}/pulls?state=open&per_page=100&page=${page}`);
-    if (!Array.isArray(batch) || batch.length > 100) throw new Error('HOLD_OPEN_PR_PAGE_SHAPE');
-    all.push(...batch);
-    if (batch.length < 100) return all;
+    let batch;
+    try {
+      batch = await github(`/repos/${repository}/pulls?state=open&per_page=100&page=${page}`);
+    } catch (error) {
+      return { prs: all, hold: `HOLD_OPEN_PR_LIST_${error?.message ?? 'UNKNOWN'}` };
+    }
+    if (!Array.isArray(batch) || batch.length > 100) {
+      return { prs: all, hold: 'HOLD_OPEN_PR_PAGE_SHAPE' };
+    }
+    // Duplicated pages are evidence of an unstable snapshot, not complete coverage.
+    for (const pr of batch) {
+      if (!Number.isInteger(pr?.number) || seen.has(pr.number)) {
+        return { prs: all, hold: 'HOLD_OPEN_PR_SCAN_DRIFT' };
+      }
+      seen.add(pr.number);
+      all.push(pr);
+    }
+    if (batch.length < 100) return { prs: all, hold: null };
   }
-  // A full last page does not prove that the sweep covered every open PR.
-  throw new Error('HOLD_OPEN_PR_SCAN_TRUNCATED');
+  // Evaluate the visible PRs conservatively, but never claim a full sweep.
+  return { prs: all, hold: 'HOLD_OPEN_PR_SCAN_TRUNCATED' };
 }
 
 async function listFiles(number) {
@@ -83,21 +98,32 @@ function statusDescription(result, guardMinutes) {
 }
 
 async function setStatus(pr, result) {
-  // Unrelated PRs must not produce another success status every five minutes.
-  // A malformed relevant brief must still get BLOCK even with relevantCount=0.
   if (result.decision === 'PASS' && result.relevantCount === 0) return false;
+  const state = result.decision === 'BLOCK' ? 'failure' : 'success';
+  const description = statusDescription(result, guardMinutes);
+  let statuses;
+  try {
+    statuses = await github(`/repos/${repository}/commits/${pr.head.sha}/statuses?per_page=100`);
+    if (!Array.isArray(statuses) || statuses.length > 100) {
+      throw new Error('HOLD_STATUS_LIST_SHAPE');
+    }
+  } catch (error) {
+    // No positive write after an unknown status read; the whole sweep must HOLD.
+    throw new Error(`HOLD_GUARD_STATUS_READ_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`);
+  }
+  // GitHub returns commit statuses newest-first. If 100 unrelated contexts
+  // obscure this one, don't risk overwriting an unknown failure.
+  const previous = statuses.find((item) => item.context === context);
+  if (!previous && statuses.length === 100) throw new Error('HOLD_STATUS_CONTEXT_UNVERIFIED');
+  if (previous?.state === state && previous?.description === description
+    && previous?.target_url === pr.html_url) return false;
   try {
     await github(`/repos/${repository}/statuses/${pr.head.sha}`, {
       method: 'POST',
-      body: {
-        state: result.decision === 'BLOCK' ? 'failure' : 'success',
-        context,
-        description: statusDescription(result, guardMinutes),
-        target_url: pr.html_url,
-      },
+      body: { state, context, description, target_url: pr.html_url },
     });
   } catch (error) {
-    // Ambiguous GitHub 5xx is HOLD; no duplicate write retry or auto-close.
+    // An ambiguous response must not be retried; other SHAs still get evaluated.
     throw new Error(`HOLD_GUARD_STATUS_WRITE_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`);
   }
   return true;
@@ -114,49 +140,100 @@ async function closePr(pr, evaluatedHeadSha) {
 }
 
 const summaries = [];
-for (const pr of await listOpenPrs()) {
+const holds = [];
+const scan = await listOpenPrs();
+if (scan.hold) holds.push(scan.hold);
+const groups = new Map();
+function infrastructureBlock(error) {
+  return { decision: 'BLOCK', reason: error?.message ?? 'HOLD_GUARD_EVALUATION',
+    relevantCount: 0, blockAt: null, releaseAt: null };
+}
+
+// Evaluate every available PR independently. One malformed or oversized PR
+// must not prevent a later expired BLS preview from receiving a failure status.
+for (const pr of scan.prs) {
   const descriptor = {
-    number: pr.number,
-    headRef: pr.head?.ref,
-    headSha: pr.head?.sha,
-    headRepo: pr.head?.repo?.full_name,
+    number: pr?.number, headRef: pr?.head?.ref,
+    headSha: pr?.head?.sha, headRepo: pr?.head?.repo?.full_name,
   };
   if (!Number.isInteger(descriptor.number) || !/^[a-f0-9]{40}$/.test(String(descriptor.headSha ?? ''))) {
-    throw new Error('HOLD_PR_IDENTITY');
+    holds.push('HOLD_PR_IDENTITY');
+    continue;
   }
-  const files = await listFiles(descriptor.number);
-  const relevant = files.filter((file) => (
-    file.status !== 'removed'
-    && typeof file.filename === 'string'
-    && file.filename.startsWith('apps/web/src/content/catalyst-briefs/')
-    && file.filename.endsWith('.md')
-  ));
-  const changes = [];
-  for (const file of relevant) {
-    changes.push({
-      path: file.filename,
-      status: file.status,
-      content: await readAtHead(file.filename, descriptor.headSha),
+  let result;
+  let infrastructureHold = false;
+  try {
+    const files = await listFiles(descriptor.number);
+    const relevant = files.filter((file) => (
+      file.status !== 'removed'
+      && typeof file.filename === 'string'
+      && file.filename.startsWith('apps/web/src/content/catalyst-briefs/')
+      && file.filename.endsWith('.md')
+    ));
+    const changes = [];
+    for (const file of relevant) {
+      changes.push({ path: file.filename, status: file.status,
+        content: await readAtHead(file.filename, descriptor.headSha) });
+    }
+    result = classifyPublicationCalendarChanges(changes, {
+      nowMs: Date.now(), guardWindowMs: guardMinutes * 60 * 1000,
+    });
+  } catch (error) {
+    infrastructureHold = true;
+    result = infrastructureBlock(error);
+    holds.push(`HOLD_PR_${descriptor.number}_${result.reason}`);
+  }
+  if (!groups.has(descriptor.headSha)) groups.set(descriptor.headSha, []);
+  groups.get(descriptor.headSha).push({ pr, descriptor, result, infrastructureHold });
+}
+
+// A commit status is keyed by SHA + context, not by PR number. Aggregate first
+// so a different-base PR with the same head SHA cannot overwrite a BLOCK.
+for (const records of groups.values()) {
+  const incomplete = records.some((item) => item.infrastructureHold);
+  const chosen = records.find((item) => item.infrastructureHold)
+    ?? records.find((item) => item.result.decision === 'BLOCK')
+    ?? records.find((item) => item.result.relevantCount > 0);
+  let statusConfirmed = false;
+  let statusWritten = false;
+  if (chosen && (chosen.result.decision === 'BLOCK' || !scan.hold)) {
+    try {
+      statusWritten = await setStatus(chosen.pr, chosen.result);
+      statusConfirmed = true;
+    } catch (error) {
+      holds.push(error?.message ?? 'HOLD_STATUS_WRITE_UNKNOWN');
+    }
+  }
+  for (const item of records) {
+    let closed = false;
+    // Never auto-close on an incomplete scan or before the failure status is
+    // confirmed, and never close because of an infrastructure error.
+    if (statusConfirmed && !scan.hold && !incomplete
+      && item.result.decision === 'BLOCK'
+      && shouldAutoClosePublicationPr(item.descriptor, item.result, {
+        automationBranchPrefix: branchPrefix,
+      })) {
+      try {
+        closed = await closePr(item.pr, item.descriptor.headSha);
+      } catch (error) {
+        holds.push(`HOLD_PR_${item.descriptor.number}_CLOSE_${error?.message ?? 'UNKNOWN'}`);
+      }
+    }
+    summaries.push({
+      number: item.descriptor.number,
+      headSha: item.descriptor.headSha,
+      decision: item.result.decision,
+      reason: item.result.reason,
+      relevantCount: item.result.relevantCount,
+      blockAt: item.result.blockAt,
+      statusWritten,
+      statusConfirmed,
+      closed,
     });
   }
-  const result = classifyPublicationCalendarChanges(changes, {
-    nowMs: Date.now(),
-    guardWindowMs: guardMinutes * 60 * 1000,
-  });
-  const statusWritten = await setStatus(pr, result);
-  let closed = false;
-  if (shouldAutoClosePublicationPr(descriptor, result, { automationBranchPrefix: branchPrefix })) {
-    closed = await closePr(pr, descriptor.headSha);
-  }
-  summaries.push({
-    number: descriptor.number,
-    headSha: descriptor.headSha,
-    decision: result.decision,
-    reason: result.reason,
-    relevantCount: result.relevantCount,
-    blockAt: result.blockAt,
-    statusWritten,
-    closed,
-  });
 }
-console.log(JSON.stringify({ schema: 'publication-calendar-pr-guard/v1', guardMinutes, prs: summaries }));
+console.log(JSON.stringify({
+  schema: 'publication-calendar-pr-guard/v1', guardMinutes, prs: summaries,
+  holdCount: holds.length, holds: holds.slice(0, 12),
+}));
+if (holds.length) throw new Error(`HOLD_GUARD_SWEEP_${holds.length}_${holds[0]}`);

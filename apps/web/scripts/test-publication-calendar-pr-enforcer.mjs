@@ -108,7 +108,8 @@ async function scenario(index, {
     if (parsed.pathname.includes('/contents/')) {
       const path = parsed.pathname.split('/contents/')[1].split('/').map(decodeURIComponent).join('/');
       const ref = parsed.searchParams.get('ref');
-      const raw = multiPrs ? multiPrs.find((p) => p.sha === ref)?.contents?.[path]
+      const raw = multiPrs ? multiPrs.find((p) => p.sha === ref
+        && Object.prototype.hasOwnProperty.call(p.contents ?? {}, path))?.contents?.[path]
         : source({ releaseAt, calendar, event });
       if (raw === undefined) return json({ message: 'Not Found' }, 404);
       return json({ type: 'file', encoding: 'base64', content: Buffer.from(raw).toString('base64') });

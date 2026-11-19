@@ -16,6 +16,7 @@ if (!token || repository !== 'usdimpact/usd-impact-site' || !context
 }
 
 const apiRoot = 'https://api.github.com';
+const REQUEST_TIMEOUT_MS = 30 * 1000;
 const headers = Object.freeze({
   Accept: 'application/vnd.github+json',
   Authorization: `Bearer ${token}`,
@@ -29,6 +30,7 @@ async function github(path, { method = 'GET', body } = {}) {
     headers: body ? { ...headers, 'Content-Type': 'application/json' } : headers,
     body: body ? JSON.stringify(body) : undefined,
     redirect: 'error',
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`HOLD_GITHUB_API_${method}_${response.status}`);
   if (response.status === 204) return null;
@@ -69,10 +71,10 @@ async function listFiles(number) {
     const batch = await github(`/repos/${repository}/pulls/${number}/files?per_page=100&page=${page}`);
     if (!Array.isArray(batch) || batch.length > 100) throw new Error('HOLD_PR_FILE_PAGE_SHAPE');
     all.push(...batch);
-    if (batch.length < 100) return all;
+    if (batch.length < 100) return { files: all, truncated: false };
   }
-  // Do not conclude that a PR is unrelated after an incomplete file scan.
-  throw new Error('HOLD_PR_FILE_SCAN_TRUNCATED');
+  // Preserve the visible evidence; an incomplete scan cannot authorize success or closure.
+  return { files: all, truncated: true };
 }
 
 const encodePath = (path) => path.split('/').map(encodeURIComponent).join('/');
@@ -101,13 +103,13 @@ function statusDescription(result, guardMinutes) {
 // prevents a long read-only sweep from writing a positive status at the cutoff.
 // This is NOT a merge-time release gate: independent issue #1269 remains NO-GO.
 const POSITIVE_WRITE_CUSHION_MS = 2 * 60 * 1000;
-function decisionAtWrite(result, nowMs = Date.now()) {
+function decisionAtWrite(result, nowMs = Date.now(), requestBudgetMs = 0) {
   if (result.decision !== 'PASS' || result.relevantCount === 0 || !result.blockAt) return result;
   const blockAtMs = Date.parse(result.blockAt);
   if (!Number.isFinite(blockAtMs)) {
     return { ...result, decision: 'BLOCK', reason: 'HOLD_GUARD_LEASE_INSTANT' };
   }
-  if (nowMs + POSITIVE_WRITE_CUSHION_MS >= blockAtMs) {
+  if (nowMs + POSITIVE_WRITE_CUSHION_MS + requestBudgetMs >= blockAtMs) {
     return { ...result, decision: 'BLOCK', reason: 'HOLD_FRESHNESS_SAFETY_WINDOW',
       releaseAt: new Date(blockAtMs + guardMinutes * 60 * 1000).toISOString() };
   }
@@ -131,9 +133,10 @@ async function setStatus(pr, evaluatedResult, holds) {
     holds.push(hold);
   }
 
-  // Re-check trusted current time AFTER the GitHub read, directly before POST.
-  // If the release safety window started during this read, write a failure.
-  result = decisionAtWrite(result);
+  // Re-check the runner clock AFTER the history read. Reserve a full request timeout
+  // in addition to the two-minute cushion so a success POST cannot span the cutoff.
+  // This is not an authoritative clock or a merge-time freshness guarantee.
+  result = decisionAtWrite(result, Date.now(), REQUEST_TIMEOUT_MS);
   const state = result.decision === 'BLOCK' ? 'failure' : 'success';
   const description = statusDescription(result, guardMinutes);
   if (statuses !== null) {
@@ -194,8 +197,8 @@ for (const pr of scan.prs) {
   let infrastructureHold = false;
   let knownCatalyst = false;
   try {
-    const files = await listFiles(descriptor.number);
-    const relevant = files.filter((file) => (
+    const listing = await listFiles(descriptor.number);
+    const relevant = listing.files.filter((file) => ( 
       file.status !== 'removed'
       && typeof file.filename === 'string'
       && file.filename.startsWith('apps/web/src/content/catalyst-briefs/')
@@ -210,6 +213,15 @@ for (const pr of scan.prs) {
     result = classifyPublicationCalendarChanges(changes, {
       nowMs: Date.now(), guardWindowMs: guardMinutes * 60 * 1000,
     });
+    if (listing.truncated) {
+      infrastructureHold = true;
+      holds.push(`HOLD_PR_${descriptor.number}_HOLD_PR_FILE_SCAN_TRUNCATED`);
+      // If an observed file is already BLOCK, preserve that verdict. Otherwise,
+      // never post a PASS based on only the first 400 files of this PR.
+      if (result.decision !== 'BLOCK') {
+        result = infrastructureBlock(new Error('HOLD_PR_FILE_SCAN_TRUNCATED'));
+      }
+    }
   } catch (error) {
     infrastructureHold = true;
     result = infrastructureBlock(error);
@@ -226,18 +238,37 @@ for (const records of groups.values()) {
   // re-evaluating its cutoff immediately before the status is written.
   for (const item of records) item.result = decisionAtWrite(item.result);
   const incomplete = records.some((item) => item.infrastructureHold);
+  const earliestPass = records.filter((item) => !item.infrastructureHold
+    && item.result.decision === 'PASS' && item.result.relevantCount > 0)
+    .sort((a, b) => Date.parse(a.result.blockAt) - Date.parse(b.result.blockAt)
+      || a.descriptor.number - b.descriptor.number)[0];
   const chosen = records.find((item) => !item.infrastructureHold && item.result.decision === 'BLOCK')
     ?? records.find((item) => item.infrastructureHold)
-    ?? records.find((item) => item.result.relevantCount > 0);
+    ?? earliestPass;
   const knownCatalyst = records.some((item) => item.knownCatalyst);
   // Unknown file listings cannot prove that a PR contains a guarded brief.
   // Their sweep must HOLD, but a speculative red status on an unrelated SHA
   // would persist forever when later sweeps skip unrelated success writes.
   const speculativeInfrastructureBlock = chosen?.infrastructureHold && !knownCatalyst
     && !records.some((item) => !item.infrastructureHold && item.result.decision === 'BLOCK');
+  let headConfirmed = true;
+  // Infrastructure failures may follow a moved head. Never write a conservative
+  // status to a SHA after the affected PR has moved or ceased to be open.
+  if (chosen?.infrastructureHold && !speculativeInfrastructureBlock) {
+    try {
+      const current = await github(`/repos/${repository}/pulls/${chosen.descriptor.number}`);
+      if (current?.state !== 'open' || current?.head?.sha !== chosen.descriptor.headSha) {
+        headConfirmed = false;
+        holds.push(`HOLD_PR_${chosen.descriptor.number}_HOLD_PR_HEAD_MOVED`);
+      }
+    } catch (error) {
+      headConfirmed = false;
+      holds.push(`HOLD_PR_${chosen.descriptor.number}_HOLD_PR_HEAD_RECHECK_${error?.message ?? 'UNKNOWN'}`);
+    }
+  }
   let statusConfirmed = false;
   let statusWritten = false;
-  if (chosen && !speculativeInfrastructureBlock
+  if (chosen && headConfirmed && !speculativeInfrastructureBlock
     && (chosen.result.decision === 'BLOCK' || !scan.hold)) {
     try {
       const posted = await setStatus(chosen.pr, chosen.result, holds);
@@ -277,7 +308,8 @@ for (const records of groups.values()) {
   }
 }
 console.log(JSON.stringify({
-  schema: 'publication-calendar-pr-guard/v1', guardMinutes, prs: summaries,
-  holdCount: holds.length, holds: holds.slice(0, 12),
+  schema: 'publication-calendar-pr-guard/v2', guardMinutes,
+  complete: holds.length === 0, listing: { complete: !scan.hold, hold: scan.hold },
+  prs: summaries, holdCount: holds.length, holds,
 }));
-if (holds.length) throw new Error(`HOLD_GUARD_SWEEP_${holds.length}_${holds[0]}`);
+if (holds.length) throw new Error(`HOLD_SWEEP_INCOMPLETE_${holds.length}_${holds[0]}`);

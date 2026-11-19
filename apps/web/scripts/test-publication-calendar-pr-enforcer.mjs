@@ -32,6 +32,8 @@ async function scenario(index, {
   initialStatuses = [], statusReadHttp = 200, multiPrs = null,
   fileHttp = 200, statusHistoryOverride = null, clockStartMs = null,
   advanceMsPerRequest = 0, duplicatePrPage = false, omitFirstHead = false,
+  contentHttp = 200, driftBeforeStatus = false, statusReadAdvanceMs = 0,
+  statusPostAdvanceMs = 0, filePageShape = false,
 }) {
   process.env.GITHUB_TOKEN = 'fixture-token';
   process.env.GITHUB_REPOSITORY = 'usdimpact/usd-impact-site';
@@ -51,6 +53,7 @@ async function scenario(index, {
     const parsed = new URL(url);
     assert.equal(parsed.origin, 'https://api.github.com');
     assert.equal(init.headers.Authorization, 'Bearer fixture-token');
+    assert.ok(init.signal instanceof AbortSignal, 'every GitHub request must have a timeout signal');
     requests.push({ path: parsed.pathname + parsed.search, method: init.method ?? 'GET', body: init.body ? JSON.parse(init.body) : null });
     const json = (value, status = 200) => new Response(JSON.stringify(value), {
       status,
@@ -79,6 +82,14 @@ async function scenario(index, {
         };
       }));
     }
+    if (multiPrs && /\/pulls\/\d+$/.test(parsed.pathname) && (init.method ?? 'GET') === 'GET') {
+      const number = Number(parsed.pathname.split('/').at(-1));
+      const p = multiPrs.find((item) => item.number === number);
+      if (!p) return json({ message: 'Not Found' }, 404);
+      return json({ number, state: 'open',
+        head: { ref: p.ref, sha: p.sha, repo: { full_name: 'usdimpact/usd-impact-site' } },
+      });
+    }
     if (parsed.pathname.endsWith('/pulls/123') && (init.method ?? 'GET') === 'GET') {
       pullReads += 1;
       return json({
@@ -87,7 +98,7 @@ async function scenario(index, {
         html_url: 'https://github.com/usdimpact/usd-impact-site/pull/123',
         ...(omitFirstHead ? {} : { head: {
           ref: headRef,
-          sha: driftBeforeClose && pullReads > 1 ? 'b'.repeat(40) : headSha,
+          sha: (driftBeforeClose || driftBeforeStatus) && pullReads > 1 ? 'b'.repeat(40) : headSha,
           repo: { full_name: 'usdimpact/usd-impact-site' },
         } }),
       });
@@ -102,10 +113,14 @@ async function scenario(index, {
     if (fullPrPages && /\/pulls\/[0-9]+\/files$/.test(parsed.pathname)) return json([]);
     if (parsed.pathname.endsWith('/pulls/123/files')) {
       if (fileHttp !== 200) return json({}, fileHttp);
-      if (fullFilePages) return json(Array.from({ length: 100 }, () => ({ filename: catalystPath, status: 'added' })));
+      if (filePageShape) return json({ invalid: true });
+      if (fullFilePages) return json(Array.from({ length: 100 }, () => ({
+        filename: nonCatalyst ? 'README.md' : catalystPath, status: 'added',
+      })));
       return json([{ filename: nonCatalyst ? 'README.md' : catalystPath, status: 'added' }]);
     }
     if (parsed.pathname.includes('/contents/')) {
+      if (contentHttp !== 200) return json({ message: 'Source unavailable' }, contentHttp);
       const path = parsed.pathname.split('/contents/')[1].split('/').map(decodeURIComponent).join('/');
       const ref = parsed.searchParams.get('ref');
       const raw = multiPrs ? multiPrs.find((p) => p.sha === ref
@@ -115,6 +130,7 @@ async function scenario(index, {
       return json({ type: 'file', encoding: 'base64', content: Buffer.from(raw).toString('base64') });
     }
     if (/\/commits\/[a-f0-9]{40}\/statuses$/.test(parsed.pathname) && (init.method ?? 'GET') === 'GET') {
+      if (clock !== null) clock += statusReadAdvanceMs;
       if (statusReadHttp !== 200) return json({}, statusReadHttp);
       const sha = parsed.pathname.split('/commits/')[1].split('/statuses')[0];
       return json(statusHistoryOverride ?? statuses.filter((item) => item.sha === sha));
@@ -122,7 +138,8 @@ async function scenario(index, {
     if (/\/statuses\/[a-f0-9]{40}$/.test(parsed.pathname) && init.method === 'POST') {
       const sha = parsed.pathname.split('/statuses/')[1];
       const code = typeof statusHttp === 'function' ? statusHttp(sha) : statusHttp;
-      if (code === 201) statuses.unshift({ sha, ...JSON.parse(init.body) });
+      if (clock !== null) clock += statusPostAdvanceMs;
+      if (code === 201) statuses.unshift({ sha, ...JSON.parse(init.body), recordedAtMs: clock });
       return json({}, code);
     }
     if (parsed.pathname.endsWith('/pulls/123') && init.method === 'PATCH') return json({ number: 123, state: 'closed' });
@@ -211,7 +228,7 @@ assert.equal(Boolean(outage.close), false, 'failed status must not auto-close an
 
 const incompleteFiles = await scenario(9, {
   headRef: 'editorial/many-files', releaseAt: '2099-01-01T13:30:00.000Z',
-  fullFilePages: true,
+  fullFilePages: true, nonCatalyst: true,
 });
 assert.match(incompleteFiles.failure ?? '', /HOLD_PR_FILE_SCAN_TRUNCATED/);
 assert.equal(incompleteFiles.status, undefined,
@@ -420,4 +437,120 @@ assert.equal(lateFresh.posted[0].body.state, 'failure',
   'slow scan may never post a fresh success after its freshness boundary');
 assert.equal(lateFresh.posted.some((x) => x.body.state === 'success'), false);
 
-console.log('publication calendar PR enforcer API tests pass (25 offline scenarios)');
+
+// Corrective tests 26-35: regressions found by independent source-only review.
+// 26: An expired preview among the first 400 of 450 files must not disappear.
+const truncatedKnown = await scenario(26, {
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  multiPrs: [{
+    number: 123, ref: 'automation/catalyst-brief-truncated', sha: headSha,
+    files: [catalystPath, ...Array.from({ length: 449 }, (_, i) => 'docs/other-' + i + '.md')],
+    contents: { [catalystPath]: expiredSource },
+  }],
+});
+assert.match(truncatedKnown.failure ?? '', /HOLD_PR_123_HOLD_PR_FILE_SCAN_TRUNCATED/);
+assert.equal(truncatedKnown.posted.length, 1);
+assert.equal(truncatedKnown.posted[0].body.state, 'failure');
+assert.equal(truncatedKnown.requests.some((r) => r.method === 'PATCH'), false,
+  'known BLOCK on a partial file scan must never auto-close');
+
+// 27-28: Shared-SHA leases must be independent of the order of the PR list.
+const lateSource = source({ releaseAt: '2099-01-03T13:30:00.000Z' });
+for (const [index, reverse] of [[27, false], [28, true]]) {
+  const members = [
+    { number: 124, ref: 'editorial/long-lease', sha: headSha,
+      files: [content2], contents: { [content2]: lateSource } },
+    { number: 123, ref: 'editorial/short-lease', sha: headSha,
+      files: [catalystPath], contents: { [catalystPath]: freshSource } },
+  ];
+  const result = await scenario(index, {
+    releaseAt: '2099-01-01T13:30:00.000Z',
+    multiPrs: reverse ? members.reverse() : members,
+  });
+  assert.equal(result.failure, null);
+  assert.equal(result.posted.length, 1);
+  assert.equal(result.posted[0].body.state, 'success');
+  assert.match(result.posted[0].body.description, /2099-01-01T12:30:00.000Z/,
+    'shared-SHA success must carry the earliest lease');
+}
+
+// 29: The status-history read, not merely the group stage, can cross the cutoff.
+const readBoundary = new Date(NOW_MS + 60 * 60000 + 160000).toISOString();
+const crossedDuringStatusGet = await scenario(29, {
+  headRef: 'editorial/late-read', releaseAt: readBoundary,
+  clockStartMs: NOW_MS, statusReadAdvanceMs: 30000,
+});
+assert.equal(crossedDuringStatusGet.failure, null);
+assert.equal(crossedDuringStatusGet.posted[0]?.body.state, 'failure');
+
+// 30: A 30-second request budget is included before any affirmative POST.
+const postBoundary = new Date(NOW_MS + 60 * 60000 + 149000).toISOString();
+const delayedPost = await scenario(30, {
+  headRef: 'editorial/delayed-post', releaseAt: postBoundary,
+  clockStartMs: NOW_MS, statusPostAdvanceMs: 29999,
+});
+assert.equal(delayedPost.failure, null);
+assert.equal(delayedPost.posted[0]?.body.state, 'failure',
+  'positive POST cannot consume the last 30s of the safety budget');
+assert.equal(delayedPost.posted.some((r) => r.body.state === 'success'), false);
+
+// 31: A moved head is never given a conservative infrastructure failure status.
+const movedBeforeFailure = await scenario(31, {
+  headRef: 'editorial/moved-head', releaseAt: '2000-01-01T13:30:00.000Z',
+  contentHttp: 404, driftBeforeStatus: true,
+});
+assert.match(movedBeforeFailure.failure ?? '', /HOLD_PR_123_HOLD_PR_HEAD_MOVED/);
+assert.equal(movedBeforeFailure.posted.length, 0);
+assert.equal(Boolean(movedBeforeFailure.close), false);
+
+// 32: A 422 on one SHA does not suppress a failure for an independent SHA.
+const rejectedStatus = await scenario(32, {
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  statusHttp: (sha) => sha === 'a'.repeat(40) ? 422 : 201,
+  multiPrs: [
+    { number: 124, ref: 'editorial/422', sha: 'a'.repeat(40),
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+    { number: 123, ref: 'editorial/independent', sha: 'b'.repeat(40),
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+  ],
+});
+assert.match(rejectedStatus.failure ?? '', /HOLD_GUARD_STATUS_WRITE_PR_124_HOLD_GITHUB_API_POST_422/);
+assert.equal(rejectedStatus.statuses.find((r) => r.sha === 'b'.repeat(40))?.state, 'failure');
+
+// 33: Invalid frontmatter still blocks even if the guarded count is zero.
+const malformedSource = await scenario(33, {
+  releaseAt: '2099-01-01T13:30:00.000Z',
+  multiPrs: [{
+    number: 123, ref: 'editorial/invalid-frontmatter', sha: headSha,
+    files: [catalystPath], contents: { [catalystPath]: 'not frontmatter' },
+  }],
+});
+assert.equal(malformedSource.failure, null);
+assert.equal(malformedSource.posted[0]?.body.state, 'failure');
+assert.match(malformedSource.posted[0]?.body.description ?? '', /HOLD_SOURCE_FRONTMATTER/);
+
+// 34: Malformed files API shape holds without an unsupported status write.
+const malformedListing = await scenario(34, {
+  headRef: 'editorial/malformed-file-list', releaseAt: '2099-01-01T13:30:00.000Z',
+  filePageShape: true,
+});
+assert.match(malformedListing.failure ?? '', /HOLD_PR_FILE_PAGE_SHAPE/);
+assert.equal(malformedListing.posted.length, 0);
+
+// 35: Synthetic replicas of preserved legacy non-BLS PRs have zero write/close.
+const preservedLegacy = await scenario(35, {
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  multiPrs: [916, 939, 1010, 1203, 1206, 1211, 1225].map((number, i) => ({
+    number, ref: 'automation/catalyst-brief-legacy-' + number, sha: String(i + 1).repeat(40),
+    files: [catalystPath],
+    contents: { [catalystPath]: source({
+      releaseAt: '2000-01-01T13:30:00.000Z', calendar: false,
+      event: 'Treasury or BEA historical non-BLS preview',
+    }) },
+  })),
+});
+assert.equal(preservedLegacy.failure, null);
+assert.equal(preservedLegacy.posted.length, 0);
+assert.equal(preservedLegacy.requests.some((r) => r.method === 'PATCH'), false);
+
+console.log('publication calendar PR enforcer API tests pass (35 offline scenarios)');

@@ -1,0 +1,150 @@
+name: Daily 840 Phase 1a advisory suite
+
+# Phase 1b-B / D6 advisory-only synthetic CI; not a required or release check.
+# Advisory only: never a required check, release gate, publication proof,
+# S2 certification or incident authority. Synthetic offline suites; no install,
+# no secrets, no artifact, no deployment, no issue or PR mutation.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - apps/web/scripts/daily-840-phase1a-classifier.mjs
+      - apps/web/scripts/daily-840-phase1a-collector.mjs
+      - apps/web/scripts/test-daily-840-phase1a.mjs
+      - apps/web/scripts/test-daily-840-phase1b-d6-regressions.mjs
+      - .github/workflows/daily-840-phase1a-advisory.yml
+
+permissions: {}
+
+jobs:
+  phase1a-advisory:
+    name: Daily 840 Phase 1a synthetic suite (advisory, not required)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      # Pinned reviewed Phase 1a head (stacked-review mode). Drift fails closed.
+      EXPECTED_BASE_SHA: 4563f022303ee65198698606845824e4a2dd4f9c
+      EXPECTED_PHASE1A_TOTAL: '630'
+      EXPECTED_D6_TOTAL: '36'
+      EXPECTED_PACKAGE_SCRIPT: node scripts/test-daily-840-phase1a.mjs
+      STACKED_ALLOWED_FILES: >-
+        .github/workflows/daily-840-phase1a-advisory.yml
+        apps/web/scripts/test-daily-840-phase1b-d6-regressions.mjs
+      SUITE_FILES: >-
+        apps/web/scripts/daily-840-phase1a-classifier.mjs
+        apps/web/scripts/daily-840-phase1a-collector.mjs
+        apps/web/scripts/test-daily-840-phase1a.mjs
+        apps/web/scripts/test-daily-840-phase1b-d6-regressions.mjs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Bind exact head, pinned base and protected main
+        id: bind
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          fail() { printf 'ADVISORY_FAIL %s\n' "$1" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+          [ "$GITHUB_EVENT_NAME" = pull_request ] || fail EVENT_NOT_PULL_REQUEST
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ] || fail RERUN_NOT_ORIGINAL_ATTEMPT
+          for value in "$PR_BASE_SHA" "$PR_HEAD_SHA" "$EXPECTED_BASE_SHA"; do
+            [[ "$value" =~ ^[0-9a-f]{40}$ ]] || fail EVENT_SHA_MALFORMED
+          done
+          [ "$(git rev-parse HEAD^1)" = "$PR_BASE_SHA" ] || fail BASE_NOT_MERGE_PARENT
+          [ "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA" ] || fail HEAD_NOT_MERGE_PARENT
+          [ "$PR_BASE_SHA" = "$EXPECTED_BASE_SHA" ] || fail BASE_DRIFT
+          while IFS= read -r changed; do
+            [ -z "$changed" ] && continue
+            case " $STACKED_ALLOWED_FILES " in *" $changed "*) ;; *) fail "STACKED_DIFF_OUTSIDE_D6_SCOPE:$changed" ;; esac
+          done < <(git diff --name-only "$EXPECTED_BASE_SHA" "$PR_HEAD_SHA")
+          for file in $SUITE_FILES; do
+            git cat-file -e "HEAD:$file" 2>/dev/null || fail "SUITE_FILE_ABSENT:$file"
+            [ "$(git rev-parse "HEAD:$file")" = "$(git rev-parse "$PR_HEAD_SHA:$file")" ] || fail "SUITE_FILE_NOT_HEAD:$file"
+          done
+          git rev-parse --verify -q refs/remotes/origin/main >/dev/null ||
+            git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main ||
+            fail PROTECTED_MAIN_UNREADABLE
+          main="$(git rev-parse refs/remotes/origin/main)"
+          merged="$(git merge-tree --write-tree "$main" HEAD)" || fail NOT_CLEANLY_MERGEABLE_WITH_MAIN
+          merged="${merged%%$'\n'*}"
+          for file in $SUITE_FILES; do
+            [ "$(git rev-parse "$merged:$file")" = "$(git rev-parse "HEAD:$file")" ] || fail "MAIN_MERGE_CHANGES:$file"
+          done
+          script="$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync("apps/web/package.json", "utf8")).scripts["validate:daily-phase1a"]))')"
+          [ "$script" = "$EXPECTED_PACKAGE_SCRIPT" ] || fail PACKAGE_SCRIPT_MISMATCH
+          case "$(node --version)" in v24.*) ;; *) fail NODE_NOT_24 ;; esac
+          { echo "merge_sha=$(git rev-parse HEAD)"; echo "main_sha=$main"; } >> "$GITHUB_OUTPUT"
+      - name: Run synthetic suites offline (Node permission model, empty environment)
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          for pair in test-daily-840-phase1a.mjs:phase1a test-daily-840-phase1b-d6-regressions.mjs:d6; do
+            file="${pair%%:*}"; out="$RUNNER_TEMP/${pair##*:}.stdout"
+            env -i PATH="$PATH" TZ=UTC node --permission --allow-fs-read="$PWD/scripts/" "scripts/$file" > "$out"
+            tail -n 1 "$out"
+          done
+      - name: Verify explicit counts and emit advisory receipt
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_SHA: ${{ steps.bind.outputs.merge_sha }}
+          MAIN_SHA: ${{ steps.bind.outputs.main_sha }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const env = process.env;
+          const fail = (code) => {
+            console.log(`ADVISORY_FAIL ${code}`);
+            appendFileSync(env.GITHUB_STEP_SUMMARY, `ADVISORY_FAIL ${code}\n`);
+            process.exit(1);
+          };
+          const suites = [
+            ['phase1a', 'DEC026 Phase1a PASS ', env.EXPECTED_PHASE1A_TOTAL, ['nativePositive', 'recoveryPositive',
+              'negative', 'provisional', 'pending', 'collector', 'reviewRegression', 'ownerPolicy', 'v5Review']],
+            ['d6', 'DEC026 Phase1b-D6 REGRESSION PASS ', env.EXPECTED_D6_TOTAL, ['fixtureSanity',
+              'nativePublisherNotSuccess', 'publisherInvalidOrAbsent', 'recoveryPublisherNotSuccess',
+              'publisherNotCompleted', 'provisionalPublisherNotSuccess']]
+          ];
+          const receipt = { schema: 'USDIMPACT_PHASE1A_ADVISORY_RECEIPT_V1', repository: env.GITHUB_REPOSITORY,
+            runId: env.GITHUB_RUN_ID, runAttempt: env.GITHUB_RUN_ATTEMPT, event: env.GITHUB_EVENT_NAME,
+            prNumber: env.PR_NUMBER, baseRef: env.PR_BASE_REF, baseSha: env.PR_BASE_SHA, headSha: env.PR_HEAD_SHA,
+            mergeSha: env.MERGE_SHA, protectedMainSha: env.MAIN_SHA, node: process.version, files: {}, suites: {},
+            verdict: 'ADVISORY_SYNTHETIC_SUITES_GREEN',
+            scope: 'Synthetic offline suites only. Not live Daily acceptance, not S2 certification, not a required check, not merge, release or incident authority.' };
+          for (const file of env.SUITE_FILES.split(/\s+/).filter(Boolean)) {
+            const bytes = readFileSync(file);
+            receipt.files[file] = { gitBlob: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex'),
+              sha256: createHash('sha256').update(bytes).digest('hex') };
+          }
+          for (const [name, prefix, expectedText, keys] of suites) {
+            const expected = Number(expectedText);
+            if (!/^[1-9][0-9]*$/.test(expectedText ?? '') || !Number.isSafeInteger(expected)) fail(`${name}:EXPECTED_TOTAL_INVALID`);
+            const bytes = readFileSync(`${env.RUNNER_TEMP}/${name}.stdout`);
+            const lines = bytes.toString('utf8').split('\n').filter(Boolean);
+            const pass = lines.filter((line) => line.startsWith(prefix));
+            if (pass.length !== 1 || lines.at(-1) !== pass[0]) fail(`${name}:PASS_LINE_NOT_UNIQUE_AND_FINAL`);
+            let counts;
+            try { counts = JSON.parse(pass[0].slice(prefix.length).split('; ')[0]); } catch { fail(`${name}:COUNT_JSON_INVALID`); }
+            const { totalCases, ...parts } = counts;
+            if (JSON.stringify(Object.keys(parts).sort()) !== JSON.stringify([...keys].sort())) fail(`${name}:COUNT_KEYS_CHANGED`);
+            if (![totalCases, ...Object.values(parts)].every((value) => Number.isSafeInteger(value) && value >= 0)) fail(`${name}:COUNT_NOT_INTEGER`);
+            if (Object.values(parts).reduce((sum, value) => sum + value, 0) !== totalCases) fail(`${name}:COUNT_SUM_MISMATCH`);
+            if (totalCases !== expected) fail(`${name}:TOTAL_${totalCases}_NOT_${expected}`);
+            receipt.suites[name] = { stdoutSha256: createHash('sha256').update(bytes).digest('hex'), counts };
+          }
+          const line = `USDIMPACT_PHASE1A_ADVISORY_RECEIPT_V1 ${JSON.stringify(receipt)}`;
+          console.log(line);
+          appendFileSync(env.GITHUB_STEP_SUMMARY, `${line}\n`);
+          EOF

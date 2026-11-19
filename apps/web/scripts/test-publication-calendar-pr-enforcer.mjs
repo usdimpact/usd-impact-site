@@ -89,7 +89,7 @@ async function scenario(index, {
       const files = pr.files.map((filename) => ({ filename, status: 'added' }));
       return json(files.slice((page - 1) * 100, page * 100));
     }
-    if (fullPrPages && /^\/pulls\/[0-9]+\/files$/.test(parsed.pathname)) return json([]);
+    if (fullPrPages && /\/pulls\/[0-9]+\/files$/.test(parsed.pathname)) return json([]);
     if (parsed.pathname.endsWith('/pulls/123/files')) {
       if (fullFilePages) return json(Array.from({ length: 100 }, () => ({ filename: catalystPath, status: 'added' })));
       return json([{ filename: nonCatalyst ? 'README.md' : catalystPath, status: 'added' }]);

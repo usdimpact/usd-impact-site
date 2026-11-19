@@ -76,6 +76,8 @@ jobs:
         run: |
           npm run validate:news
           npm run validate:ux
+      - name: Validate five-minute learning guide contract
+        run: node --experimental-strip-types --test scripts/test-five-minute-guide-contract.mjs
       - name: Validate reports
         run: npm run validate:reports
       - name: Validate compliance

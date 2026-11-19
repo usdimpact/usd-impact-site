@@ -59,11 +59,15 @@ async function scenario(index, {
       })) : []);
     }
     if (fullPrPages && parsed.pathname.endsWith('/pulls')) {
-      return json(Array.from({ length: 100 }, (_, i) => ({
-        number: i + 1, state: 'open',
-        html_url: 'https://github.com/usdimpact/usd-impact-site/pull/' + (i + 1),
-        head: { ref: 'editorial/test', sha: headSha, repo: { full_name: 'usdimpact/usd-impact-site' } },
-      })));
+      const page = Number(parsed.searchParams.get('page'));
+      return json(Array.from({ length: 100 }, (_, i) => {
+        const number = (page - 1) * 100 + i + 1;
+        return {
+          number, state: 'open',
+          html_url: 'https://github.com/usdimpact/usd-impact-site/pull/' + number,
+          head: { ref: 'editorial/test', sha: headSha, repo: { full_name: 'usdimpact/usd-impact-site' } },
+        };
+      }));
     }
     if (parsed.pathname.endsWith('/pulls/123') && (init.method ?? 'GET') === 'GET') {
       pullReads += 1;
@@ -85,6 +89,7 @@ async function scenario(index, {
       const files = pr.files.map((filename) => ({ filename, status: 'added' }));
       return json(files.slice((page - 1) * 100, page * 100));
     }
+    if (fullPrPages && /^\/pulls\/[0-9]+\/files$/.test(parsed.pathname)) return json([]);
     if (parsed.pathname.endsWith('/pulls/123/files')) {
       if (fullFilePages) return json(Array.from({ length: 100 }, () => ({ filename: catalystPath, status: 'added' })));
       return json([{ filename: nonCatalyst ? 'README.md' : catalystPath, status: 'added' }]);

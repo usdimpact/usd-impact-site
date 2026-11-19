@@ -30,6 +30,8 @@ async function scenario(index, {
   nonCatalyst = false, statusHttp = 201, fullFilePages = false,
   fullPrPages = false, event = 'BLS Consumer Price Index (CPI) — December 2098',
   initialStatuses = [], statusReadHttp = 200, multiPrs = null,
+  fileHttp = 200, statusHistoryOverride = null, clockStartMs = null,
+  advanceMsPerRequest = 0, duplicatePrPage = false, omitFirstHead = false,
 }) {
   process.env.GITHUB_TOKEN = 'fixture-token';
   process.env.GITHUB_REPOSITORY = 'usdimpact/usd-impact-site';
@@ -40,8 +42,12 @@ async function scenario(index, {
 
   const requests = [];
   const statuses = initialStatuses.map((x) => ({ ...x }));
+  const realNow = Date.now;
+  let clock = clockStartMs === null ? null : clockStartMs;
+  if (clock !== null) Date.now = () => clock;
   let pullReads = 0;
   globalThis.fetch = async (url, init = {}) => {
+    if (clock !== null) clock += advanceMsPerRequest;
     const parsed = new URL(url);
     assert.equal(parsed.origin, 'https://api.github.com');
     assert.equal(init.headers.Authorization, 'Bearer fixture-token');
@@ -52,16 +58,20 @@ async function scenario(index, {
     });
     if (multiPrs && parsed.pathname.endsWith('/pulls')) {
       const page = Number(parsed.searchParams.get('page'));
-      return json(page === 1 ? multiPrs.map((p) => ({
+      const batch = multiPrs.slice((page - 1) * 100, page * 100);
+      return json(batch.map((p) => ({
         number: p.number, state: 'open',
         html_url: 'https://github.com/usdimpact/usd-impact-site/pull/' + p.number,
-        head: { ref: p.ref, sha: p.sha, repo: { full_name: 'usdimpact/usd-impact-site' } },
-      })) : []);
+        ...(p.omitHead ? {} : { head: {
+          ref: p.ref, sha: p.sha, repo: { full_name: 'usdimpact/usd-impact-site' },
+        } }),
+      })));
     }
     if (fullPrPages && parsed.pathname.endsWith('/pulls')) {
       const page = Number(parsed.searchParams.get('page'));
       return json(Array.from({ length: 100 }, (_, i) => {
-        const number = (page - 1) * 100 + i + 1;
+        const number = duplicatePrPage && page === 2 && i === 0
+          ? 100 : (page - 1) * 100 + i + 1;
         return {
           number, state: 'open',
           html_url: 'https://github.com/usdimpact/usd-impact-site/pull/' + number,
@@ -75,11 +85,11 @@ async function scenario(index, {
         number: 123,
         state: 'open',
         html_url: 'https://github.com/usdimpact/usd-impact-site/pull/123',
-        head: {
+        ...(omitFirstHead ? {} : { head: {
           ref: headRef,
           sha: driftBeforeClose && pullReads > 1 ? 'b'.repeat(40) : headSha,
           repo: { full_name: 'usdimpact/usd-impact-site' },
-        },
+        } }),
       });
     }
     const fileMatch = parsed.pathname.match(/\/pulls\/(\d+)\/files$/);
@@ -91,6 +101,7 @@ async function scenario(index, {
     }
     if (fullPrPages && /\/pulls\/[0-9]+\/files$/.test(parsed.pathname)) return json([]);
     if (parsed.pathname.endsWith('/pulls/123/files')) {
+      if (fileHttp !== 200) return json({}, fileHttp);
       if (fullFilePages) return json(Array.from({ length: 100 }, () => ({ filename: catalystPath, status: 'added' })));
       return json([{ filename: nonCatalyst ? 'README.md' : catalystPath, status: 'added' }]);
     }
@@ -105,7 +116,7 @@ async function scenario(index, {
     if (/\/commits\/[a-f0-9]{40}\/statuses$/.test(parsed.pathname) && (init.method ?? 'GET') === 'GET') {
       if (statusReadHttp !== 200) return json({}, statusReadHttp);
       const sha = parsed.pathname.split('/commits/')[1].split('/statuses')[0];
-      return json(statuses.filter((item) => item.sha === sha));
+      return json(statusHistoryOverride ?? statuses.filter((item) => item.sha === sha));
     }
     if (/\/statuses\/[a-f0-9]{40}$/.test(parsed.pathname) && init.method === 'POST') {
       const sha = parsed.pathname.split('/statuses/')[1];
@@ -122,10 +133,13 @@ async function scenario(index, {
     await import(`./enforce-publication-calendar-prs.mjs?scenario=${index}`);
   } catch (error) {
     failure = String(error?.message ?? error);
+  } finally {
+    Date.now = realNow;
   }
   const status = requests.find((item) => item.path.endsWith('/statuses/' + headSha));
   const close = requests.find((item) => item.method === 'PATCH' && item.path.endsWith('/pulls/123'));
-  return { status: status?.body, close, requests, failure, statuses };
+  return { status: status?.body, close, requests, failure, statuses,
+    posted: requests.filter((item) => item.method === 'POST') };
 }
 
 const fresh = await scenario(1, {
@@ -199,7 +213,8 @@ const incompleteFiles = await scenario(9, {
   fullFilePages: true,
 });
 assert.match(incompleteFiles.failure ?? '', /HOLD_PR_FILE_SCAN_TRUNCATED/);
-assert.equal(incompleteFiles.status?.state, 'failure', 'incomplete file scan must post a conservative failure');
+assert.equal(incompleteFiles.status, undefined,
+  'unknown file coverage must HOLD without a sticky speculative failure on an unrelated SHA');
 assert.equal(Boolean(incompleteFiles.close), false);
 
 const incompletePrSweep = await scenario(10, {
@@ -224,8 +239,8 @@ const older = await scenario(11, {
 assert.match(older.failure ?? '', /HOLD_PR_124_HOLD_PR_FILE_SCAN_TRUNCATED/);
 assert.equal(older.statuses.find((x) => x.sha === 'b'.repeat(40))?.state, 'failure',
   'older expired PR must still receive BLOCK after an oversized newer PR');
-assert.equal(older.statuses.find((x) => x.sha === 'a'.repeat(40))?.state, 'failure',
-  'oversized PR must receive a conservative failure');
+assert.equal(older.statuses.find((x) => x.sha === 'a'.repeat(40)), undefined,
+  'unknown-content infrastructure HOLD must not leave a permanent failure on an unrelated SHA');
 
 const outageContinue = await scenario(12, {
   releaseAt: '2000-01-01T13:30:00.000Z',
@@ -276,4 +291,132 @@ assert.match(readFailure.failure ?? '', /HOLD_GUARD_STATUS_READ_PR_123_HOLD_GITH
 assert.equal(readFailure.requests.filter((x) => x.method === 'POST').length, 0,
   'unknown prior status must never authorize a positive write');
 
-console.log('publication calendar PR enforcer API tests pass (15 offline scenarios)');
+
+const blockOnReadOutage = await scenario(16, {
+  headRef: 'automation/catalyst-brief-cpi-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z', statusReadHttp: 502,
+  initialStatuses: [{
+    sha: headSha, context: 'publication-calendar-freshness', state: 'success',
+    description: 'Freshness lease valid until 2099-01-01T12:30:00.000Z',
+    target_url: 'https://github.com/usdimpact/usd-impact-site/pull/123',
+  }],
+});
+assert.match(blockOnReadOutage.failure ?? '', /HOLD_GUARD_STATUS_READ_PR_123_HOLD_GITHUB_API_GET_502/);
+assert.equal(blockOnReadOutage.posted.length, 1);
+assert.equal(blockOnReadOutage.posted[0].body.state, 'failure');
+assert.equal(Boolean(blockOnReadOutage.close), true, 'known expired automation preview must still close after confirmed failure');
+
+const hiddenContext = await scenario(17, {
+  headRef: 'editorial/fresh', releaseAt: '2099-01-01T13:30:00.000Z',
+  statusHistoryOverride: Array.from({ length: 100 }, (_, i) => ({
+    context: 'unrelated-check-' + i, state: 'success',
+  })),
+});
+assert.match(hiddenContext.failure ?? '', /HOLD_STATUS_CONTEXT_UNVERIFIED_PR_123/);
+assert.equal(hiddenContext.posted.length, 0,
+  '100 other contexts must not authorize a positive status whose prior state is unknown');
+
+const hiddenBlocked = await scenario(18, {
+  headRef: 'editorial/expired', releaseAt: '2000-01-01T13:30:00.000Z',
+  statusHistoryOverride: Array.from({ length: 100 }, (_, i) => ({
+    context: 'unrelated-check-' + i, state: 'success',
+  })),
+});
+assert.match(hiddenBlocked.failure ?? '', /HOLD_STATUS_CONTEXT_UNVERIFIED_PR_123/);
+assert.equal(hiddenBlocked.posted.length, 1);
+assert.equal(hiddenBlocked.posted[0].body.state, 'failure',
+  'known BLOCK must be posted despite an obscured status context');
+
+const transientUnknown = await scenario(19, {
+  headRef: 'editorial/readme', releaseAt: '2099-01-01T13:30:00.000Z',
+  nonCatalyst: true, fileHttp: 502,
+});
+assert.match(transientUnknown.failure ?? '', /HOLD_PR_123_HOLD_GITHUB_API_GET_502/);
+assert.equal(transientUnknown.posted.length, 0,
+  'an unknown-content GET failure must not create a permanent red status on an unrelated PR');
+
+const multiBlockFirst = await scenario(20, {
+  releaseAt: '2099-01-01T13:30:00.000Z',
+  multiPrs: [
+    { number: 125, ref: 'editorial/stacked-fresh', sha: headSha,
+      files: [content2], contents: { [content2]: freshSource } },
+    { number: 124, ref: 'editorial/main-expired', sha: headSha,
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+  ],
+});
+assert.equal(multiBlockFirst.failure, null);
+assert.equal(multiBlockFirst.posted.length, 1);
+assert.equal(multiBlockFirst.posted[0].body.state, 'failure',
+  'shared-SHA BLOCK must win even when the fresh PR is first');
+
+const incompleteShared = await scenario(21, {
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  multiPrs: [
+    { number: 125, ref: 'automation/catalyst-brief-bulk', sha: headSha,
+      files: Array.from({ length: 450 }, (_, i) => 'docs/x' + i + '.md'), contents: {} },
+    { number: 124, ref: 'automation/catalyst-brief-expired', sha: headSha,
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+  ],
+});
+assert.match(incompleteShared.failure ?? '', /HOLD_PR_125_HOLD_PR_FILE_SCAN_TRUNCATED/);
+assert.equal(incompleteShared.posted.length, 1);
+assert.equal(incompleteShared.posted[0].body.state, 'failure');
+assert.equal(incompleteShared.requests.some((x) => x.method === 'PATCH'), false,
+  'no automation PR in an incompletely evaluated shared group may auto-close');
+
+const incompleteGlobal = await scenario(22, {
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  multiPrs: [
+    { number: 601, ref: 'editorial/fresh', sha: 'a'.repeat(40),
+      files: [content2], contents: { [content2]: freshSource } },
+    { number: 600, ref: 'automation/catalyst-brief-expired', sha: 'b'.repeat(40),
+      files: [catalystPath], contents: { [catalystPath]: expiredSource } },
+    ...Array.from({ length: 499 }, (_, i) => ({
+      number: 599 - i, ref: 'editorial/unrelated', sha: 'c'.repeat(40),
+      files: ['README.md'], contents: {},
+    })),
+  ],
+});
+assert.match(incompleteGlobal.failure ?? '', /HOLD_OPEN_PR_SCAN_TRUNCATED/);
+assert.equal(incompleteGlobal.posted.some((x) => x.body.state === 'success'), false,
+  'no positive status while the open PR inventory is incomplete');
+assert.equal(incompleteGlobal.posted.some((x) => x.body.state === 'failure'), true,
+  'known expired preview still receives its failure despite incomplete scan');
+assert.equal(incompleteGlobal.requests.some((x) => x.method === 'PATCH'), false,
+  'no automatic closure during incomplete global scan');
+
+const duplicatePage = await scenario(23, {
+  headRef: 'editorial/pagination', releaseAt: '2099-01-01T13:30:00.000Z',
+  fullPrPages: true, duplicatePrPage: true,
+});
+assert.match(duplicatePage.failure ?? '', /HOLD_OPEN_PR_SCAN_DRIFT/);
+assert.equal(duplicatePage.posted.some((x) => x.body.state === 'success'), false);
+
+const missingHead = await scenario(24, {
+  headRef: 'editorial/malformed-PR', releaseAt: '2099-01-01T13:30:00.000Z',
+  omitFirstHead: true,
+});
+assert.match(missingHead.failure ?? '', /HOLD_PR_IDENTITY/);
+assert.equal(missingHead.posted.length, 0);
+
+const NOW_MS = Date.parse('2026-11-15T18:00:00.000Z');
+const atBoundary = new Date(NOW_MS + 60 * 60000 + 90000).toISOString();
+const slowSource = source({ releaseAt: atBoundary });
+const lateFresh = await scenario(25, {
+  releaseAt: atBoundary, clockStartMs: NOW_MS, advanceMsPerRequest: 10000,
+  multiPrs: [
+    { number: 601, ref: 'editorial/fresh-near-cutoff', sha: 'a'.repeat(40),
+      files: [catalystPath], contents: { [catalystPath]: slowSource } },
+    ...Array.from({ length: 20 }, (_, i) => ({
+      number: 600 - i, ref: 'editorial/readme', sha: 'c'.repeat(40),
+      files: ['README.md'], contents: {},
+    })),
+  ],
+});
+assert.equal(lateFresh.failure, null);
+assert.equal(lateFresh.posted.length, 1);
+assert.equal(lateFresh.posted[0].body.state, 'failure',
+  'slow scan may never post a fresh success after its freshness boundary');
+assert.equal(lateFresh.posted.some((x) => x.body.state === 'success'), false);
+
+console.log('publication calendar PR enforcer API tests pass (25 offline scenarios)');

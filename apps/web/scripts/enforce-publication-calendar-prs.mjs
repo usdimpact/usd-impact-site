@@ -97,26 +97,56 @@ function statusDescription(result, guardMinutes) {
   return 'No guarded BLS preview change in this PR.';
 }
 
-async function setStatus(pr, result) {
-  if (result.decision === 'PASS' && result.relevantCount === 0) return false;
-  const state = result.decision === 'BLOCK' ? 'failure' : 'success';
-  const description = statusDescription(result, guardMinutes);
-  let statuses;
+// A status is immutable and does not expire. An additional two-minute cushion
+// prevents a long read-only sweep from writing a positive status at the cutoff.
+// This is NOT a merge-time release gate: independent issue #1269 remains NO-GO.
+const POSITIVE_WRITE_CUSHION_MS = 2 * 60 * 1000;
+function decisionAtWrite(result, nowMs = Date.now()) {
+  if (result.decision !== 'PASS' || result.relevantCount === 0 || !result.blockAt) return result;
+  const blockAtMs = Date.parse(result.blockAt);
+  if (!Number.isFinite(blockAtMs)) {
+    return { ...result, decision: 'BLOCK', reason: 'HOLD_GUARD_LEASE_INSTANT' };
+  }
+  if (nowMs + POSITIVE_WRITE_CUSHION_MS >= blockAtMs) {
+    return { ...result, decision: 'BLOCK', reason: 'HOLD_FRESHNESS_SAFETY_WINDOW',
+      releaseAt: new Date(blockAtMs + guardMinutes * 60 * 1000).toISOString() };
+  }
+  return result;
+}
+
+async function setStatus(pr, evaluatedResult, holds) {
+  let result = decisionAtWrite(evaluatedResult);
+  if (result.decision === 'PASS' && result.relevantCount === 0) {
+    return { written: false, result };
+  }
+  let statuses = null;
   try {
     statuses = await github(`/repos/${repository}/commits/${pr.head.sha}/statuses?per_page=100`);
-    if (!Array.isArray(statuses) || statuses.length > 100) {
-      throw new Error('HOLD_STATUS_LIST_SHAPE');
-    }
+    if (!Array.isArray(statuses) || statuses.length > 100) throw new Error('HOLD_STATUS_LIST_SHAPE');
   } catch (error) {
-    // No positive write after an unknown status read; the whole sweep must HOLD.
-    throw new Error(`HOLD_GUARD_STATUS_READ_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`);
+    const hold = `HOLD_GUARD_STATUS_READ_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`;
+    // Known BLOCKs must still get one conservative failure POST even when
+    // status history is unavailable; no uncertain positive status is permitted.
+    if (result.decision !== 'BLOCK') throw new Error(hold);
+    holds.push(hold);
   }
-  // GitHub returns commit statuses newest-first. If 100 unrelated contexts
-  // obscure this one, don't risk overwriting an unknown failure.
-  const previous = statuses.find((item) => item.context === context);
-  if (!previous && statuses.length === 100) throw new Error('HOLD_STATUS_CONTEXT_UNVERIFIED');
-  if (previous?.state === state && previous?.description === description
-    && previous?.target_url === pr.html_url) return false;
+
+  // Re-check trusted current time AFTER the GitHub read, directly before POST.
+  // If the release safety window started during this read, write a failure.
+  result = decisionAtWrite(result);
+  const state = result.decision === 'BLOCK' ? 'failure' : 'success';
+  const description = statusDescription(result, guardMinutes);
+  if (statuses !== null) {
+    const previous = statuses.find((item) => item?.context === context);
+    if (!previous && statuses.length === 100) {
+      const hold = `HOLD_STATUS_CONTEXT_UNVERIFIED_PR_${pr.number}`;
+      if (state !== 'failure') throw new Error(hold);
+      holds.push(hold);
+    } else if (previous?.state === state && previous?.description === description
+      && (previous?.target_url ?? null) === (pr.html_url ?? null)) {
+      return { written: false, result };
+    }
+  }
   try {
     await github(`/repos/${repository}/statuses/${pr.head.sha}`, {
       method: 'POST',
@@ -126,7 +156,7 @@ async function setStatus(pr, result) {
     // An ambiguous response must not be retried; other SHAs still get evaluated.
     throw new Error(`HOLD_GUARD_STATUS_WRITE_PR_${pr.number}_${error?.message ?? 'UNKNOWN'}`);
   }
-  return true;
+  return { written: true, result };
 }
 
 async function closePr(pr, evaluatedHeadSha) {
@@ -162,6 +192,7 @@ for (const pr of scan.prs) {
   }
   let result;
   let infrastructureHold = false;
+  let knownCatalyst = false;
   try {
     const files = await listFiles(descriptor.number);
     const relevant = files.filter((file) => (
@@ -170,6 +201,7 @@ for (const pr of scan.prs) {
       && file.filename.startsWith('apps/web/src/content/catalyst-briefs/')
       && file.filename.endsWith('.md')
     ));
+    knownCatalyst = relevant.length > 0;
     const changes = [];
     for (const file of relevant) {
       changes.push({ path: file.filename, status: file.status,
@@ -184,21 +216,33 @@ for (const pr of scan.prs) {
     holds.push(`HOLD_PR_${descriptor.number}_${result.reason}`);
   }
   if (!groups.has(descriptor.headSha)) groups.set(descriptor.headSha, []);
-  groups.get(descriptor.headSha).push({ pr, descriptor, result, infrastructureHold });
+  groups.get(descriptor.headSha).push({ pr, descriptor, result, infrastructureHold, knownCatalyst });
 }
 
 // A commit status is keyed by SHA + context, not by PR number. Aggregate first
 // so a different-base PR with the same head SHA cannot overwrite a BLOCK.
 for (const records of groups.values()) {
+  // The scan can take minutes. Never reuse a positive decision without
+  // re-evaluating its cutoff immediately before the status is written.
+  for (const item of records) item.result = decisionAtWrite(item.result);
   const incomplete = records.some((item) => item.infrastructureHold);
-  const chosen = records.find((item) => item.infrastructureHold)
-    ?? records.find((item) => item.result.decision === 'BLOCK')
+  const chosen = records.find((item) => !item.infrastructureHold && item.result.decision === 'BLOCK')
+    ?? records.find((item) => item.infrastructureHold)
     ?? records.find((item) => item.result.relevantCount > 0);
+  const knownCatalyst = records.some((item) => item.knownCatalyst);
+  // Unknown file listings cannot prove that a PR contains a guarded brief.
+  // Their sweep must HOLD, but a speculative red status on an unrelated SHA
+  // would persist forever when later sweeps skip unrelated success writes.
+  const speculativeInfrastructureBlock = chosen?.infrastructureHold && !knownCatalyst
+    && !records.some((item) => !item.infrastructureHold && item.result.decision === 'BLOCK');
   let statusConfirmed = false;
   let statusWritten = false;
-  if (chosen && (chosen.result.decision === 'BLOCK' || !scan.hold)) {
+  if (chosen && !speculativeInfrastructureBlock
+    && (chosen.result.decision === 'BLOCK' || !scan.hold)) {
     try {
-      statusWritten = await setStatus(chosen.pr, chosen.result);
+      const posted = await setStatus(chosen.pr, chosen.result, holds);
+      chosen.result = posted.result;
+      statusWritten = posted.written;
       statusConfirmed = true;
     } catch (error) {
       holds.push(error?.message ?? 'HOLD_STATUS_WRITE_UNKNOWN');

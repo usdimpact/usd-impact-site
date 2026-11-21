@@ -281,6 +281,11 @@ try {
   assert.equal(recorded.statusCode, 502);
   const body = JSON.parse(recorded.body);
   assert.equal(body.repairAttempts, 1);
+  assert.equal(body.initialDraftSourceCount, 2, 'original model ledger count is reported without its URLs');
+  assert.equal(body.latestDraftSourceCount, 2, 'failed repair does not invent a different count');
+  assert.equal(body.groundedMetadataUrlCount, 3, 'search metadata count is distinguishable from the draft ledger');
+  assert.equal(body.originalRetainedLedgerUrlCount, 2, 'only exact ledger/matching grounded metadata count is reported');
+  assert.equal('groundedSourceUrls' in body, false, 'error responses cannot disclose URLs');
   assert.match(body.repairError, /synthetic repair stop/);
   assert.equal(providerCalls.length, 2, 'one retrieval plus one bounded context-linked repair');
   assert.equal(repairBodies.length, 1);
@@ -295,6 +300,91 @@ try {
   assert.match(repairBody.input, /PERMITTED GROUNDED CONTEXT URLS/);
   assert.match(repairBody.input, /Do not perform a fresh web search/);
   assert.doesNotMatch(repairBody.input, /example\.invalid/);
+  // Insufficient stored search context must remain fail-closed and request no
+  // repair model; errors may expose counts only, never source URLs.
+  const noRepairProvider = makeFakeProvider(testSourceUrls.slice(0, 2), testSourceUrls.slice(0, 2));
+  let noRepairProviderCalls = 0;
+  globalThis.fetch = async (url, options = {}) => {
+    noRepairProviderCalls += 1;
+    assert.equal(options.method, 'GET');
+    assert.match(String(url), /\/v1\/responses\/resp_test1234567$/);
+    return new Response(JSON.stringify(noRepairProvider), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  };
+  const noRepairRecord = {
+    statusCode: 200, headers: {}, body: '',
+    setHeader(key, value) { this.headers[String(key).toLowerCase()] = value; },
+    end(value) { this.body = value; },
+  };
+  await backgroundHandler(req, noRepairRecord);
+  const insufficient = JSON.parse(noRepairRecord.body);
+  assert.equal(noRepairRecord.statusCode, 502);
+  assert.equal(insufficient.code, 'insufficient-grounded-sources');
+  assert.equal(insufficient.repairAttempts, 0);
+  assert.equal(insufficient.initialDraftSourceCount, 2);
+  assert.equal(insufficient.latestDraftSourceCount, 2);
+  assert.equal(insufficient.groundedMetadataUrlCount, 2);
+  assert.equal(insufficient.originalRetainedLedgerUrlCount, 2);
+  assert.equal(noRepairProviderCalls, 1, 'no paid repair request from an insufficient context');
+
+  // Reproduce the exact observed November 2 failure CLASS offline: the
+  // original ledger is short and two completed, context-linked repairs both
+  // return still-short ledgers. All provider traffic is intercepted.
+  const boundedRepairBodies = [];
+  let boundedOriginalReads = 0;
+  globalThis.fetch = async (url, options = {}) => {
+    if (options.method === 'GET') {
+      boundedOriginalReads += 1;
+      assert.match(String(url), /\/v1\/responses\/resp_test1234567$/);
+      return new Response(JSON.stringify(incomplete), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    assert.equal(String(url), 'https://api.openai.com/v1/responses');
+    assert.equal(options.method, 'POST');
+    boundedRepairBodies.push(JSON.parse(String(options.body ?? '{}')));
+    const count = boundedRepairBodies.length === 1 ? 1 : 2;
+    const corrected = {
+      marketRegime: 'Synthetic test only',
+      summary: 'Synthetic source-count receipt only.',
+      highlights: [], catalysts: [],
+      sources: testSourceUrls.slice(0, count).map((url, index) => ({
+        id: 'synthetic-' + (index + 1),
+        title: 'Synthetic source ' + (index + 1),
+        url,
+        publishedAt: '2026-10-22',
+      })),
+      body: 'Synthetic test copy.',
+    };
+    return new Response(JSON.stringify({
+      id: 'resp_syntheticrepair' + String(count).padStart(8, '0'),
+      status: 'completed',
+      output: [{ type: 'message', content: [{
+        type: 'output_text', text: JSON.stringify(corrected),
+      }] }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const boundedRecord = {
+    statusCode: 200, headers: {}, body: '',
+    setHeader(key, value) { this.headers[String(key).toLowerCase()] = value; },
+    end(value) { this.body = value; },
+  };
+  await backgroundHandler(req, boundedRecord);
+  const exhausted = JSON.parse(boundedRecord.body);
+  assert.equal(boundedRecord.statusCode, 502, 'two still-invalid repairs remain fail-closed');
+  assert.equal(exhausted.repairAttempts, 2, 'existing two-repair limit is retained');
+  assert.equal(exhausted.initialDraftSourceCount, 2);
+  assert.equal(exhausted.latestDraftSourceCount, 2);
+  assert.equal(exhausted.groundedMetadataUrlCount, 3);
+  assert.equal(exhausted.originalRetainedLedgerUrlCount, 2);
+  assert.equal(boundedOriginalReads, 1);
+  assert.equal(boundedRepairBodies.length, 2, 'no third paid repair allowed');
+  assert.ok(boundedRepairBodies.every((body) =>
+    body.previous_response_id === 'resp_test1234567' && !('tools' in body)
+  ), 'both repairs are bounded to the original stored evidence without web search');
+  assert.doesNotMatch(boundedRecord.body, /https?:\/\//, 'error receipt contains no source URLs');
+
   // Test the real nested generation wrappers with one synthetic provider POST.
   // All calls are intercepted; this is not a live generator acceptance test.
   const generationBodies = [];

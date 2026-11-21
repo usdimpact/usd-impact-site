@@ -142,6 +142,31 @@ import Icon from '../../components/Icon.astro';
         </div>
       </section>
 
+      <section id="transactional-language-panel" class="card account-panel" aria-labelledby="transactional-language-heading" hidden>
+        <p class="eyebrow">Development preview only</p>
+        <h2 id="transactional-language-heading">Account language</h2>
+        <p>
+          Choose the language for future USD Impact Library Pass access notices.
+          This does not subscribe you to a newsletter, change your marketing preferences,
+          alter past access emails, or affect Lemon Squeezy payment receipts.
+        </p>
+        <form id="transactional-language-form" class="account-form">
+          <label for="transactional-language-choice">Access notice language</label>
+          <select id="transactional-language-choice" name="locale" disabled>
+            <option value="en">English</option>
+            <option value="es">Español (Spanish)</option>
+          </select>
+          <button id="transactional-language-save" type="submit" class="button account-secondary" disabled>
+            Save language
+          </button>
+        </form>
+        <p class="account-help">
+          This saves an account preference only. Notifications are not automatically enabled.
+          Portuguese email remains unavailable.
+        </p>
+        <p id="transactional-language-status" class="account-status" role="status" aria-live="polite"></p>
+      </section>
+
       <section class="card account-panel" aria-labelledby="payment-records-heading">
         <h2 id="payment-records-heading">Payment receipt and invoice</h2>
         <p>
@@ -225,6 +250,11 @@ import Icon from '../../components/Icon.astro';
     const supportStatus = document.getElementById('support-status');
     const pushSettingsLink = document.getElementById('push-settings-link');
     const passkeySettingsLink = document.getElementById('passkey-settings-link');
+    const transactionalLanguagePanel = document.getElementById('transactional-language-panel');
+    const transactionalLanguageForm = document.getElementById('transactional-language-form');
+    const transactionalLanguageChoice = document.getElementById('transactional-language-choice');
+    const transactionalLanguageSave = document.getElementById('transactional-language-save');
+    const transactionalLanguageStatus = document.getElementById('transactional-language-status');
     const nextStepHeading = document.getElementById('next-step-heading');
     const nextStepDescription = document.getElementById('next-step-description');
     const nextStepLink = document.getElementById('next-step-link');
@@ -391,6 +421,79 @@ import Icon from '../../components/Icon.astro';
       }
     };
 
+    let canSaveTransactionalLocale = false;
+    const showTransactionalLocaleStatus = (text, state = '') => {
+      if (!transactionalLanguageStatus) return;
+      transactionalLanguageStatus.textContent = text;
+      transactionalLanguageStatus.dataset.state = state;
+    };
+    const loadTransactionalLanguageSettings = async () => {
+      if (!transactionalLanguagePanel || !transactionalLanguageChoice || !transactionalLanguageSave) return;
+      try {
+        const response = await fetch('/api/account?action=transactional-locale', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          transactionalLanguagePanel.hidden = true;
+          return;
+        }
+        const data = await response.json();
+        if (data.enabled !== true || !['en', 'es'].includes(data.locale)) {
+          transactionalLanguagePanel.hidden = true;
+          return;
+        }
+        transactionalLanguagePanel.hidden = false;
+        transactionalLanguageChoice.value = data.locale;
+        canSaveTransactionalLocale = data.writable === true;
+        transactionalLanguageChoice.disabled = !canSaveTransactionalLocale;
+        transactionalLanguageSave.disabled = !canSaveTransactionalLocale;
+        showTransactionalLocaleStatus(canSaveTransactionalLocale
+          ? 'Your current account language has been loaded.'
+          : 'Language changes are not available in this preview.',
+          canSaveTransactionalLocale ? 'success' : '');
+      } catch {
+        transactionalLanguagePanel.hidden = true;
+      }
+    };
+
+    transactionalLanguageForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!canSaveTransactionalLocale || !transactionalLanguageChoice
+        || !transactionalLanguageSave || !['en', 'es'].includes(transactionalLanguageChoice.value)) {
+        return;
+      }
+      transactionalLanguageSave.disabled = true;
+      transactionalLanguageChoice.disabled = true;
+      showTransactionalLocaleStatus('Saving language preference…', 'pending');
+      try {
+        const response = await fetch('/api/account?action=transactional-locale', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ locale: transactionalLanguageChoice.value }),
+        });
+        if (response.status === 401) {
+          window.location.replace('/account/sign-in/?next=/account/');
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.enabled !== true || data.locale !== transactionalLanguageChoice.value) {
+          throw new Error('Could not verify the saved language. Please try again.');
+        }
+        showTransactionalLocaleStatus(
+          'Language preference saved. This does not subscribe you to marketing or send an email.',
+          'success',
+        );
+      } catch {
+        showTransactionalLocaleStatus('Language preference was not saved. Please try again.', 'error');
+      } finally {
+        transactionalLanguageChoice.disabled = !canSaveTransactionalLocale;
+        transactionalLanguageSave.disabled = !canSaveTransactionalLocale;
+      }
+    });
+
     const loadAccount = async () => {
       showMessage('Loading account…', 'pending');
       const response = await fetch('/api/account-access', { credentials: 'same-origin' });
@@ -412,6 +515,7 @@ import Icon from '../../components/Icon.astro';
       await Promise.all([
         loadNotificationSettingsAvailability(),
         loadPasskeySettingsAvailability(),
+        loadTransactionalLanguageSettings(),
       ]);
       showMessage('Account loaded.', 'success');
     };

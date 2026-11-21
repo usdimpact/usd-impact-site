@@ -12,6 +12,7 @@ const developmentEnvironment = Object.freeze({
   VERCEL_ENV: 'preview',
   EMAIL_READINESS_LEDGER_ENABLED: 'true',
   LAUNCH_EMAIL_DISPATCH_ENABLED: 'true',
+  PURCHASE_ACCESS_READY_ATOMIC_DISPATCH_ENABLED: 'true',
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
   SUPABASE_SECRET_KEY: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
@@ -52,6 +53,16 @@ function createLedgerMock(initial) {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, options });
+    if (String(url).includes('/rpc/ui02_check_access_ready_dispatch')) {
+      const params = JSON.parse(options.body);
+      assert.equal(params.p_outbox_id, row.id);
+      assert.equal(params.p_idempotency_key, row.idempotency_key);
+      return response(200, {
+        verified: true, locale: 'en', outboxId: row.id,
+        idempotencyKey: row.idempotency_key,
+        templateVersion: row.template_version,
+      });
+    }
     if (options.method === 'POST') return response(201, [row]);
     if (options.method === 'PATCH') {
       row = { ...row, ...JSON.parse(options.body), updated_at: occurredAt };
@@ -112,6 +123,36 @@ await assert.rejects(
     && error.code === 'PRODUCTION_LEDGER_NOT_APPROVED',
 );
 
+// Missing atomic proof holds purchase mail before PATCH or provider send.
+let prematurePurchaseTransitions = 0;
+await assert.rejects(
+  () => dispatchEnqueuedLaunchEmail({
+    state,
+    environment: {
+      ...developmentEnvironment,
+      PURCHASE_ACCESS_READY_ATOMIC_DISPATCH_ENABLED: 'false',
+    },
+    fetchImpl: async (url, options = {}) => {
+      if (options.method === 'PATCH' || String(url).includes('/rpc/')) {
+        prematurePurchaseTransitions++;
+        throw new Error('Unverified purchase must not advance');
+      }
+      if (String(url).includes('/notification_outbox?')) return response(200, [queued]);
+      throw new Error('Unexpected unverified fixture request');
+    },
+    providerAdapter: {
+      id: 'resend',
+      async send() {
+        prematurePurchaseTransitions++;
+        throw new Error('Unverified purchase must not reach a provider');
+      },
+    },
+    nowMs: Date.parse(occurredAt),
+  }),
+  error => error.code === 'PURCHASE_ACCESS_READY_DISPATCH_HOLD',
+);
+assert.equal(prematurePurchaseTransitions, 0);
+
 let conflictRow = { ...queued };
 let conflictAdapterCalled = false;
 await assert.rejects(
@@ -122,6 +163,13 @@ await assert.rejects(
     },
     environment: developmentEnvironment,
     fetchImpl: async (url, options = {}) => {
+      if (String(url).includes('/rpc/ui02_check_access_ready_dispatch')) {
+        return response(200, {
+          verified: true, locale: 'en', outboxId: conflictRow.id,
+          idempotencyKey: conflictRow.idempotency_key,
+          templateVersion: conflictRow.template_version,
+        });
+      }
       if (options.method === 'PATCH') {
         conflictRow = { ...conflictRow, status: 'sending', attempt_count: 1 };
         return response(200, []);

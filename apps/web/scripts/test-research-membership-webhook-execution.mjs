@@ -50,6 +50,10 @@ const result = await processResearchMembershipWebhook({
   signature,
   environment,
   fetchImpl: async (url, init = {}) => {
+    assert.equal(new URL(url).origin, environment.SUPABASE_URL);
+    assert.equal(init.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(Object.keys(init.headers || {}).some((name) => name.toLowerCase() === 'authorization'), false,
+      'signed Research Membership webhook must never send opaque key as Bearer');
     requests.push({ url, init });
     if (url.includes('/rest/v1/subscriptions?')) {
       return new Response(JSON.stringify([{

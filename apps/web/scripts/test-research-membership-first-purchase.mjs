@@ -7,6 +7,7 @@ import {
   createResearchMembershipCheckout,
   inspectResearchMembershipFirstPurchase,
   processResearchMembershipWebhookWithFirstPurchase,
+  publicResearchMembershipFirstPurchaseError,
   readResearchMembershipCheckoutConfig,
 } from '../src/lib/research-membership-first-purchase.js';
 
@@ -214,6 +215,15 @@ const checkout = await createResearchMembershipCheckout({
       assert.equal(parsed.searchParams.get('state'), 'in.(pending,active,past_due,cancel_scheduled)');
       return new Response('[]', { status: 200 });
     }
+    if (String(url).startsWith(`${config.supabase.url}/rest/v1/entitlements?`)) {
+      assert.equal(init.method, undefined);
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('select'), 'id');
+      assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+      assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
+      assert.equal(parsed.searchParams.get('limit'), '1');
+      return new Response('[]', { status: 200 });
+    }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
     assert.equal(init.method, 'POST');
     assert.match(init.headers.Authorization, /^Bearer test_api_key_/);
@@ -248,6 +258,12 @@ const productionCheckout = await createResearchMembershipCheckout({
   idempotencyKey: 'research-live-checkout-002',
   fetchImpl: async (url, init = {}) => {
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/subscriptions?`)) {
+      return new Response('[]', { status: 200 });
+    }
+    if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/entitlements?`)) {
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+      assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
       return new Response('[]', { status: 200 });
     }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
@@ -293,6 +309,96 @@ await assert.rejects(
   { code: 'RESEARCH_CHECKOUT_CURRENT_SUBSCRIPTION_EXISTS', status: 409 },
 );
 assert.equal(blockedProviderCalls, 0);
+
+// Stage A28 N1: an old subscription-linked entitlement and a complimentary
+// entitlement both occupy the UNIQUE(account_id, product_id) row. Checkout
+// must stop before any provider POST, regardless of the entitlement state.
+for (const [name, entitlementRecord, checkoutConfig, checkoutUser] of [
+  ['cancelled subscriber retains revoked entitlement', {
+    id: '33333333-3333-4333-8333-333333333333',
+    subscription_id: subscriptionId, state: 'revoked',
+  }, config, user],
+  ['complimentary Research holder has active entitlement', {
+    id: '33333333-3333-4333-8333-333333333333',
+    subscription_id: null, state: 'active',
+  }, config, user],
+  ['Production account has an old paid entitlement', {
+    id: '33333333-3333-4333-8333-333333333333',
+    subscription_id: subscriptionId, state: 'revoked',
+  }, productionConfig, productionUser],
+]) {
+  let providerRequestCount = 0;
+  let entitlementLookupCount = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: checkoutConfig,
+      user: checkoutUser,
+      billingInterval: 'monthly',
+      idempotencyKey: 'research-checkout-guard-001',
+      fetchImpl: async (url, init = {}) => {
+        if (String(url).includes('/rest/v1/subscriptions?')) {
+          return new Response('[]', { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/entitlements?')) {
+          entitlementLookupCount += 1;
+          assert.equal(init.method, undefined);
+          const parsed = new URL(url);
+          assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+          assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
+          assert.equal(parsed.searchParams.get('limit'), '1');
+          return new Response(JSON.stringify([entitlementRecord]), { status: 200 });
+        }
+        providerRequestCount += 1;
+        throw new Error(name + ': the paid checkout provider must never be called');
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT', status: 409 },
+    name,
+  );
+  assert.equal(entitlementLookupCount, 1, name);
+  assert.equal(providerRequestCount, 0, name);
+}
+
+// A failed, malformed, or unexpectedly shaped eligibility lookup must fail
+// closed, rather than exposing a paid checkout or treating absent data as safe.
+for (const [name, body, status] of [
+  ['transient entitlement DB outage', JSON.stringify({ message: 'temporary outage' }), 503],
+  ['malformed response object', JSON.stringify({ data: [] }), 200],
+  ['invalid entitlement row', JSON.stringify([{ id: 'not-a-uuid' }]), 200],
+]) {
+  let providerRequestCount = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config,
+      user,
+      billingInterval: 'annual',
+      idempotencyKey: 'research-checkout-guard-002',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/subscriptions?')) {
+          return new Response('[]', { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/entitlements?')) {
+          return new Response(body, { status });
+        }
+        providerRequestCount += 1;
+        throw new Error(name + ': no provider call allowed on DB failure');
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', status: 502 },
+    name,
+  );
+  assert.equal(providerRequestCount, 0, name);
+}
+
+const guarded = publicResearchMembershipFirstPurchaseError({
+  code: 'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT',
+  status: 409,
+});
+assert.equal(guarded.status, 409);
+assert.deepEqual(guarded.payload, {
+  error: 'Research Membership checkout was rejected.',
+  code: 'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT',
+});
 
 const event = signed();
 const inspected = inspectResearchMembershipFirstPurchase({ ...event, environment });

@@ -118,6 +118,9 @@ function ledgerFetch(initial = outbox()) {
     const url = new URL(input);
     calls.push({ url, options });
     assert.equal(url.origin, 'https://ycstrcvshdluovtuasjc.supabase.co');
+    assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(Object.hasOwn(options.headers || {}, 'Authorization'), false,
+      'Opaque sb_secret_ must never be sent as Bearer on Progress PostgREST calls');
     if (url.pathname !== '/rest/v1/notification_outbox') {
       throw new Error(`Unexpected database path ${url.pathname}`);
     }

@@ -24,6 +24,15 @@ const environment = Object.freeze({
   MARKETING_OPT_IN_SECRET: secret,
 });
 
+function assertOpaqueConsentRequest(url, options = {}) {
+  const parsed = new URL(url);
+  assert.equal(parsed.origin, environment.SUPABASE_URL);
+  assert.ok(parsed.pathname.startsWith('/rest/v1/'));
+  assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+  assert.equal(Object.hasOwn(options.headers || {}, 'Authorization'), false,
+    'Opaque sb_secret_ must never be a Bearer token in opt-in REST calls');
+}
+
 function response(payload, status = 200) {
   return {
     ok: status >= 200 && status < 300,
@@ -37,6 +46,7 @@ function response(payload, status = 200) {
 function scriptedFetch(steps) {
   let index = 0;
   const fetchImpl = async (url, options = {}) => {
+    assertOpaqueConsentRequest(url, options);
     const step = steps[index++];
     assert.ok(step, `Unexpected fetch call ${index}: ${url}`);
     if (step.method) assert.equal(options.method || 'GET', step.method);
@@ -176,6 +186,7 @@ assert.equal(
   const grantId = '123e4567-e89b-42d3-a456-426614174031';
   let call = 0;
   const confirmationFetch = async (url, options = {}) => {
+    assertOpaqueConsentRequest(url, options);
     call += 1;
     if (call === 1) {
       assert.match(url, /notification_outbox\?message_id=eq\.marketing_opt_in_confirmation/);

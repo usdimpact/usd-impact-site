@@ -1,16 +1,12 @@
 import {
   SupabaseRequestError,
+  buildSupabaseRestHeaders,
   readSupabaseServerConfig,
 } from './supabase-server.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const GUIDED_CONTENT_ID_PATTERN = /^guided-edition:[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const GUIDED_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,79}$/;
-const JSON_HEADERS = Object.freeze({
-  Accept: 'application/json',
-  'Content-Type': 'application/json',
-});
-
 function firstRow(payload) {
   return Array.isArray(payload) && payload.length > 0 ? payload[0] : null;
 }
@@ -44,12 +40,7 @@ async function guidedSupabaseFetch({
   }
   const response = await fetchImpl(`${config.url}${path}`, {
     method,
-    headers: {
-      ...JSON_HEADERS,
-      apikey: apiKey,
-      Authorization: `Bearer ${accessToken || apiKey}`,
-      ...headers,
-    },
+    headers: buildSupabaseRestHeaders({ apiKey, accessToken, headers }),
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   const payload = await readJsonSafely(response);

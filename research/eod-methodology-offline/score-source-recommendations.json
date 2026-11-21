@@ -1,0 +1,191 @@
+{
+  "schema": "usdimpact-offline-score-source-recommendations-v1",
+  "date": "2026-11-03",
+  "status": "RESEARCH_DRAFT_ONLY_NO_LIVE_OR_LICENSED_DATA",
+  "basis": {
+    "source_code": "https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py",
+    "governance": "https://github.com/usdimpact/usd-impact-pipeline/blob/main/governance/score-zero-license-phase-a-feasibility-2026-10-29.json",
+    "rights_hold": "https://github.com/usdimpact/usd-impact-pipeline/issues/155",
+    "production_change_authorized": false,
+    "real_source_fetch_authorized": false,
+    "public_score_reproduction_authorized": false,
+    "exact_zero_cost_equivalent_validated": false
+  },
+  "original_formula": {
+    "model": "Score v2 historic calculation, NOT a forward-looking performance guarantee",
+    "start_date": "2015-01-01",
+    "weekly_resample": "W-FRI: last available daily observation within week; completed Friday only",
+    "normalization": "z_i,t = (x_i,t - mean_full_sample_i) / sample_std_full_sample_i",
+    "std_degrees_of_freedom": 1,
+    "clipping": "clip(z_i,t, -3.5, +3.5)",
+    "combination": "Score_t = SUM_i weight_i * clip(z_i,t, -3.5, +3.5)",
+    "model_limitations": [
+      "Original current-vintage full-sample z-scores can change with new history, and are not historical as-published vintages.",
+      "Do not change series/futures rolls or normalization windows silently.",
+      "Formula is not a provider-data redistribution grant."
+    ],
+    "regime_bands": [
+      {
+        "label": "Weak dollar regime",
+        "upper_exclusive": -1
+      },
+      {
+        "label": "Soft dollar regime",
+        "lower_inclusive": -1,
+        "upper_exclusive": -0.3
+      },
+      {
+        "label": "Neutral / transitional",
+        "lower_inclusive": -0.3,
+        "upper_exclusive": 0.3
+      },
+      {
+        "label": "Firm dollar regime",
+        "lower_inclusive": 0.3,
+        "upper_exclusive": 1
+      },
+      {
+        "label": "Strong dollar regime",
+        "lower_inclusive": 1
+      }
+    ]
+  },
+  "source_preference": [
+    {
+      "tier": "1_EXACT_LICENSED_SERIES",
+      "description": "Highest semantic fidelity in principle: exactly the original 8 input definitions through authorized publisher or distributor, preserving dates, rolls, vintages, history and calculation. Actual fidelity and all rights still unverified.",
+      "actual_similarity_measured": false,
+      "rights_cleared": false
+    },
+    {
+      "tier": "2_PARTIAL_DIRECT_ISSUER_RATE_MATCH",
+      "description": "Direct Treasury/Federal Reserve 2Y/10Y may approximate the two original constant-maturity rate inputs, after live same-date and vintage parity testing; does not solve the other six.",
+      "actual_similarity_measured": false,
+      "rights_cleared": false
+    },
+    {
+      "tier": "3_NEW_METHOD_OFFICIAL_PROXY",
+      "description": "Trade-weighted Fed USD, WTI spot, financial stress or other official measures change driver meaning; research as a separately named educational model only, not a replacement Score v2.",
+      "actual_similarity_measured": false,
+      "rights_cleared": false
+    }
+  ],
+  "drivers": [
+    {
+      "id": "DXY",
+      "weight": 0.125,
+      "original": "ICE U.S. Dollar Index, Yahoo transport DX-Y.NYB",
+      "preferred": "Contracted ICE USDX input with specifically permitted commercial/derived/retention/publication and end-user replay scope",
+      "alternative": "Federal Reserve H.10 nominal broad/AFE USD: DIFFERENT trade-weighted basket, lag and methodology",
+      "status": "ORIGINAL_RIGHTS_HOLD_NOT_EQUIVALENT",
+      "links": [
+        "https://www.ice.com/",
+        "https://www.federalreserve.gov/releases/h10/"
+      ]
+    },
+    {
+      "id": "WTI",
+      "weight": -0.125,
+      "original": "CME WTI continuous front-month futures, Yahoo transport CL=F",
+      "preferred": "Contracted CME or approved authorized distributor matching contract roll, settlement/close and history",
+      "alternative": "EIA Cushing WTI spot: different spot/futures basis, Refinitiv downstream rights unresolved",
+      "status": "ORIGINAL_RIGHTS_HOLD_NOT_EQUIVALENT",
+      "links": [
+        "https://www.cmegroup.com/",
+        "https://www.eia.gov/dnav/pet/hist/RWTCD.htm"
+      ]
+    },
+    {
+      "id": "SPX",
+      "weight": -0.125,
+      "original": "S&P 500 price index, Yahoo transport ^GSPC",
+      "preferred": "S&P DJI / authorized distributor with rights for index values, derivation, archive and permitted reuse",
+      "alternative": "BEA corporate profits are quarterly macro statistics and NOT a weekly S&P index proxy",
+      "status": "ORIGINAL_RIGHTS_HOLD_NO_VERIFIED_NEAR_PROXY",
+      "links": [
+        "https://www.spglobal.com/spdji/en/",
+        "https://www.bea.gov/data/income-saving/corporate-profits"
+      ]
+    },
+    {
+      "id": "VIX",
+      "weight": 0.125,
+      "original": "Cboe VIX equity option-implied-volatility index, Yahoo transport ^VIX",
+      "preferred": "Licensed Cboe VIX history with exact timestamp/close and derived-use permissions",
+      "alternative": "OFR FSI, NFCI or rate volatility are different measures; source/embedded proprietary input rights may also apply",
+      "status": "ORIGINAL_RIGHTS_HOLD_NO_VERIFIED_NEAR_PROXY",
+      "links": [
+        "https://www.cboe.com/",
+        "https://www.financialresearch.gov/financial-stress-index/"
+      ]
+    },
+    {
+      "id": "BTC",
+      "weight": -0.125,
+      "original": "BTC/USD historical Yahoo BTC-USD delivered price, upstream historical provider unproven",
+      "preferred": "Written licensed historical BTC/USD vendor dataset only after independent verification of venue/reference-rate/24-7 close/adjustment parity",
+      "alternative": "CoinGecko/Coin Metrics alternative BTC index/price: not proven same original composite and free plans do not establish commercial permission",
+      "status": "ORIGINAL_PROVIDER_UNIDENTIFIED_HOLD",
+      "links": [
+        "https://github.com/usdimpact/usd-impact-pipeline/issues/179"
+      ]
+    },
+    {
+      "id": "GOLD",
+      "weight": -0.125,
+      "original": "CME COMEX gold continuous front-month futures, Yahoo transport GC=F",
+      "preferred": "Licensed CME/COMEX or authorized distributor with exact front contract, roll, settlement and history",
+      "alternative": "World Bank Pink Sheet monthly gold quotation / spot gold are not weekly COMEX futures; underlying rights may apply",
+      "status": "ORIGINAL_RIGHTS_HOLD_NOT_EQUIVALENT",
+      "links": [
+        "https://www.cmegroup.com/"
+      ]
+    },
+    {
+      "id": "UST_2Y",
+      "weight": 0.125,
+      "original": "FRED DGS2, Board H.15 constant-maturity 2-year nominal yield",
+      "preferred": "Issuer-original Board H.15 or direct Treasury 2-year par curve ONLY after same-day as-published vintage mapping and re-use permissions are verified",
+      "alternative": "Direct Treasury nominal 2-year par yield BC_2YEAR: near semantic, NOT yet empirically proven identical to DGS2",
+      "status": "NEAR_SOURCE_RESEARCH_ONLY_NO_PARITY_OR_RIGHTS",
+      "links": [
+        "https://www.federalreserve.gov/releases/h15/",
+        "https://home.treasury.gov/treasury-daily-interest-rate-xml-feed"
+      ]
+    },
+    {
+      "id": "UST_10Y",
+      "weight": 0.125,
+      "original": "FRED DGS10, Board H.15 constant-maturity 10-year nominal yield",
+      "preferred": "Issuer-original Board H.15 or direct Treasury 10-year par curve ONLY after same-day as-published vintage mapping and re-use permissions are verified",
+      "alternative": "Direct Treasury nominal 10-year par yield BC_10YEAR: near semantic, NOT yet empirically proven identical to DGS10",
+      "status": "NEAR_SOURCE_RESEARCH_ONLY_NO_PARITY_OR_RIGHTS",
+      "links": [
+        "https://www.federalreserve.gov/releases/h15/",
+        "https://home.treasury.gov/treasury-daily-interest-rate-xml-feed"
+      ]
+    }
+  ],
+  "comparison_protocol": {
+    "status": "NO_EMPIRICAL_CLOSEST_SCORE_RANKING_AVAILABLE",
+    "requirements": [
+      "Compare only data each party can lawfully retrieve/retain/process and only after original and candidate source approvals.",
+      "Lock original model weights and sample settings BEFORE comparison; align identical Friday periods, timezone/holidays, event availability and source vintages.",
+      "Preserve reference score metadata privately with approved rights; no component values or derived normalized histories in public URLs.",
+      "Use a development-only held-out period and record rows/time window and completeness; do not optimize on evaluation data."
+    ],
+    "metrics": [
+      "coverage = aligned_eligible_fridays / reference_eligible_fridays",
+      "mae = mean(abs(candidate_score - reference_score))",
+      "rmse = sqrt(mean((candidate_score - reference_score)^2))",
+      "sign_agreement = mean(sign(candidate_score) == sign(reference_score))",
+      "regime_agreement = mean(candidate_regime == reference_regime)",
+      "revision_stability = source vintages and recomputation drift evaluated independently"
+    ],
+    "result": "UNKNOWN; never label a provider or alternative as the empirically closest Score before rights-cleared comparisons."
+  },
+  "reader_guidance": {
+    "en": "For the closest defensible reconstruction, use the exact original inputs from verified, appropriately licensed sources and reproduce the published transformation precisely. If any input must be substituted, label the result a different educational model, disclose the substitutions and quantify similarity only after a lawful comparative test. An example with invented data proves the arithmetic, not market accuracy.",
+    "es": "Para reconstruir el resultado de la forma más fiel posible, use las series originales exactas de fuentes verificadas y con licencia o permiso adecuado, y reproduzca el cálculo publicado. Si sustituye alguna serie, presente el resultado como otro modelo educativo, explique los cambios y cuantifique la similitud solo tras una prueba comparativa autorizada. Los datos inventados muestran la aritmética, no la precisión del mercado."
+  }
+}

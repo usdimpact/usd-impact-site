@@ -13,6 +13,7 @@ const baseSubscription = {
   productId: 'research-membership',
   provider: 'lemon-squeezy',
   providerSubscriptionId: '98765',
+  providerCustomerId: '456',
   state: 'active',
   currentPeriodStart: '2026-09-01T00:00:00.000Z',
   currentPeriodEnd: '2026-10-01T00:00:00.000Z',
@@ -321,6 +322,34 @@ assert.throws(
     signedOptions(subscriptionPayload('subscription_paused', { status: 'paused' })),
   ),
   /not approved/,
+);
+
+// The signed customer_id must match the persisted provider-customer binding
+// before any invoice classification (including duplicate/replay processing).
+for (const eventName of ['subscription_payment_success', 'subscription_payment_failed',
+  'subscription_payment_recovered', 'subscription_payment_refunded']) {
+  assert.throws(
+    () => inspectLemonSqueezyResearchMembershipWebhook(
+      signedOptions(invoicePayload(eventName, { customer_id: 999 })),
+    ),
+    (error) => error.code === 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_MISMATCH',
+    eventName + ' must reject a foreign signed customer',
+  );
+}
+assert.throws(
+  () => inspectLemonSqueezyResearchMembershipWebhook(
+    signedOptions(invoicePayload('subscription_payment_success'),
+      { ...baseSubscription, providerCustomerId: null }),
+  ),
+  (error) => error.code === 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_UNAVAILABLE',
+  'unknown persisted provider customer must not process invoices',
+);
+assert.throws(
+  () => inspectLemonSqueezyResearchMembershipWebhook(
+    signedOptions(subscriptionPayload('subscription_updated', { customer_id: 999 })),
+  ),
+  (error) => error.code === 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_MISMATCH',
+  'subscription objects must agree with known bound provider customer',
 );
 
 console.log('Lemon Squeezy Research Membership recurring adapter matrix passed.');

@@ -115,7 +115,7 @@ async function databaseRequest({ config, path, method = 'GET', body, prefer, fet
       Accept: 'application/json',
       'Content-Type': 'application/json',
       apikey: config.secretKey,
-      Authorization: `Bearer ${config.secretKey}`,
+      // Supabase sb_secret_ authenticates via apikey; only Resend uses Bearer.
       ...(prefer ? { Prefer: prefer } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),

@@ -1,0 +1,43 @@
+name: Account deletion cross-layer claim RLS integration - offline
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/scripts/test-account-deletion-cross-layer-pglite.mjs'
+      - 'apps/web/src/lib/account-deletion-fenced-protocol-candidate.js'
+      - 'docs/operations/candidates/account-deletion-atomic-claim.review.sql'
+      - 'docs/operations/candidates/account-deletion-jwt-rls-fence.review.sql'
+      - '.github/workflows/account-deletion-cross-layer-pglite.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  no-network-no-secret-cross-layer:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Execute disposable Postgres SQL/RLS/client tests
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          test -z "${RESEND_API_KEY:-}"
+          node --check scripts/test-account-deletion-cross-layer-pglite.mjs
+          node scripts/test-account-deletion-cross-layer-pglite.mjs

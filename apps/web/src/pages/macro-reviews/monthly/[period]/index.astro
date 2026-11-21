@@ -1,0 +1,144 @@
+---
+/*
+ * Independent October 2026 educational Monthly: private Vercel Preview only.
+ * An unapproved merge must never generate a public route in Production.
+ * Only an explicit future release PR may change this gate after fresh QA.
+ */
+export function getStaticPaths() {
+  if (process.env.VERCEL_ENV !== 'preview') return [];
+  return [{ params: { period: '2026-10' } }];
+}
+---
+<!doctype html>
+<!-- Independent USD Impact calendar-month educational preview; not a Score-derived Monthly.
+     October 1-31, 2026; six dated original-publisher releases; only one independent Weekly published.
+     No third-party price feeds, published return data, provider charts, forecasts or customer data. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#081726">
+  <title>October 2026 Macro Monthly Preview | USD Impact</title>
+  <meta name="description" content="Free independent educational October 2026 macro monthly preview: employment, inflation, the Federal Reserve and economic growth, backed by dated official sources. No market-price signals or original Score.">
+  <style is:global>
+    :root{--bg:#081726;--surface:#102538;--border:#2a4758;--ink:#edf6f7;--muted:#bad0d6;--accent:#80dbcb;--warm:#efd0a1;--max:1130px;color-scheme:dark}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:var(--accent);text-underline-offset:3px}a:hover{color:#bbf4e8}a:focus-visible{outline:3px solid var(--warm);outline-offset:4px;border-radius:3px}
+    .container{max-width:var(--max);margin:auto;padding:0 28px}.skip{position:absolute;left:-1000px;top:12px;background:white;color:#081726;padding:11px 16px;z-index:50}.skip:focus{left:20px}
+    header{border-bottom:1px solid var(--border)}.top{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{text-decoration:none;color:var(--ink);font-size:1.12rem;font-weight:800;letter-spacing:.035em}.brand em{color:var(--accent);font-style:normal}.kicker{font-size:.75rem;color:var(--accent);font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+    .hero{background:radial-gradient(ellipse 70% 110% at 85% 10%,#214653 0%,transparent 69%),linear-gradient(155deg,#122e40,#081726);padding:72px 0 66px;border-bottom:1px solid var(--border)}
+    h1{font-size:clamp(2.4rem,5.9vw,5rem);letter-spacing:-.054em;line-height:1.06;margin:17px 0 20px;max-width:900px}h1 span{color:var(--accent)}.dek{font-size:clamp(1.04rem,1.75vw,1.28rem);color:#d4e2e6;max-width:820px;margin:0 0 24px}
+    .chips{display:flex;flex-wrap:wrap;gap:9px}.chip{padding:6px 11px;border:1px solid #507479;background:#183849;color:#def2ed;border-radius:100px;font-weight:700;font-size:.78rem}.preview{border-color:#8e7850;background:#423b2a;color:#ffebc5}
+    .grid{display:grid;grid-template-columns:minmax(0,1fr) 302px;gap:40px;padding-top:52px;padding-bottom:65px;align-items:start}.body{min-width:0}.body section{border-bottom:1px solid var(--border);padding-bottom:31px;margin-bottom:33px}.body section:last-child{border:0}.eyebrow{color:var(--accent);font-size:.75rem;text-transform:uppercase;letter-spacing:.13em;font-weight:800}h2{font-size:clamp(1.55rem,2.2vw,2.1rem);line-height:1.2;letter-spacing:-.032em;margin:10px 0 20px}h3{font-size:1.06rem;line-height:1.35;margin:0 0 8px}p{margin:0 0 17px;color:#cfdee3}strong{color:#f6fafb}.caution{border-left:4px solid var(--warm);border-radius:0 8px 8px 0;background:#222f36;padding:16px 20px;margin:17px 0 25px}.caution p{margin:0;color:#efe5cf}.ai{border-left:4px solid var(--accent);background:#142e3e;padding:14px 19px;margin:0 0 35px;border-radius:5px;color:#d5e6e9}
+    .event{position:relative;border-left:2px solid #456971;margin-left:5px;padding:0 0 25px 24px}.event:last-child{padding-bottom:0}.event:before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;background:var(--accent);border-radius:50%;outline:4px solid var(--bg)}.event time{font-size:.77rem;color:var(--warm);letter-spacing:.07em;text-transform:uppercase;font-weight:800;display:block;margin:0 0 4px}.event p{margin-bottom:8px}.source{font-size:.84rem}
+    .rows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.row-card{border:1px solid var(--border);background:#10293a;padding:17px;border-radius:9px}.row-card h3{font-size:.91rem}.row-card p{font-size:.84rem;margin:0}.no-prices{font-size:.85rem;color:var(--warm)}
+    .source-list{list-style:none;padding:0;margin:0}.source-list li{padding:11px 0;border-bottom:1px solid var(--border)}.source-list li:last-child{border:0}.source-list small{display:block;color:var(--muted);font-size:.8rem}.daily-links{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}.daily-links a{padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--border);text-decoration:none;font-size:.83rem}
+    aside{position:sticky;top:20px}.card{border:1px solid #376070;background:linear-gradient(175deg,#173c4d,#12293a);border-radius:10px;padding:23px;margin-bottom:16px}.card h2{font-size:.96rem;letter-spacing:.01em;margin:0 0 15px}.stat{border-bottom:1px solid #426373;padding:12px 0}.stat:last-child{border:0}.stat .name{display:block;text-transform:uppercase;letter-spacing:.09em;color:#b4cbd1;font-size:.69rem}.stat .value{font-weight:800;font-size:1.4rem;line-height:1.3;display:block}.stat small{color:#c5d7dc}.card p{font-size:.84rem;color:#d1e0e3;margin:0 0 10px}.notice{font-size:.81rem;line-height:1.6;border:1px solid #6b623f;background:#2c312d;border-radius:8px;padding:13px;color:#ebdfce}
+    footer{border-top:1px solid var(--border);padding:23px 0 37px;color:var(--muted);font-size:.8rem}footer .bottom{display:flex;gap:12px 25px;justify-content:space-between;flex-wrap:wrap}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.hero{padding:55px 0}.rows{grid-template-columns:repeat(2,minmax(0,1fr))}aside{position:static;display:grid;grid-template-columns:1fr 1fr;gap:15px}.card{margin:0}}
+    @media(max-width:600px){.container{padding:0 19px}.hero{padding:45px 0}.top{min-height:65px}.grid{padding-top:36px;gap:22px}.rows,aside{grid-template-columns:1fr}.event{padding-left:19px}h1{letter-spacing:-.044em}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body data-series="independent_macro_education" data-report="calendar_monthly_preview"
+      data-period-start="2026-10-01" data-period-end="2026-10-31"
+      data-friday-count="5" data-published-independent-weekly-count="1"
+      data-original-score-excluded="true" data-market-price-data-excluded="true">
+  <a class="skip" href="#main">Skip to October preview</a>
+  <header><div class="container top">
+    <a class="brand" href="/" aria-label="USD Impact home">USD <em>Impact</em></a>
+    <div class="kicker">Independent macro education</div>
+  </div></header>
+  <section class="hero" aria-labelledby="page-title"><div class="container">
+    <div class="kicker">Free Monthly Preview / October 2026</div>
+    <h1 id="page-title">The calendar month.<br><span>Not four scorecards.</span></h1>
+    <p class="dek">An October 1–31 overview of dated U.S. labor, inflation, policy and growth releases. Each claim points to its original publisher. This educational preview does not measure asset returns or reproduce the USD Impact Score.</p>
+    <div class="chips">
+      <span class="chip preview">October Monthly Preview</span>
+      <span class="chip">1–31 October 2026</span>
+      <span class="chip">5 calendar Fridays</span>
+      <span class="chip">Official sources, no market feeds</span>
+    </div>
+  </div></section>
+  <main id="main" class="container grid">
+    <article class="body">
+      <div class="ai" role="note"><strong>AI-assisted preparation.</strong> AI tools assisted with preparation of this educational preview. USD Impact, operated by KELA LEADS S.R.L., is responsible for its content. The linked BLS, Federal Reserve and BEA releases are the original sources of the reported official facts.</div>
+      <section aria-labelledby="summary">
+        <div class="eyebrow">01 / Executive summary</div><h2 id="summary">October in one evidence-based view</h2>
+        <p>The October release sequence began with a September employment report and later September consumer inflation figures. The Federal Reserve maintained its target rate range on October 28. Subsequent BEA releases estimated third-quarter GDP growth and September PCE inflation, while BLS reported third-quarter employment costs on October 30.</p>
+        <p>These are <strong>release events during October</strong>. Their underlying observation periods vary. The figures do not establish an October return for DXY, EURUSD, WTI, Henry Hub, TTF, gold, Bitcoin or U.S. equities.</p>
+        <div class="caution"><p><strong>Preview coverage:</strong> Five Fridays occurred in October (2, 9, 16, 23, 30). Only the <a href="/macro-reviews/weekly/2026-10-30/">October 26–30 free independent Weekly</a> has been separately published in this new educational series. The other four are <strong>not</strong> represented as independent Weekly reports. This preview therefore synthesizes selected official October releases directly, not a complete sequence of Weekly products.</p></div>
+      </section>
+      <section aria-labelledby="chronology">
+        <div class="eyebrow">02 / Dated developments</div><h2 id="chronology">The verified October release sequence</h2>
+        <div class="event"><time datetime="2026-10-02">2 October · Labor market</time><h3>September payrolls and unemployment</h3><p>BLS reported <strong>29,000</strong> additional nonfarm payroll jobs in September and an unemployment rate of <strong>4.2%</strong>. The release occurred October 2; the labor reference month was September.</p><a class="source" href="https://www.bls.gov/news.release/archives/empsit_10022026.htm" target="_blank" rel="noopener noreferrer">BLS · Employment Situation, October 2 archive</a></div>
+        <div class="event"><time datetime="2026-10-14">14 October · Consumer inflation</time><h3>September CPI published</h3><p>BLS reported a <strong>0.6%</strong> seasonally adjusted monthly increase in headline CPI for September, with an all-items <strong>3.7%</strong> increase over twelve months before seasonal adjustment. These are different time bases.</p><a class="source" href="https://www.bls.gov/news.release/archives/cpi_10142026.htm" target="_blank" rel="noopener noreferrer">BLS · September CPI, October 14 archive</a></div>
+        <div class="event"><time datetime="2026-10-28">28 October · Monetary policy</time><h3>The FOMC held rates</h3><p>The Federal Reserve maintained the federal funds target range at <strong>3.75%–4.00%</strong>. The statement passed <strong>10–2</strong>; Lisa D. Cook and Beth M. Hammack favored a 25-basis-point increase. A scheduled meeting and its decision count as one event, not two.</p><a class="source" href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm" target="_blank" rel="noopener noreferrer">Federal Reserve · October 28 FOMC statement</a></div>
+        <div class="event"><time datetime="2026-10-29">29 October · Economic activity</time><h3>Q3 GDP advance estimate</h3><p>BEA reported <strong>3.4%</strong> growth in real GDP at a seasonally adjusted annual rate in Q3, versus <strong>2.2%</strong> in Q2. This is quarterly annualized growth, not a monthly increase or year-over-year GDP measure.</p><a class="source" href="https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026" target="_blank" rel="noopener noreferrer">BEA · Q3 GDP advance, October 29</a></div>
+        <div class="event"><time datetime="2026-10-29">29 October · Consumption prices</time><h3>September PCE inflation</h3><p>In a separate release on October 29, BEA reported year-over-year September PCE price inflation of <strong>3.6%</strong> overall and <strong>3.1%</strong> excluding food and energy. These are twelve-month rates; they must not be conflated with the quarterly annualized PCE figures in GDP tables.</p><a class="source" href="https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026" target="_blank" rel="noopener noreferrer">BEA · September personal income and outlays</a></div>
+        <div class="event"><time datetime="2026-10-30">30 October · Employment costs</time><h3>Q3 Employment Cost Index</h3><p>BLS reported a <strong>0.8%</strong> seasonally adjusted increase in civilian compensation over the quarter and a distinct <strong>3.4%</strong> increase over twelve months, not seasonally adjusted. One release provides two different measurement windows.</p><a class="source" href="https://www.bls.gov/news.release/archives/eci_10302026.htm" target="_blank" rel="noopener noreferrer">BLS · Employment Cost Index, October 30</a></div>
+      </section>
+      <section aria-labelledby="transmission">
+        <div class="eyebrow">03 / What moves it</div><h2 id="transmission">The conditional USD transmission chain</h2>
+        <div class="rows">
+          <div class="row-card"><h3>01 · Policy expectations</h3><p>Fed decisions and inflation releases can alter expected policy rates, but a release does not reveal the surprise priced by investors.</p></div>
+          <div class="row-card"><h3>02 · Real yields and risk</h3><p>Expected inflation and nominal rates can shift the real-rate narrative. This preview contains no synchronized yield or volatility readings.</p></div>
+          <div class="row-card"><h3>03 · Cross-asset channels</h3><p>Relative yields, energy demand, funding conditions and risk preferences can connect USD, commodities, crypto and equities in either direction.</p></div>
+        </div>
+        <p class="no-prices">No original eight-driver USD Impact Score, DXY/market series, synthetic disguised as live data, price-return table, market correlation or recommendation is included.</p>
+      </section>
+      <section aria-labelledby="mistakes">
+        <div class="eyebrow">04 / Common mistakes</div><h2 id="mistakes">Keep October, September and Q3 separate</h2>
+        <p><strong>Release month is not observation month.</strong> October 2 payrolls and October 14 CPI describe September; October 29 GDP describes Q3; October 30 employment costs describe the quarter ending September.</p>
+        <p><strong>One event is counted once.</strong> An October 28 FOMC decision should not be repeated as a distinct October 29 policy action. A PCE value repeated in later analysis is not a second statistical release.</p>
+        <p><strong>Calendar does not equal data completeness.</strong> October has five Fridays, not an arbitrary four-week aggregation. Missing independently published Weeklies are transparently disclosed; no original Score-derived Weekly is counted as independent.</p>
+      </section>
+      <section aria-labelledby="watch">
+        <div class="eyebrow">05 / What to watch next</div><h2 id="watch">November continues on its own calendar</h2>
+        <p>The next independent Monthly period is <strong>November 1–30, 2026</strong>, with Friday-ending dates November 6, 13, 20 and 27. The November edition cannot be finalized before the month ends. Each new outcome must be tied to its actual issuer release and original observation period.</p>
+        <p>The <a href="https://www.bls.gov/schedule/2026/11_sched_list.htm" target="_blank" rel="noopener noreferrer">BLS November schedule</a> and <a href="https://www.bea.gov/news/schedule/full" target="_blank" rel="noopener noreferrer">BEA release calendar</a> are calendars, not pre-announced results. Avoid future-result claims, invented market moves or automatic payment/product implications.</p>
+      </section>
+      <section aria-labelledby="sources">
+        <div class="eyebrow">06 / Verification</div><h2 id="sources">Dated primary sources and our Daily archive</h2>
+        <ul class="source-list">
+          <li><a href="https://www.bls.gov/news.release/archives/empsit_10022026.htm" target="_blank" rel="noopener noreferrer">BLS · Employment Situation, October 2</a><small>September jobs and unemployment</small></li>
+          <li><a href="https://www.bls.gov/news.release/archives/cpi_10142026.htm" target="_blank" rel="noopener noreferrer">BLS · CPI, October 14</a><small>September consumer prices</small></li>
+          <li><a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm" target="_blank" rel="noopener noreferrer">Federal Reserve · FOMC statement, October 28</a><small>Target range, vote and dissent</small></li>
+          <li><a href="https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026" target="_blank" rel="noopener noreferrer">BEA · Q3 GDP advance, October 29</a><small>Growth and quarterly annualization</small></li>
+          <li><a href="https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026" target="_blank" rel="noopener noreferrer">BEA · Personal income/outlays, October 29</a><small>September PCE inflation</small></li>
+          <li><a href="https://www.bls.gov/news.release/archives/eci_10302026.htm" target="_blank" rel="noopener noreferrer">BLS · Employment Cost Index, October 30</a><small>Quarterly and twelve-month compensation</small></li>
+        </ul>
+        <p>Read the already-published dated analyses, which are not substitutes for the original issuer documents:</p>
+        <div class="daily-links"><a href="https://www.usd-impact.com/news/2026-10-02/">Daily Oct 2</a><a href="https://www.usd-impact.com/news/2026-10-14/">Daily Oct 14</a><a href="https://www.usd-impact.com/news/2026-10-28/">Daily Oct 28</a><a href="https://www.usd-impact.com/news/2026-10-29/">Daily Oct 29</a><a href="https://www.usd-impact.com/news/2026-10-30/">Daily Oct 30</a><a href="/macro-reviews/weekly/2026-10-30/">Independent Weekly Oct 26–30</a></div>
+      </section>
+      <section aria-labelledby="compliance">
+        <div class="eyebrow">07 / Key takeaway and compliance</div><h2 id="compliance">A month of sources is not a trading signal</h2>
+        <p>October's dated employment, inflation, policy and growth releases offer useful economic context. They do not establish synchronized actual market prices or an investment conclusion. The report is educational and informational, not personalized investment, legal or tax advice; no buy/sell decision, forecast, return or capital protection is implied.</p>
+        <p>This page is independently authored and neither affiliated with nor endorsed by BLS, BEA or the Federal Reserve. No agency logos, charts, embedded PDFs or redistributed licensed market feeds are included.</p>
+        <p>Coverage dates describe the calendar month, <strong>not the first-publication date</strong>. Editorial review, source revisions and corrections must be recorded separately.</p>
+      </section>
+    </article>
+    <aside aria-label="October coverage details">
+      <div class="card"><h2>October at a glance</h2>
+        <div class="stat"><span class="name">Calendar window</span><span class="value">1–31 October</span><small>Whole calendar month</small></div>
+        <div class="stat"><span class="name">Friday-ending weeks</span><span class="value">5</span><small>2 · 9 · 16 · 23 · 30 October</small></div>
+        <div class="stat"><span class="name">Published free independent Weeklies</span><span class="value">1</span><small>October 26–30; the others are not claimed</small></div>
+        <div class="stat"><span class="name">Verified issuer releases featured</span><span class="value">6</span><small>BLS, Federal Reserve, BEA</small></div>
+      </div>
+      <div class="card"><h2>How this series differs</h2>
+        <p>The free independent Monthly Preview uses original explanations and dated issuer links. It is not the historical <strong>Score-derived Monthly</strong> and does not reuse any provider-licensed driver, data archive, historical Score path or quantitative market outcome.</p>
+        <p>November will use its true month-end. A fixed four-Weekly gate is not a condition for this educational preview.</p>
+      </div>
+      <div class="notice">Preview label means selected verified highlights, not an exhaustive review of every October release. Original Score/source rights and any separate commercial offering remain subject to their own gates.</div>
+    </aside>
+  </main>
+  <footer><div class="container bottom">
+    <span>© 2026 USD Impact · Operated by KELA LEADS S.R.L.</span>
+    <span><a href="/">Home</a> · <a href="/news">Dailies</a> · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · <a href="/compliance">Compliance</a> · <a href="/contact">Contact</a></span>
+  </div></footer>
+</body>
+</html>

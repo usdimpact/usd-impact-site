@@ -64,3 +64,6 @@ if (process.argv.includes('--built')) {
 }
 console.log('independent free Weekly factual/source/privacy/isolation checks pass' +
   (process.argv.includes('--built') ? ' (built route verified)' : ''));
+
+// Independent calendar Monthly is a distinct educational series, not the legacy Score validator.
+await import('./test-independent-macro-monthly-preview.mjs');

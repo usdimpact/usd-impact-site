@@ -116,10 +116,15 @@ export async function createSignedAudiobookTrackUrl({
     response = await fetchImpl(endpoint, {
       method: 'POST',
       cache: 'no-store',
+      // Current protected main does not export a shared credential helper.
+      // Preserve the exact legacy-JWT compatibility contract locally:
+      // opaque sb_secret_ credentials belong on apikey, never as JWT Bearer.
       headers: {
-        apikey: resolvedConfig.secretKey,
-        Authorization: `Bearer ${resolvedConfig.secretKey}`,
+        Accept: 'application/json',
         'Content-Type': 'application/json',
+        apikey: resolvedConfig.secretKey,
+        ...(resolvedConfig.secretKey.startsWith('eyJ')
+          ? { Authorization: `Bearer ${resolvedConfig.secretKey}` } : {}),
       },
       body: JSON.stringify({ expiresIn }),
     });

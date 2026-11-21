@@ -1,0 +1,56 @@
+name: Issue950 private Library Pass signed URL - opaque key and deleted account
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/private-book.js'
+      - 'apps/web/src/lib/private-audiobook.js'
+      - 'apps/web/src/lib/book-delivery-handler.js'
+      - 'apps/web/src/lib/audiobook-handler.js'
+      - 'apps/web/src/lib/supabase-server.js'
+      - 'apps/web/scripts/test-private-book.mjs'
+      - 'apps/web/scripts/test-private-audiobook.mjs'
+      - 'apps/web/scripts/test-book-delivery-handler.mjs'
+      - 'apps/web/scripts/test-audiobook-handler.mjs'
+      - '.github/workflows/issue950-private-storage-signed-link-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  signing-contract-no-real-provider:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24 and locked dependencies
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Ensure provider and deployment secrets are not available
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          test -z "${RCLONE_CONFIG_ISSUE950_SOURCE_ACCESS_KEY_ID:-}"
+          test -z "${RCLONE_CONFIG_ISSUE950_RESTORE_ACCESS_KEY_ID:-}"
+      - name: Install locked packages
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Test complete book and audiobook signing + entitlement guards
+        run: |
+          node --check src/lib/private-book.js
+          node --check src/lib/private-audiobook.js
+          node scripts/test-private-book.mjs
+          node scripts/test-private-audiobook.mjs
+          node scripts/test-book-delivery-handler.mjs
+          node scripts/test-audiobook-handler.mjs

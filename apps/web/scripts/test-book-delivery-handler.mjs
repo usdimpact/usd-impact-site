@@ -59,6 +59,18 @@ await handleBookDeliveryRequest(request('', { authenticated: true }), denied, {
 assert.equal(denied.statusCode, 302);
 assert.match(denied.getHeader('location'), /reason=refunded/);
 
+// A deleted or newly detached account must never receive another signed
+// Storage capability, even when the incoming cookie still exists.
+let afterDeleteBookSigningCalls=0;
+const deletedDownload=response();
+await handleBookDeliveryRequest(request('download',{authenticated:true}),deletedDownload,{
+  readAccessState:async()=>({allowed:false,reason:'deleted'}),
+  createSignedUrl:async()=>{afterDeleteBookSigningCalls++;throw new Error('signer forbidden');},
+});
+assert.equal(afterDeleteBookSigningCalls,0);
+assert.equal(deletedDownload.statusCode,302);
+assert.match(deletedDownload.getHeader('cache-control'),/no-store/);
+
 const eligible = response();
 await handleBookDeliveryRequest(request('', { authenticated: true }), eligible, {
   readAccessState: async () => ({ allowed: true }),

@@ -199,6 +199,26 @@ assert.deepEqual(productionCheckoutRequest.data.attributes.product_options.enabl
 assert.equal(productionCheckoutRequest.data.attributes.checkout_data.email, 'member@example.com');
 assert.equal(productionCheckoutRequest.data.attributes.checkout_data.custom.usd_impact_research_billing_interval, 'annual');
 
+// Research P1: the success paths must record and attach a DB-issued checkout
+// attempt around the single merchant call.
+function custody(inner, log = []) {
+  return async (url, init = {}) => {
+    const href = String(url);
+    if (href.endsWith('/rest/v1/rpc/create_research_checkout_attempt')) {
+      log.push('attempt');
+      return new Response(JSON.stringify('11111111-1111-4111-8111-111111111111'), { status: 200 });
+    }
+    if (href.endsWith('/rest/v1/rpc/attach_research_checkout_attempt')) {
+      log.push('attach');
+      return new Response('true', { status: 200 });
+    }
+    if (href.startsWith('https://api.lemonsqueezy.com/')) log.push('provider');
+    return inner(url, init);
+  };
+}
+const custodyLog = [];
+const productionCustodyLog = [];
+
 let providerCalls = 0;
 const checkout = await createResearchMembershipCheckout({
   config,
@@ -206,12 +226,25 @@ const checkout = await createResearchMembershipCheckout({
   billingInterval: 'monthly',
   idempotencyKey: 'research-checkout-001',
   now: new Date('2026-09-07T15:00:00.000Z'),
-  fetchImpl: async (url, init = {}) => {
+  fetchImpl: custody(async (url, init = {}) => {
+    if (String(url).startsWith(`${config.supabase.url}/rest/v1/profiles?`)) {
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+      assert.equal(parsed.searchParams.get('select'), 'account_id,status,deletion_requested_at,deleted_at');
+      return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
+    }
     if (String(url).startsWith(`${config.supabase.url}/rest/v1/subscriptions?`)) {
       assert.equal(init.method, undefined);
       const parsed = new URL(url);
       assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
       assert.equal(parsed.searchParams.get('state'), 'in.(pending,active,past_due,cancel_scheduled)');
+      return new Response('[]', { status: 200 });
+    }
+    if (String(url).startsWith(`${config.supabase.url}/rest/v1/entitlements?`)) {
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+      assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
+      assert.equal(parsed.searchParams.get('select'), 'id');
       return new Response('[]', { status: 200 });
     }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
@@ -233,9 +266,10 @@ const checkout = await createResearchMembershipCheckout({
         },
       },
     }), { status: 201 });
-  },
+  }, custodyLog),
 });
 assert.equal(providerCalls, 1);
+assert.deepEqual(custodyLog, ['attempt', 'provider', 'attach']);
 assert.equal(checkout.checkoutId, 'checkout_1');
 assert.equal(checkout.billingInterval, 'monthly');
 assert.equal(checkout.testMode, true);
@@ -246,8 +280,14 @@ const productionCheckout = await createResearchMembershipCheckout({
   user: productionUser,
   billingInterval: 'monthly',
   idempotencyKey: 'research-live-checkout-002',
-  fetchImpl: async (url, init = {}) => {
+  fetchImpl: custody(async (url, init = {}) => {
+    if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/profiles?`)) {
+      return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
+    }
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/subscriptions?`)) {
+      return new Response('[]', { status: 200 });
+    }
+    if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/entitlements?`)) {
       return new Response('[]', { status: 200 });
     }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
@@ -269,9 +309,10 @@ const productionCheckout = await createResearchMembershipCheckout({
         },
       },
     }), { status: 201 });
-  },
+  }, productionCustodyLog),
 });
 assert.equal(productionProviderCalls, 1);
+assert.deepEqual(productionCustodyLog, ['attempt', 'provider', 'attach']);
 assert.equal(productionCheckout.checkoutId, 'checkout_live_1');
 assert.equal(productionCheckout.testMode, false);
 
@@ -283,6 +324,9 @@ await assert.rejects(
     billingInterval: 'monthly',
     idempotencyKey: 'research-checkout-002',
     fetchImpl: async (url) => {
+      if (String(url).startsWith(`${config.supabase.url}/rest/v1/profiles?`)) {
+        return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
+      }
       if (String(url).startsWith(`${config.supabase.url}/rest/v1/subscriptions?`)) {
         return new Response(JSON.stringify([{ id: subscriptionId, state: 'active' }]), { status: 200 });
       }
@@ -293,6 +337,157 @@ await assert.rejects(
   { code: 'RESEARCH_CHECKOUT_CURRENT_SUBSCRIPTION_EXISTS', status: 409 },
 );
 assert.equal(blockedProviderCalls, 0);
+
+// A valid Supabase session is not an active account. Fail before *any*
+// subscription lookup or Lemon Squeezy POST for deleted/deletion-pending profiles.
+const activeProfile = {
+  account_id: accountId,
+  status: 'active',
+  deletion_requested_at: null,
+  deleted_at: null,
+};
+for (const [label, profile] of [
+  ['deletion pending', { ...activeProfile, status: 'deletion_pending' }],
+  ['deleted', { ...activeProfile, status: 'deleted' }],
+  ['suspended', { ...activeProfile, status: 'suspended' }],
+  ['request timestamp still present', { ...activeProfile, deletion_requested_at: '2026-11-05T00:00:00.000Z' }],
+  ['deleted timestamp still present', { ...activeProfile, deleted_at: '2026-11-05T00:00:00.000Z' }],
+]) {
+  let subscriptionReads = 0;
+  let merchantPosts = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: productionConfig,
+      user: productionUser,
+      billingInterval: 'monthly',
+      idempotencyKey: 'research-profile-blocked-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify([profile]), { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/subscriptions?')) subscriptionReads += 1;
+        else merchantPosts += 1;
+        return new Response('[]', { status: 200 });
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_PROFILE_NOT_ACTIVE', status: 409 },
+    label,
+  );
+  assert.equal(subscriptionReads, 0, label);
+  assert.equal(merchantPosts, 0, label);
+}
+for (const [label, payload, status] of [
+  ['missing row', [], 200],
+  ['wrong owner', [{ ...activeProfile, account_id: '33333333-3333-4333-8333-333333333333' }], 200],
+  ['ambiguous duplicate', [activeProfile, activeProfile], 200],
+  ['invalid state shape', [{ ...activeProfile, status: null }], 200],
+  ['malformed response', { bad: true }, 200],
+  ['upstream 503', { message: 'unavailable' }, 503],
+]) {
+  let subsequentCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: productionConfig,
+      user: productionUser,
+      billingInterval: 'annual',
+      idempotencyKey: 'research-profile-error-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify(payload), { status });
+        }
+        subsequentCalls += 1;
+        return new Response('[]', { status: 200 });
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', status: 502 },
+    label,
+  );
+  assert.equal(subsequentCalls, 0, label);
+}
+let failedLookupOtherCalls = 0;
+await assert.rejects(
+  () => createResearchMembershipCheckout({
+    config,
+    user,
+    billingInterval: 'monthly',
+    idempotencyKey: 'research-profile-network-fail-001',
+    fetchImpl: async () => {
+      failedLookupOtherCalls += 1;
+      throw new Error('synthetic network timeout');
+    },
+  }),
+  { code: 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', status: 502 },
+);
+assert.equal(failedLookupOtherCalls, 1); // profile lookup only, never the merchant
+
+// A previous paid/revoked or complimentary Research entitlement occupies the
+// unique account/product row, so no further paid checkout may be offered until
+// a separate relink/recovery lifecycle is accepted.
+for (const [name, checkoutConfig, checkoutUser, entitlementState] of [
+  ['old revoked Research entitlement', config, user, 'revoked'],
+  ['complimentary active Research entitlement', config, user, 'active'],
+  ['previous Production entitlement', productionConfig, productionUser, 'revoked'],
+]) {
+  let lookups = 0;
+  let providerCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: checkoutConfig,
+      user: checkoutUser,
+      billingInterval: 'monthly',
+      idempotencyKey: 'research-existing-entitlement-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify(activeProfile ? [activeProfile] : []), { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+        if (String(url).includes('/rest/v1/entitlements?')) {
+          lookups += 1;
+          return new Response(JSON.stringify([{ id: '33333333-3333-4333-8333-333333333333', state: entitlementState }]), { status: 200 });
+        }
+        providerCalls += 1;
+        throw new Error('Never create paid checkout for ' + name);
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT', status: 409 },
+    name,
+  );
+  assert.equal(lookups, 1, name);
+  assert.equal(providerCalls, 0, name);
+}
+for (const [name, payload, status] of [
+  ['entitlement lookup outage', { error: 'unavailable' }, 503],
+  ['entitlement malformed response', { data: [] }, 200],
+  ['entitlement invalid row', [{ id: 'invalid' }], 200],
+  ['entitlement duplicate rows', [
+    { id: '33333333-3333-4333-8333-333333333333' },
+    { id: '44444444-4444-4444-8444-444444444444' },
+  ], 200],
+]) {
+  let providerCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config,
+      user,
+      billingInterval: 'annual',
+      idempotencyKey: 'research-entitlement-error-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify([activeProfile]), { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+        if (String(url).includes('/rest/v1/entitlements?')) {
+          return new Response(JSON.stringify(payload), { status });
+        }
+        providerCalls += 1;
+        throw new Error('Never create paid checkout on malformed entitlement evidence');
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', status: 502 },
+    name,
+  );
+  assert.equal(providerCalls, 0, name);
+}
 
 const event = signed();
 const inspected = inspectResearchMembershipFirstPurchase({ ...event, environment });

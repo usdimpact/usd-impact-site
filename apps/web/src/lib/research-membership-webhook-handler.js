@@ -31,14 +31,6 @@ function positiveInteger(value, name) {
   return parsed;
 }
 
-function projectRef(value) {
-  try {
-    return new URL(value).hostname.split('.')[0] || '';
-  } catch {
-    return '';
-  }
-}
-
 function configurationError(message, code = 'RESEARCH_WEBHOOK_CONFIGURATION_INVALID') {
   const error = new Error(message);
   error.code = code;
@@ -77,7 +69,7 @@ function readConfig(environment = process.env) {
   }
 
   if (vercelEnvironment === 'preview') {
-    if (projectRef(environment.SUPABASE_URL) !== DEVELOPMENT_PROJECT_REF) {
+    if (environment.SUPABASE_URL !== `https://${DEVELOPMENT_PROJECT_REF}.supabase.co`) {
       throw configurationError('Research Membership Preview webhook must target canonical Development Supabase.', 'RESEARCH_WEBHOOK_DATABASE_MISMATCH');
     }
     if (!enabled(environment.LEMON_SQUEEZY_RESEARCH_TEST_MODE)) {
@@ -90,7 +82,7 @@ function readConfig(environment = process.env) {
     if (!enabled(environment.RESEARCH_MEMBERSHIP_PRODUCTION_ACTIVATION_APPROVED)) {
       throw configurationError('Research Membership Production webhook activation is not approved.', 'RESEARCH_WEBHOOK_PRODUCTION_NOT_APPROVED');
     }
-    if (projectRef(environment.SUPABASE_URL) !== PRODUCTION_PROJECT_REF) {
+    if (environment.SUPABASE_URL !== `https://${PRODUCTION_PROJECT_REF}.supabase.co`) {
       throw configurationError('Research Membership Production webhook must target canonical Production Supabase.', 'RESEARCH_WEBHOOK_DATABASE_MISMATCH');
     }
     if (enabled(environment.LEMON_SQUEEZY_RESEARCH_PRODUCTION_TEST_MODE)) {
@@ -259,6 +251,19 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
   for (const field of ['lemonEventName', 'lemonDataType', 'lemonDataId', 'lemonStatus', 'lemonBillingReason', 'testMode']) {
     if (metadata[field] !== inspected.metadata[field]) throw replayError();
   }
+  const staleHeld = metadata.researchP1StaleHeld === true;
+  const nonactiveHeld = metadata.researchP1NonactiveHeld === true;
+  if ((Object.hasOwn(metadata, 'researchP1StaleHeld') && !staleHeld)
+      || (Object.hasOwn(metadata, 'researchP1NonactiveHeld') && !nonactiveHeld)
+      || (staleHeld && nonactiveHeld)) throw replayError();
+  if ((staleHeld || nonactiveHeld) && (
+    row.to_state !== row.from_state
+    || typeof metadata.researchP1OriginalToState !== 'string'
+    || (staleHeld && (
+      !Number.isFinite(Date.parse(metadata.researchP1LatestAt))
+      || Date.parse(metadata.researchP1LatestAt) < Date.parse(row.occurred_at)
+    ))
+  )) throw replayError();
   // Legacy rows have only the six provider fields above. Compare every field
   // they retained, without inventing a historical full-payload fingerprint.
   // A present but invalid/version-mismatched fingerprint never falls back.
@@ -277,11 +282,51 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
     const event = normalizeResearchMembershipLifecycleEvent({
       ...normalized.providerEvent, accountId: subscription.accountId, currentState: row.from_state,
     });
-    if (event.toState !== row.to_state || event.eventType !== row.reason) throw replayError();
+    if (event.toState !== ((staleHeld || nonactiveHeld)
+      ? metadata.researchP1OriginalToState : row.to_state)
+        || event.eventType !== row.reason) throw replayError();
   } catch {
     throw replayError();
   }
-  return Object.freeze({ action: 'duplicate', eventKey, providerSubscriptionId: subscription.providerSubscriptionId });
+  return Object.freeze({ action: staleHeld ? 'held_stale'
+    : nonactiveHeld ? 'held_nonactive' : 'duplicate', eventKey,
+    providerSubscriptionId: subscription.providerSubscriptionId });
+}
+
+// A fully authenticated, catalog-bound Research event can still be rejected
+// by the state planner (e.g., a paid renewal after the account was deleted).
+// Never discard this financial evidence merely because the mutation is unsafe.
+// This fallback only runs after signature, catalog, subscription and account
+// inspection succeeded; it records custody, never grants an entitlement.
+async function quarantineRejectedSignedBoundEvent({
+  config, existingSubscription, fetchImpl,
+}) {
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/rpc/record_research_paid_binding_refusal`, {
+      method: 'POST',
+      headers: {
+        ...headers(config.supabaseSecret),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_provider: PROVIDER,
+        p_provider_subscription_id: existingSubscription.providerSubscriptionId,
+        p_claimed_account_id: existingSubscription.accountId,
+        p_checkout_key: null,
+        p_reason_code: 'SIGNED_BOUND_LIFECYCLE_REJECTED',
+      }),
+    });
+  } catch {
+    throw replayError('RESEARCH_WEBHOOK_QUARANTINE_FAILED', 503);
+  }
+  let saved;
+  try { saved = await readJson(response); } catch {
+    throw replayError('RESEARCH_WEBHOOK_QUARANTINE_FAILED', 503);
+  }
+  if (!response?.ok || !UUID_PATTERN.test(String(saved ?? ''))) {
+    throw replayError('RESEARCH_WEBHOOK_QUARANTINE_FAILED', 503);
+  }
 }
 
 export async function processResearchMembershipWebhook({
@@ -323,6 +368,9 @@ export async function processResearchMembershipWebhook({
     if (error?.code === 'RESEARCH_MEMBERSHIP_INVALID_TRANSITION') {
       const concurrent = await readEvent();
       if (concurrent) return verifiedDuplicate(concurrent, replayContext);
+      await quarantineRejectedSignedBoundEvent({
+        config, existingSubscription, fetchImpl,
+      });
     }
     throw error;
   }
@@ -345,10 +393,12 @@ export async function processResearchMembershipWebhook({
     if (concurrent) return verifiedDuplicate(concurrent, replayContext);
     throw error;
   }
-  if (persisted.action === 'duplicate') {
+  if (['duplicate', 'held_stale', 'held_nonactive'].includes(persisted.action)) {
     const concurrent = await readEvent();
     if (!concurrent) throw replayError();
-    return verifiedDuplicate(concurrent, replayContext);
+    const verified = verifiedDuplicate(concurrent, replayContext);
+    if (persisted.action !== 'duplicate' && verified.action !== persisted.action) throw replayError();
+    return verified;
   }
   return Object.freeze({
     action: persisted.action,

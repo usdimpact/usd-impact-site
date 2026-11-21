@@ -18,11 +18,10 @@ export class AccountDeletionFinalizerError extends Error {
 }
 
 function projectRefFromUrl(url) {
-  try {
-    return new URL(url).hostname.split('.')[0] || '';
-  } catch {
-    return '';
-  }
+  // Exact origin only: a lookalike project-ref prefix is not an API boundary.
+  if (url === `https://${DEVELOPMENT_PROJECT_REF}.supabase.co`) return DEVELOPMENT_PROJECT_REF;
+  if (url === `https://${PRODUCTION_PROJECT_REF}.supabase.co`) return PRODUCTION_PROJECT_REF;
+  return '';
 }
 
 function enabled(value) {
@@ -126,13 +125,27 @@ export async function listDueAccountDeletions({
   if (!config?.enabled) return [];
   const limit = normalizeBatchSize(batchSize);
   const dueAt = new Date(now).toISOString();
-  const path = `/rest/v1/profiles?status=eq.deletion_pending&deletion_due_at=lte.${encodeURIComponent(dueAt)}&select=account_id,email,status,deletion_requested_at,deletion_due_at&order=deletion_due_at.asc&limit=${limit}`;
-  const response = await fetchImpl(`${config.supabase.url}${path}`, {
-    method: 'GET',
-    headers: jsonHeaders(config.supabase.secretKey),
-  });
+  // The server-owned cursor advances past previously examined billing holds
+  // across daily invocations. Missing the RPC is an error, never a fallback to
+  // the oldest-N REST scan (which can starve all newer deletion requests).
+  const response = await fetchImpl(
+    `${config.supabase.url}/rest/v1/rpc/list_due_account_deletions_fair`,
+    {
+      method: 'POST',
+      headers: jsonHeaders(config.supabase.secretKey),
+      body: JSON.stringify({ p_limit: limit, p_due_at: dueAt }),
+    },
+  );
   const rows = await requireOk(response, 'ACCOUNT_DELETION_DUE_SCAN_FAILED');
-  return Array.isArray(rows) ? rows : [];
+  if (!Array.isArray(rows) || rows.length > limit || rows.some((row) =>
+    !row || typeof row.account_id !== 'string'
+    || row.status !== 'deletion_pending' || !row.deletion_due_at)) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion due scan returned an invalid response.',
+      'ACCOUNT_DELETION_DUE_SCAN_FAILED',
+    );
+  }
+  return rows;
 }
 
 export async function readDeletionProfile({ config, accountId, fetchImpl = fetch }) {
@@ -147,10 +160,11 @@ export async function readDeletionProfile({ config, accountId, fetchImpl = fetch
 
 export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch }) {
   const response = await fetchImpl(
-    `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}?should_soft_delete=true`,
+    `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}`,
     {
       method: 'DELETE',
       headers: jsonHeaders(config.supabase.secretKey),
+      body: JSON.stringify({ should_soft_delete: true }),
     },
   );
   if (response.status === 404) return Object.freeze({ alreadyAbsent: true });
@@ -402,6 +416,68 @@ async function finalizedProfileAfterFailure({ config, accountId, fetchImpl }) {
   return null;
 }
 
+// Research P1 billing-safe deletion. Runs BEFORE the irreversible Auth
+// soft-delete. Fails closed: an unreachable or malformed readiness answer is
+// treated as a hold. Local cancellation rows never clear a hold (enforced in
+// SQL); only an owner-recorded external billing clearance can.
+export class ResearchDeletionBillingHoldError extends AccountDeletionFinalizerError {
+  constructor(message, code, reasons = []) {
+    super(message, code);
+    this.name = 'ResearchDeletionBillingHoldError';
+    this.reasons = reasons;
+  }
+}
+
+export async function checkResearchDeletionBillingReadiness({ config, accountId, fetchImpl = fetch }) {
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabase.url}/rest/v1/rpc/check_research_deletion_billing_readiness`, {
+      method: 'POST',
+      headers: jsonHeaders(config.supabase.secretKey),
+      body: JSON.stringify({ p_account_id: accountId }),
+    });
+  } catch {
+    return Object.freeze({ clear: false, durable: false, escalate: false, reasons: ['readiness_unavailable'] });
+  }
+  let payload = null;
+  try {
+    const raw = await response.text();
+    payload = raw ? JSON.parse(raw) : null;
+  } catch {
+    payload = null;
+  }
+  if (!response.ok || !payload || typeof payload.clear !== 'boolean' || !Array.isArray(payload.reasons)) {
+    return Object.freeze({ clear: false, durable: false, escalate: false, reasons: ['readiness_unavailable'] });
+  }
+  if (payload.clear === true && payload.reasons.length === 0) {
+    return Object.freeze({ clear: true, durable: true, escalate: false, reasons: [] });
+  }
+  return Object.freeze({
+    clear: false,
+    durable: true,
+    escalate: payload.escalate === true,
+    reasons: payload.reasons.map((reason) => String(reason)).filter((reason) => /^[a-z_]{1,64}$/.test(reason)),
+  });
+}
+
+async function escalateResearchDeletionBillingHold({ config, accountId, email, fetchImpl }) {
+  const reference = await recordDeletionFinalizationEscalation({
+    config,
+    accountId,
+    email,
+    errorCode: 'RESEARCH_DELETION_BILLING_HOLD',
+    recoverable: false,
+    fetchImpl,
+  });
+  const response = await fetchImpl(`${config.supabase.url}/rest/v1/rpc/mark_research_deletion_hold_escalated`, {
+    method: 'POST',
+    headers: jsonHeaders(config.supabase.secretKey),
+    body: JSON.stringify({ p_account_id: accountId, p_reference: reference }),
+  });
+  await requireOk(response, 'RESEARCH_DELETION_HOLD_ESCALATION_MARK_FAILED');
+  return reference;
+}
+
 export async function finalizeOneDueAccount({
   profile,
   config,
@@ -411,6 +487,36 @@ export async function finalizeOneDueAccount({
   const accountId = String(profile?.account_id || '');
   const originalEmail = String(profile?.email || '');
   let completion = null;
+  const readiness = await checkResearchDeletionBillingReadiness({ config, accountId, fetchImpl });
+  if (!readiness.clear) {
+    let escalated = false;
+    if (readiness.escalate && originalEmail) {
+      try {
+        await escalateResearchDeletionBillingHold({ config, accountId, email: originalEmail, fetchImpl });
+        escalated = true;
+      } catch (escalationError) {
+        // The SQL claim expires after one hour, so a later run re-escalates.
+        console.error('Research deletion billing hold escalation failed.', {
+          code: typeof escalationError?.code === 'string'
+            ? escalationError.code
+            : 'RESEARCH_DELETION_HOLD_ESCALATION_FAILED',
+        });
+      }
+    }
+    if (!readiness.durable) {
+      console.error('Research deletion billing readiness unavailable; Auth deletion withheld.', {
+        code: 'RESEARCH_DELETION_READINESS_UNAVAILABLE',
+      });
+    }
+    return Object.freeze({
+      status: 'billing_hold',
+      accountReference: opaqueReference(accountId),
+      outboxId: null,
+      durable: readiness.durable,
+      escalated,
+      reasons: readiness.reasons,
+    });
+  }
   try {
     await softDeleteAuthUser({ config, accountId, fetchImpl });
     completion = await finalizeAccountDeletionRecord({ config, accountId, fetchImpl });
@@ -484,6 +590,7 @@ export async function runDueAccountDeletionFinalizer({
       finalized: 0,
       alreadyFinalized: 0,
       failed: 0,
+      billingHeld: 0,
     });
   }
 
@@ -502,10 +609,12 @@ export async function runDueAccountDeletionFinalizer({
   let finalized = 0;
   let alreadyFinalized = 0;
   let failed = 0;
+  let billingHeld = 0;
   for (const profile of profiles) {
     try {
       const result = await finalizeOneDueAccount({ profile, config, environment, fetchImpl });
       if (result.status === 'already_finalized') alreadyFinalized += 1;
+      else if (result.status === 'billing_hold') billingHeld += 1;
       else finalized += 1;
     } catch (error) {
       failed += 1;
@@ -523,6 +632,7 @@ export async function runDueAccountDeletionFinalizer({
     finalized,
     alreadyFinalized,
     failed,
+    billingHeld,
   });
 }
 

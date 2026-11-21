@@ -89,6 +89,14 @@ export async function decideResearchPreviewRequest({
     return redirect(url, '/research/access-required/', 'denied');
   }
 
+  // readAccountAccessState returns the raw entitlement row even when the
+  // profile is not active (deletion_pending, deleted, disabled), so the
+  // entitlement state alone is not an authorization. Fail closed unless the
+  // server-read profile is active.
+  if (state?.profile?.status !== 'active') {
+    return redirect(url, '/research/access-required/', 'denied');
+  }
+
   const subscriptionState = state?.entitlement?.state;
   if (!KNOWN_RESEARCH_STATES.has(subscriptionState)) {
     return redirect(url, '/research/access-required/', 'denied');

@@ -119,3 +119,13 @@ jobs:
         run: npm run validate:daily-cards
       - name: Build production site
         run: npm run build
+      - name: Verify October Monthly excluded from default build (local CI only)
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/test-independent-macro-monthly-preview.mjs --built
+      - name: Verify October Monthly Preview build and sitemap isolation (local CI only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERCEL_ENV: preview
+        run: |
+          npm run build
+          node scripts/test-independent-macro-monthly-preview.mjs --built

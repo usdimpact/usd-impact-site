@@ -1,0 +1,103 @@
+# Owner D1 approval (2026-11-04): isolated secrets-free PostgreSQL tests only.
+# NEVER use production/development Supabase, real merchant tokens, or live customers.
+name: Research D1 isolated PostgreSQL 2-session review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - '.github/workflows/research-d1-ephemeral-postgres-review.yml'
+      - 'scripts/test-research-d1-postgres-concurrency.py'
+      - 'docs/operations/research-b3-versioned-receipts-pglite-review-2026-11-04.sql'
+      - 'docs/operations/research-b4-synthetic-binding-conflict-2026-11-04.sql'
+      - 'scripts/test-research-d1-b4-binding-conflicts.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-d1-isolated-review-pr
+  cancel-in-progress: true
+
+jobs:
+  real-postgres-review-only:
+    # Same-repo controlled review branch. Never run in pull_request_target context.
+    if: startsWith(github.head_ref, 'agent/1103-d1-ephemeral-pg-') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: 'ci_review'
+      PGUSER: 'ci_research'
+      # Public synthetic-only fixture. NOT a credential for any real service.
+      PGPASSWORD: 'ci_fixture_only_password'
+    services:
+      postgres:
+        # Docker Official Image postgres:16.15-bookworm pinned to index digest.
+        image: postgres:16.15-bookworm@sha256:e8a07d2c7579b038938cdba6c539e580e5001caf9ea203d397b5cc83e76bd938
+        env:
+          POSTGRES_DB: 'ci_review'
+          POSTGRES_USER: 'ci_research'
+          POSTGRES_PASSWORD: 'ci_fixture_only_password'
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out read-only PR contents
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 pinned
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify isolated fixture paths and no remote DB variable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$CI" = "true"
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "ci_review"
+          test "$PGUSER" = "ci_research"
+          test -f scripts/test-research-d1-postgres-concurrency.py
+          test -f docs/operations/research-b3-versioned-receipts-pglite-review-2026-11-04.sql
+          test -f docs/operations/research-b4-synthetic-binding-conflict-2026-11-04.sql
+          test -f scripts/test-research-d1-b4-binding-conflicts.py
+          echo "D1 isolated review: no Supabase keys, production URLs or real merchant API calls."
+
+      - name: Install pinned test-only Python PostgreSQL client in runner venv
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/research-d1-venv"
+          "$RUNNER_TEMP/research-d1-venv/bin/python" -m pip install --disable-pip-version-check --no-input "psycopg[binary]==3.2.10"
+
+      - name: Execute actual independent PostgreSQL connections
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/research-d1-venv/bin/python" scripts/test-research-d1-postgres-concurrency.py
+
+      - name: B-4 synthetic binding/entitlement and restricted-role negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/research-d1-venv/bin/python" scripts/test-research-d1-b4-binding-conflicts.py
+
+      - name: Append scope of evidence to workflow summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Research D1 isolated PostgreSQL review"
+            echo "This job uses ONLY a temporary, synthetic Postgres 16.15 service container."
+            echo "Real two-session tests apply to the B-3 *prototype*, not deployed subscription/entitlement code."
+            echo "No Supabase Production/Development DB, customer identity, merchant key, migrations or credentials."
+            echo "B-4 uses synthetic bindings, signed-paid observations, and non-superuser fake roles only."
+            echo "Actual USD Impact T13/T21/T22, real Supabase D2 roles, provider HMAC, refunds and D7 activation remain HOLD."
+          } >> "$GITHUB_STEP_SUMMARY"

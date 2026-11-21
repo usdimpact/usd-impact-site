@@ -1,5 +1,13 @@
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
-import { processResearchMembershipWebhook } from './research-membership-webhook-handler.js';
+import {
+  processResearchMembershipWebhook,
+  inspectSignedResearchWebhookReceiptEnvelope,
+} from './research-membership-webhook-handler.js';
+import {
+  beginResearchWebhookReceipt,
+  finishResearchWebhookReceipt,
+  researchReceiptEvidenceEnabled,
+} from './research-membership-receipt-evidence.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
@@ -427,12 +435,49 @@ export async function bindResearchMembershipFirstPurchase({
   });
   const payload = await readJson(response);
   if (!response.ok) {
+    // Match exact trusted RPC messages only. Never echo arbitrary PostgREST
+    // text or provider PII into a receipt or a public API response.
+    if (payload?.message === 'Research Membership account already has a current subscription') {
+      fail('An additional paid Research subscription requires manual reconciliation.',
+        'RESEARCH_DUPLICATE_PAID_SUBSCRIPTION', 409);
+    }
     fail('Research Membership first-purchase binding failed.', 'RESEARCH_FIRST_PURCHASE_BINDING_FAILED', response.status >= 400 && response.status <= 599 ? response.status : 502);
   }
   if (!payload || !['created', 'existing'].includes(payload.action) || !UUID_PATTERN.test(text(payload.subscription_id))) {
     fail('Research Membership first-purchase binding returned an invalid result.', 'RESEARCH_FIRST_PURCHASE_BINDING_INVALID', 502);
   }
   return Object.freeze({ ...payload });
+}
+
+// Preserve the exact legacy flow when receipt auditing is not explicitly
+// authorized. The new flag is absent by default and is NOT set by this Draft.
+async function runResearchFirstPurchase({ rawBody, signature, environment, fetchImpl, processImpl }) {
+  try {
+    return await processImpl({ rawBody, signature, environment, fetchImpl });
+  } catch (error) {
+    if (error?.code !== 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND') throw error;
+  }
+  const binding = inspectResearchMembershipFirstPurchase({ rawBody, signature, environment });
+  await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
+  return processImpl({ rawBody, signature, environment, fetchImpl });
+}
+
+function classifyResearchReceiptFailure(error) {
+  if (error?.code === 'RESEARCH_DUPLICATE_PAID_SUBSCRIPTION') return error;
+  if (error?.message === 'Research Membership entitlement subscription mismatch') {
+    return new ResearchMembershipFirstPurchaseError(
+      'Existing Research entitlement requires reconciliation.',
+      'RESEARCH_ENTITLEMENT_CONFLICT',
+      409,
+    );
+  }
+  return error;
+}
+
+function receiptFailureCode(error) {
+  if (error?.code === 'RESEARCH_DUPLICATE_PAID_SUBSCRIPTION') return error.code;
+  if (error?.code === 'RESEARCH_ENTITLEMENT_CONFLICT') return error.code;
+  return 'RESEARCH_WEBHOOK_PROCESSING_FAILED';
 }
 
 export async function processResearchMembershipWebhookWithFirstPurchase({
@@ -442,15 +487,43 @@ export async function processResearchMembershipWebhookWithFirstPurchase({
   fetchImpl = fetch,
   processImpl = processResearchMembershipWebhook,
 }) {
-  try {
-    return await processImpl({ rawBody, signature, environment, fetchImpl });
-  } catch (error) {
-    if (error?.code !== 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND') throw error;
+  const params = { rawBody, signature, environment, fetchImpl, processImpl };
+  if (!researchReceiptEvidenceEnabled(environment)) {
+    return runResearchFirstPurchase(params);
   }
 
-  const binding = inspectResearchMembershipFirstPurchase({ rawBody, signature, environment });
-  await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
-  return processImpl({ rawBody, signature, environment, fetchImpl });
+  // Verify the signed event, store, product, variant, mode and source before
+  // writing any receipt. No unsigned provider event can create evidence.
+  const evidence = inspectSignedResearchWebhookReceiptEnvelope({
+    rawBody, signature, environment,
+  });
+  const receipt = await beginResearchWebhookReceipt({ evidence, fetchImpl });
+  if (!receipt.shouldProcess) {
+    return Object.freeze({
+      action: 'duplicate',
+      providerEventId: evidence.providerEventId,
+      providerSubscriptionId: evidence.providerSubscriptionId,
+    });
+  }
+
+  let result;
+  try {
+    result = await runResearchFirstPurchase(params);
+  } catch (error) {
+    const classified = classifyResearchReceiptFailure(error);
+    // A failed business transition rolls back independently, but the receipt
+    // is a separate committed RPC. NEVER call it processed after a conflict.
+    await finishResearchWebhookReceipt({
+      evidence, receipt, status: 'failed',
+      errorCode: receiptFailureCode(classified), fetchImpl,
+    });
+    throw classified;
+  }
+  await finishResearchWebhookReceipt({
+    evidence, receipt, status: result?.action === 'ignored' ? 'ignored' : 'processed',
+    fetchImpl,
+  });
+  return result;
 }
 
 export function publicResearchMembershipFirstPurchaseError(error) {

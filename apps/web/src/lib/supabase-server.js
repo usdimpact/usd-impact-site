@@ -94,6 +94,26 @@ async function readJsonSafely(response) {
   }
 }
 
+// PostgREST treats modern sb_publishable_/sb_secret_ API keys as opaque
+// gateway credentials, not JWTs. Only a real user access token (or a legacy
+// JWT-form API key) belongs in Authorization: Bearer. In particular, do not
+// send Bearer sb_secret_ or Bearer sb_publishable_ on server-to-REST requests.
+export function buildSupabaseRestHeaders({ apiKey, accessToken = null, headers = {} }) {
+  if (typeof apiKey !== 'string' || !apiKey) {
+    throw new SupabaseConfigurationError('A Supabase API key is required.');
+  }
+  if (accessToken !== null && (typeof accessToken !== 'string' || !accessToken.trim())) {
+    throw new SupabaseConfigurationError('A Supabase user token must be a nonempty string.');
+  }
+  const bearer = accessToken || (apiKey.startsWith('eyJ') ? apiKey : null);
+  return {
+    ...JSON_HEADERS,
+    apikey: apiKey,
+    ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    ...headers,
+  };
+}
+
 async function supabaseFetch({
   config,
   path,
@@ -110,12 +130,7 @@ async function supabaseFetch({
   const apiKey = useSecret ? config.secretKey : config.publishableKey;
   const response = await fetchImpl(`${config.url}${path}`, {
     method,
-    headers: {
-      ...JSON_HEADERS,
-      apikey: apiKey,
-      Authorization: `Bearer ${accessToken || apiKey}`,
-      ...headers,
-    },
+    headers: buildSupabaseRestHeaders({ apiKey, accessToken, headers }),
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   const payload = await readJsonSafely(response);

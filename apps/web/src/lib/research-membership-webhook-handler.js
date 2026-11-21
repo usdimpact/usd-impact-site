@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import {
+  LEMON_SQUEEZY_RESEARCH_EVENTS,
   inspectLemonSqueezyResearchMembershipWebhook,
   normalizeLemonSqueezyResearchMembershipWebhook,
   prepareLemonSqueezyResearchMembershipTransition,
@@ -155,6 +157,81 @@ function signedEnvelope(rawBody, signature, secret) {
     throw error;
   }
   return { body, providerSubscriptionId };
+}
+
+// Signed, catalog-scoped evidence for opt-in Research receipt auditing.
+// This does not determine entitlement state or authorize a transaction.
+// The receipt ID must be stable across delivery-only meta.webhook_id changes.
+function canonicalReceiptObject(value) {
+  if (Array.isArray(value)) return value.map(canonicalReceiptObject);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => [k, canonicalReceiptObject(v)]),
+    );
+  }
+  return value;
+}
+
+export function inspectSignedResearchWebhookReceiptEnvelope({
+  rawBody,
+  signature,
+  environment = process.env,
+}) {
+  const config = readConfig(environment);
+  const envelope = signedEnvelope(rawBody, signature, config.secret);
+  const payload = JSON.parse(envelope.body.toString('utf8'));
+  const meta = payload.meta;
+  const data = payload.data;
+  const attributes = data.attributes;
+  const eventType = text(meta?.event_name);
+  if (!LEMON_SQUEEZY_RESEARCH_EVENTS.includes(eventType)) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_EVENT_INVALID', 400);
+  }
+  const isInvoice = eventType.startsWith('subscription_payment_');
+  if (isInvoice !== (data.type === 'subscription-invoices')
+      || !['subscriptions', 'subscription-invoices'].includes(data.type)
+      || typeof data.id !== 'string' && typeof data.id !== 'number') {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_OBJECT_INVALID', 400);
+  }
+  if (attributes.test_mode !== config.expectedTestMode
+      || String(attributes.store_id) !== String(config.storeId)
+      || (data.type === 'subscriptions'
+        && (String(attributes.product_id) !== String(config.productId)
+          || !config.variantIds.some((id) => String(id) === String(attributes.variant_id))))) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_CATALOG_INVALID', 409);
+  }
+  const dataId = String(data.id).trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}$/.test(dataId)) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_OBJECT_INVALID', 400);
+  }
+  const eventDate = new Date(attributes.updated_at || attributes.created_at);
+  if (!Number.isFinite(eventDate.getTime())) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_CLOCK_INVALID', 400);
+  }
+  const providerEventId = `${PROVIDER}:${eventType}:${data.type}:${dataId}:${eventDate.toISOString()}`;
+  if (providerEventId.length > 255) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_EVENT_INVALID', 400);
+  }
+
+  // Only a known delivery-only field is omitted. Other changed, signed
+  // provider evidence produces a different fingerprint and fails closed.
+  const canonicalPayload = {
+    ...payload,
+    meta: { ...meta },
+  };
+  delete canonicalPayload.meta.webhook_id;
+  const semanticSha256 = createHash('sha256')
+    .update(JSON.stringify(canonicalReceiptObject(canonicalPayload)))
+    .digest('hex');
+  return Object.freeze({
+    providerEventId,
+    providerSubscriptionId: envelope.providerSubscriptionId,
+    eventType,
+    semanticSha256,
+    supabaseUrl: config.supabaseUrl,
+    supabaseSecret: config.supabaseSecret,
+  });
 }
 
 function headers(secretKey) {

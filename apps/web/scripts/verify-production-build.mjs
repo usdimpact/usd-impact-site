@@ -46,7 +46,22 @@ for (const file of fs.readdirSync(monthlyReportRoot).filter((name) => name.endsW
   }
 }
 
+// A real Production build with a configured GA4 ID must contain the actual
+// configuration in its generated public English HTML. Never silently pass
+// an otherwise successful build with analytics accidentally suppressed.
 const homepage = path.join(distRoot, 'index.html');
+if (String(process.env.VERCEL_ENV ?? '').trim().toLowerCase() === 'production' && fs.existsSync(homepage)) {
+  const configuredId = String(process.env.PUBLIC_GA4_MEASUREMENT_ID ?? '').trim();
+  const homeHtml = fs.readFileSync(homepage, 'utf8');
+  const hasGa4Config = homeHtml.includes('id="usd-impact-ga4-config"');
+  if (configuredId) {
+    if (!hasGa4Config || !homeHtml.includes(`data-ga4-measurement-id="${configuredId}"`)) {
+      failures.push('Configured Production GA4 is absent from generated public HTML.');
+    }
+  } else if (hasGa4Config || homeHtml.includes('data-ga4-measurement-id=')) {
+    failures.push('GA4-off Production build unexpectedly contains a GA4 configuration bridge.');
+  }
+}
 if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');
 else {
   const html = fs.readFileSync(homepage, 'utf8');

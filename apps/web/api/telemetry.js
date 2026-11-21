@@ -203,7 +203,13 @@ async function handleReport(request, response) {
     return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
   }
 
-  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
+  // Optional aggregate reports must never be readable in Preview or unknown targets,
+  // even with an otherwise valid bearer token or shared Upstash configuration.
+  if (String(process.env.VERCEL_ENV ?? '').trim().toLowerCase() !== 'production') {
+    return send(response, 404, { error: 'Not found.' });
+  }
+  // Dedicated reporting privilege only; NEWSFEED_BEARER_TOKEN is not a substitute.
+  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN;
   if (!endpointToken) {
     console.error('Telemetry report token is not configured.');
     return send(response, 503, { error: 'Telemetry reporting is not configured.' });
@@ -344,7 +350,13 @@ async function handleCheckoutFunnelReport(request, response) {
     return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
   }
 
-  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
+  // Optional aggregate reports must never be readable in Preview or unknown targets,
+  // even with an otherwise valid bearer token or shared Upstash configuration.
+  if (String(process.env.VERCEL_ENV ?? '').trim().toLowerCase() !== 'production') {
+    return send(response, 404, { error: 'Not found.' });
+  }
+  // Dedicated reporting privilege only; NEWSFEED_BEARER_TOKEN is not a substitute.
+  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN;
   if (!endpointToken) {
     console.error('Telemetry report token is not configured.');
     return send(response, 503, { error: 'Telemetry reporting is not configured.' });
@@ -383,7 +395,13 @@ async function handleChecklistReport(request, response) {
     return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
   }
 
-  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
+  // Optional aggregate reports must never be readable in Preview or unknown targets,
+  // even with an otherwise valid bearer token or shared Upstash configuration.
+  if (String(process.env.VERCEL_ENV ?? '').trim().toLowerCase() !== 'production') {
+    return send(response, 404, { error: 'Not found.' });
+  }
+  // Dedicated reporting privilege only; NEWSFEED_BEARER_TOKEN is not a substitute.
+  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN;
   if (!endpointToken) {
     console.error('Telemetry report token is not configured.');
     return send(response, 503, { error: 'Telemetry reporting is not configured.' });
@@ -446,12 +464,11 @@ async function handleEvent(request, response) {
     });
   }
 
-  const vercelEnvironment = String(process.env.VERCEL_ENV ?? '').trim();
-  if (
-    normalized.record.eventName.startsWith('checkout_')
-    && vercelEnvironment
-    && vercelEnvironment !== 'production'
-  ) {
+  // No optional telemetry, including checklist/quiz events, may be recorded
+  // by Previews, Development or an unknown deployment environment. This
+  // check precedes duplicate-state mutation and every storage/log write.
+  const vercelEnvironment = String(process.env.VERCEL_ENV ?? '').trim().toLowerCase();
+  if (vercelEnvironment !== 'production') {
     return send(response, 202, {
       accepted: true,
       duplicate: false,

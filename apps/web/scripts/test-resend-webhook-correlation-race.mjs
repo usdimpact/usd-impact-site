@@ -96,7 +96,7 @@ function queuedFetch(responses) {
       attempt_count: 1,
     }], 201),
     jsonResponse([]),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-pending', status: 'failed', attempt_count: 1 }]),
   ]);
   const response = responseMock();
 
@@ -141,7 +141,7 @@ function queuedFetch(responses) {
       provider_message_ref: emailId,
     }]),
     jsonResponse([{ id: 'outbox-ready', status: 'delivered', provider_message_ref: emailId }]),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-pending', status: 'processed', attempt_count: 2 }]),
   ]);
   const response = responseMock();
 

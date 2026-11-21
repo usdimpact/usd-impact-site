@@ -73,6 +73,19 @@ function jsonResponse(body, status = 200) {
 function queueFetch(responses) {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
+    const origin = new URL(url).origin;
+    if (origin === baseEnvironment.SUPABASE_URL) {
+      assert.ok(new URL(url).pathname.startsWith('/rest/v1/'));
+      assert.equal(options.headers?.apikey, baseEnvironment.SUPABASE_SECRET_KEY);
+      assert.equal(Object.keys(options.headers || {}).some((key) => key.toLowerCase() === 'authorization'), false,
+        'Supabase unsubscribe persistence must omit non-JWT opaque Bearer');
+    } else if (origin === 'https://api.resend.com') {
+      // Resend's independent API token MUST continue to use Bearer.
+      assert.equal(options.headers?.Authorization, `Bearer ${baseEnvironment.RESEND_API_KEY}`);
+      assert.equal(Object.hasOwn(options.headers || {}, 'apikey'), false);
+    } else {
+      assert.fail('Unrecognized unsubscribe HTTP destination');
+    }
     calls.push({
       url: String(url),
       method: options.method || 'GET',

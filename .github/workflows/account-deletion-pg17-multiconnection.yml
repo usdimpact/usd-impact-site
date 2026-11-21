@@ -1,0 +1,68 @@
+name: Account deletion real PostgreSQL 17 claim concurrency - isolated CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/scripts/fixtures/account-deletion-pg17-claim-schema.sql'
+      - 'apps/web/scripts/test-account-deletion-pg17-multiconnection.mjs'
+      - 'docs/operations/candidates/account-deletion-atomic-claim.review.sql'
+      - '.github/workflows/account-deletion-pg17-multiconnection.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-postgres-independent-connections:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: issue950-local-fixture-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: issue950-local-fixture-only
+      PGDATABASE: postgres
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Require isolated localhost database and no service keys
+        run: |
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'postgres'
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          test -z "${RESEND_API_KEY:-}"
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get -qq update
+            sudo apt-get -qq install -y --no-install-recommends postgresql-client
+          fi
+          psql --version
+      - name: Prepare synthetic fixtures and execute claim SQL in CI only
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f apps/web/scripts/fixtures/account-deletion-pg17-claim-schema.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/operations/candidates/account-deletion-atomic-claim.review.sql
+      - name: Race real independent PostgreSQL connections
+        run: |
+          node --check apps/web/scripts/test-account-deletion-pg17-multiconnection.mjs
+          node apps/web/scripts/test-account-deletion-pg17-multiconnection.mjs

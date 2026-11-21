@@ -1,5 +1,5 @@
 import { readTheDollarFirstAudiobook } from '../data/read-the-dollar-first-audiobook.js';
-import { readSupabaseServerConfig } from './supabase-server.js';
+import { buildSupabaseRestHeaders, readSupabaseServerConfig } from './supabase-server.js';
 
 export const AUDIOBOOK_MEMBER_PATH = '/guided-edition/audiobook/';
 export const AUDIOBOOK_TRACK_PATH_PREFIX = '/guided-edition/audiobook/track/';
@@ -116,11 +116,10 @@ export async function createSignedAudiobookTrackUrl({
     response = await fetchImpl(endpoint, {
       method: 'POST',
       cache: 'no-store',
-      headers: {
-        apikey: resolvedConfig.secretKey,
-        Authorization: `Bearer ${resolvedConfig.secretKey}`,
-        'Content-Type': 'application/json',
-      },
+      // Reuse the application's verified credential contract: opaque
+      // sb_secret_ keys go ONLY in apikey; legacy JWT keys retain Bearer.
+      // Storage signing still requires a separately verified real-provider test.
+      headers: buildSupabaseRestHeaders({ apiKey: resolvedConfig.secretKey }),
       body: JSON.stringify({ expiresIn }),
     });
   } catch {

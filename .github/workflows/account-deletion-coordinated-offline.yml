@@ -1,0 +1,42 @@
+name: Account deletion coordinated recovery-first no-send integration
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/account-deletion-coordinated-offline-candidate.js'
+      - 'apps/web/src/lib/account-deletion-due-batch-candidate.js'
+      - 'apps/web/src/lib/account-deletion-completion-recovery-candidate.js'
+      - 'apps/web/scripts/test-account-deletion-coordinated-offline-candidate.mjs'
+      - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
+      - '.github/workflows/account-deletion-coordinated-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-recovery-before-auth:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: No provider secrets or external account mutations
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          node --check src/lib/account-deletion-coordinated-offline-candidate.js
+          node --check scripts/test-account-deletion-coordinated-offline-candidate.mjs
+          node scripts/test-account-deletion-coordinated-offline-candidate.mjs
+          node scripts/test-account-deletion-review-only-activation.mjs

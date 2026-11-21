@@ -119,3 +119,6 @@ assert.throws(
 );
 
 console.log('Research Membership provider-neutral event adapter matrix passed.');
+
+// REVIEW-ONLY: explicitly does not modify live webhook or SQL ordering behavior.
+await import('./test-research-membership-ordering-review.mjs');

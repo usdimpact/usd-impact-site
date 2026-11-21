@@ -1,0 +1,39 @@
+name: Supabase REST opaque-key header contracts
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/supabase-server.js'
+      - 'apps/web/src/lib/guided-supabase-server.js'
+      - 'apps/web/scripts/test-supabase-foundation.mjs'
+      - 'apps/web/scripts/test-guided-supabase-server.mjs'
+      - '.github/workflows/supabase-rest-opaque-headers.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-rest-header-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout code with no persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Check syntax and run offline authorization contracts
+        run: |
+          node --check src/lib/supabase-server.js
+          node --check src/lib/guided-supabase-server.js
+          node --check scripts/test-supabase-foundation.mjs
+          node --check scripts/test-guided-supabase-server.mjs
+          node scripts/test-supabase-foundation.mjs
+          node scripts/test-guided-supabase-server.mjs
+          node scripts/test-supabase-auth.mjs

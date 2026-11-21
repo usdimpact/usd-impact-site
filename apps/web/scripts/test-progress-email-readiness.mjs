@@ -73,6 +73,9 @@ function eqFilter(url, key) {
 
 function createFetch({
   grantUserId = ACCOUNT_ID,
+  grantEmail = EMAIL,
+  grantPurpose = 'learning_progress_updates',
+  withLinkedWithdrawal = false,
   weeklyHistory = [],
   progressHistory = [],
   suppressionHistory = [],
@@ -117,12 +120,12 @@ function createFetch({
       const purpose = eqFilter(url, 'purpose');
       if (purpose === 'weekly_newsletter') return jsonResponse([]);
       if (purpose === 'learning_progress_updates') {
-        return jsonResponse([{
+        const grant = {
           id: GRANT_ID,
           idempotency_key: `consent:v1:${'a'.repeat(64)}`,
-          email_normalized: EMAIL,
+          email_normalized: grantEmail,
           user_id: grantUserId,
-          purpose: 'learning_progress_updates',
+          purpose: grantPurpose,
           status: 'granted',
           consent_text_version: 'learning-progress-v1',
           privacy_notice_version: 'privacy-v1',
@@ -131,7 +134,17 @@ function createFetch({
           captured_at: '2026-09-01T10:00:00.000Z',
           related_grant_id: null,
           withdrawn_at: null,
-        }]);
+        };
+        const withdrawal = {
+          id: '55555555-5555-4555-8555-555555555555',
+          email_normalized: grantEmail,
+          purpose: 'learning_progress_updates',
+          status: 'withdrawn',
+          related_grant_id: GRANT_ID,
+          captured_at: '2026-09-10T10:00:00.000Z',
+          withdrawn_at: '2026-09-10T10:00:00.000Z',
+        };
+        return jsonResponse(withLinkedWithdrawal ? [withdrawal, grant] : [grant]);
       }
     }
     if (url.pathname === '/rest/v1/notification_outbox') {
@@ -189,6 +202,26 @@ const mismatchedConsent = await resolveProgressEmailCandidate({
 assert.equal(mismatchedConsent.eligible, false);
 assert.equal(mismatchedConsent.reason, 'consent_not_granted');
 
+// Issue #620: adversarial consent fixtures must never turn another purpose,
+// another recipient, or a withdrawn grant into Learning Progress authorization.
+// Synthetic rows deliberately violate the query filter to prove defense in depth.
+for (const [description, overrides] of [
+  ['wrong purpose', { grantPurpose: 'book_availability' }],
+  ['wrong recipient', { grantEmail: 'other-qa@example.com' }],
+  ['linked withdrawal', { withLinkedWithdrawal: true }],
+]) {
+  const rejected = await resolveProgressEmailCandidate({
+    accountId: ACCOUNT_ID,
+    meaningfulChanges,
+    weeklyReport,
+    environment,
+    fetchImpl: createFetch(overrides),
+    now,
+  });
+  assert.equal(rejected.eligible, false, `${description} must not authorize a send`);
+  assert.equal(rejected.reason, 'consent_not_granted', description);
+}
+
 const weeklyCollision = await resolveProgressEmailCandidate({
   accountId: ACCOUNT_ID,
   meaningfulChanges,
@@ -241,5 +274,49 @@ await assert.rejects(
   }),
   (error) => error instanceof ProgressEmailReadinessError && error.code === 'PROGRESS_EMAIL_PRODUCTION_BLOCKED',
 );
+
+// Production Progress readiness remains explicitly unsupported by this
+// implementation slice, independently of dispatch flags or database routing.
+// Check before any authenticated user lookup, outbox mutation, or provider call.
+for (const [description, overrides, expectedCode] of [
+  ['Production with canonical database and apparent send flags', {
+    VERCEL_ENV: 'production',
+    SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+    PROGRESS_EMAIL_PRODUCTION_ENABLED: 'true',
+    PROGRESS_EMAIL_DISPATCH_ENABLED: 'true',
+    PROGRESS_EMAIL_DELIVERY_ENABLED: 'true',
+  }, 'PROGRESS_EMAIL_PRODUCTION_BLOCKED'],
+  ['Production accidentally pointed at Development', {
+    VERCEL_ENV: 'production',
+    SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+  }, 'PROGRESS_EMAIL_PRODUCTION_BLOCKED'],
+  ['Preview accidentally pointed at Production', {
+    VERCEL_ENV: 'preview',
+    SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+  }, 'PROGRESS_EMAIL_PRODUCTION_BLOCKED'],
+  ['Preview pointed at an unapproved project', {
+    VERCEL_ENV: 'preview',
+    SUPABASE_URL: 'https://unapproved-project.supabase.co',
+  }, 'UNEXPECTED_SUPABASE_PROJECT'],
+  ['Readiness ledger disabled', {
+    EMAIL_READINESS_LEDGER_ENABLED: 'false',
+  }, 'EMAIL_LEDGER_DISABLED'],
+]) {
+  let networkCalls = 0;
+  await assert.rejects(
+    () => readProgressEmailAccountState({
+      accountId: ACCOUNT_ID,
+      environment: { ...environment, ...overrides },
+      fetchImpl: async () => {
+        networkCalls += 1;
+        throw new Error('Fail-closed configuration guard must precede network access.');
+      },
+      now,
+    }),
+    (error) => error instanceof ProgressEmailReadinessError && error.code === expectedCode,
+    description,
+  );
+  assert.equal(networkCalls, 0, `${description}: no network calls allowed`);
+}
 
 console.log('progress email readiness tests passed');

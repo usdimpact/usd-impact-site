@@ -1,0 +1,48 @@
+name: Account deletion pre-Auth snapshot guard — offline only
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/account-deletion-finalizer.js'
+      - 'apps/web/scripts/test-account-deletion-finalizer.mjs'
+      - 'apps/web/scripts/test-account-deletion-preauth-revalidation.mjs'
+      - '.github/workflows/account-deletion-preauth-snapshot-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-preauth-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persisted Git credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Test fail-closed revalidation without user or admin credentials
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${DEV_PGPASSWORD:-}"
+          node --check src/lib/account-deletion-finalizer.js
+          node --check scripts/test-account-deletion-finalizer.mjs
+          node --check scripts/test-account-deletion-preauth-revalidation.mjs
+          node scripts/test-account-deletion-preauth-revalidation.mjs
+          node scripts/test-account-deletion-finalizer.mjs
+          node scripts/test-account-deletion-finalizer-batch-bound.mjs
+          node scripts/test-account-deletion-scheduler-contract.mjs
+          node scripts/test-lifecycle-qa-route.mjs

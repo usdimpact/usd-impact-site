@@ -47,10 +47,20 @@ function persistedOutbox(intent, overrides = {}) {
   };
 }
 
+function assertOpaqueLedgerRequest(url, options = {}) {
+  const parsed = new URL(url);
+  assert.equal(parsed.origin, developmentEnvironment.SUPABASE_URL);
+  assert.ok(parsed.pathname.startsWith('/rest/v1/'));
+  assert.equal(options.headers?.apikey, developmentEnvironment.SUPABASE_SECRET_KEY);
+  assert.equal(Object.hasOwn(options.headers || {}, 'Authorization'), false,
+    'An opaque sb_secret_ key must not be used as a Bearer JWT for outbox REST');
+}
+
 function createLedgerMock(initial) {
   let row = { ...initial };
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
+    assertOpaqueLedgerRequest(url, options);
     calls.push({ url, options });
     if (options.method === 'POST') return response(201, [row]);
     if (options.method === 'PATCH') {
@@ -122,6 +132,7 @@ await assert.rejects(
     },
     environment: developmentEnvironment,
     fetchImpl: async (url, options = {}) => {
+      assertOpaqueLedgerRequest(url, options);
       if (options.method === 'PATCH') {
         conflictRow = { ...conflictRow, status: 'sending', attempt_count: 1 };
         return response(200, []);

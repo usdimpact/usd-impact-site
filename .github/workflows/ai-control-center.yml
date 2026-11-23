@@ -46,6 +46,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -102,18 +103,58 @@ jobs:
       - name: Prepare automatic state snapshot branch
         if: github.event_name == 'schedule' || steps.resolve.outputs.command == 'sync'
         id: snapshot
+        env:
+          PUSH_TOKEN: ${{ github.token }}
         run: |
+          # B2.3 Stage 1 push isolation: checkout keeps no credential. PUSH_TOKEN
+          # is set only for this step, is un-exported before any child process
+          # starts, and is handed to one git push as process-only Git config.
+          usd_push_token="${PUSH_TOKEN-}"
+          unset PUSH_TOKEN
+          usd_guard_branch() {
+            local allowed='^automation/control-center-state$'
+            if [ -z "${1-}" ] || ! [[ "$1" =~ $allowed ]] || ! git check-ref-format "refs/heads/$1"; then
+              echo "::error::Unapproved automation branch name; push held."
+              return 1
+            fi
+          }
+          usd_prepare_push_auth() {
+            usd_push_auth=""
+            if [ -z "$usd_push_token" ]; then
+              echo "::error::Missing job push token; push held."
+              return 1
+            fi
+            usd_push_auth="$(printf 'x-access-token:%s' "$usd_push_token" | base64 | tr -d '\n')"
+            if [ -z "$usd_push_auth" ]; then
+              echo "::error::Push credential could not be prepared; push held."
+              return 1
+            fi
+            printf '::add-mask::%s\n' "$usd_push_auth"
+          }
           if git diff --quiet -- docs/operations/ai-control-center/PROJECT_STATE.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           branch="automation/control-center-state"
+          usd_guard_branch "$branch" || exit 1
           git config user.name "usd-impact-control-center"
           git config user.email "actions@users.noreply.github.com"
           git checkout -B "$branch"
           git add docs/operations/ai-control-center/PROJECT_STATE.json
           git commit -m "Refresh USD Impact control-center state"
-          git push --force-with-lease origin "$branch"
+          if ! git rev-parse --verify --quiet refs/remotes/origin/main >/dev/null; then
+            echo "::error::Remote-tracking refs unavailable; lease not established; push held."
+            exit 1
+          fi
+          # Explicit lease from the full-history checkout fetch: an existing state
+          # branch must still be at lease_sha; an empty lease_sha means it must not exist.
+          lease_sha="$(git rev-parse --verify --quiet "refs/remotes/origin/$branch" || true)"
+          usd_prepare_push_auth || exit 1
+          GIT_TERMINAL_PROMPT=0 GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${usd_push_auth}" \
+            git push --force-with-lease="refs/heads/$branch:$lease_sha" origin "$branch"
+          unset usd_push_auth usd_push_token
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 

@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Check edition, original generator, and publication PRs
         id: preflight
@@ -150,16 +150,48 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.author.outputs.token }}
           EDITION: ${{ steps.preflight.outputs.edition }}
+          PUSH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # B2.3 Stage 1 push isolation: checkout keeps no credential. PUSH_TOKEN
+          # is set only for this step, is un-exported before any child process
+          # starts, and is handed to one git push as process-only Git config.
+          usd_push_token="${PUSH_TOKEN-}"
+          unset PUSH_TOKEN
+          usd_guard_branch() {
+            local allowed='^automation/daily-carryforward-20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]+$'
+            if [ -z "${1-}" ] || ! [[ "$1" =~ $allowed ]] || ! git check-ref-format "refs/heads/$1"; then
+              echo "::error::Unapproved automation branch name; push held."
+              return 1
+            fi
+          }
+          usd_prepare_push_auth() {
+            usd_push_auth=""
+            if [ -z "$usd_push_token" ]; then
+              echo "::error::Missing job push token; push held."
+              return 1
+            fi
+            usd_push_auth="$(printf 'x-access-token:%s' "$usd_push_token" | base64 | tr -d '\n')"
+            if [ -z "$usd_push_auth" ]; then
+              echo "::error::Push credential could not be prepared; push held."
+              return 1
+            fi
+            printf '::add-mask::%s\n' "$usd_push_auth"
+          }
           branch="automation/daily-carryforward-$EDITION-$GITHUB_RUN_ID"
+          usd_guard_branch "$branch" || exit 1
           git config user.name "usd-impact-daily-fallback[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
           git add -- "apps/web/src/content/news/$EDITION.md"
           test "$(git diff --cached --name-only | wc -l)" -eq 1
           git commit -m "content(daily): prepare $EDITION dated official carry-forward"
-          git push origin "$branch"
+          usd_prepare_push_auth || exit 1
+          GIT_TERMINAL_PROMPT=0 GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${usd_push_auth}" \
+            git push origin "$branch"
+          unset usd_push_auth usd_push_token
           gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
             --title "Publish Daily USD Impact — $EDITION (late verified carry-forward)" \
             --body "Automatically prepared after the U.S. morning release window; NOT an original same-day government release or natural Daily generator proof. Sources are separately dated immutable official documents from a previously verified Daily, at most 14 days old. No paid model request or invented market move. Require native pull_request checks, editor acceptance, normal protected merge, exact-SHA READY Vercel Production and independent four-URL verification before PUBLISHED_MANUAL_LATE. Keep Issue #840 OPEN. This workflow never merges or approves."

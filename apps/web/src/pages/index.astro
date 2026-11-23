@@ -11,6 +11,11 @@ import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipel
 const latestNews = (await getCollection('news'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.date.localeCompare(a.data.date))[0];
+// Edition date only: this is not a verified first-publication date.
+const latestNewsEditionDate = latestNews
+  ? new Intl.DateTimeFormat('en', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(`${latestNews.data.date}T12:00:00Z`))
+  : null;
 const scorePipelineOrigin = resolveScorePipelineOrigin(
   import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
   process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
@@ -74,7 +79,8 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
         <div class="section-heading">
           <div>
             <div class="eyebrow">Daily USD Impact</div>
-            <h2>Today’s market drivers</h2>
+            <h2>Latest market drivers</h2>
+            <p>Edition date: <time datetime={latestNews.data.date}>{latestNewsEditionDate}</time></p>
           </div>
           <a href="/news/">View all editions</a>
         </div>
@@ -89,7 +95,7 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
           ))}
         </div>
         <div class="button-row">
-          <a class="button primary" href={latestNews.data.slug}>Read today’s edition</a>
+          <a class="button primary" href={latestNews.data.slug}>Read the latest edition</a>
         </div>
       </section>
     )}

@@ -37,6 +37,8 @@ jobs:
         working-directory: apps/web
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -182,7 +184,33 @@ jobs:
         if: steps.eligibility.outputs.publishable == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          PUSH_TOKEN: ${{ github.token }}
         run: |
+          # B2.3 Stage 1 push isolation: checkout keeps no credential. PUSH_TOKEN
+          # is set only for this step, is un-exported before any child process
+          # starts, and is handed to one git push as process-only Git config.
+          usd_push_token="${PUSH_TOKEN-}"
+          unset PUSH_TOKEN
+          usd_guard_branch() {
+            local allowed='^automation/catalyst-brief-[a-z0-9][a-z0-9-]*-[0-9]+$'
+            if [ -z "${1-}" ] || ! [[ "$1" =~ $allowed ]] || ! git check-ref-format "refs/heads/$1"; then
+              echo "::error::Unapproved automation branch name; push held."
+              return 1
+            fi
+          }
+          usd_prepare_push_auth() {
+            usd_push_auth=""
+            if [ -z "$usd_push_token" ]; then
+              echo "::error::Missing job push token; push held."
+              return 1
+            fi
+            usd_push_auth="$(printf 'x-access-token:%s' "$usd_push_token" | base64 | tr -d '\n')"
+            if [ -z "$usd_push_auth" ]; then
+              echo "::error::Push credential could not be prepared; push held."
+              return 1
+            fi
+            printf '::add-mask::%s\n' "$usd_push_auth"
+          }
           if [ -z "$(git status --porcelain src/content/catalyst-briefs)" ]; then
             echo "No new Catalyst Brief review candidate to hand off."
             exit 0
@@ -192,6 +220,7 @@ jobs:
           event_name="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).event")"
           phase="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).phase")"
           branch="automation/catalyst-brief-${brief_slug}-${GITHUB_RUN_ID}"
+          usd_guard_branch "$branch" || exit 1
 
           existing_pr_url="$(gh pr list --state open --head "$branch" --json url --jq '.[0].url // empty')"
           if [ -n "$existing_pr_url" ]; then
@@ -204,7 +233,12 @@ jobs:
             git checkout -b "$branch"
             git add src/content/catalyst-briefs
             git commit -m "Review verified Catalyst Brief for ${event_name}"
-            git push --set-upstream origin "$branch"
+            usd_prepare_push_auth || exit 1
+            GIT_TERMINAL_PROMPT=0 GIT_CONFIG_COUNT=1 \
+            GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
+            GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${usd_push_auth}" \
+              git push --set-upstream origin "$branch"
+            unset usd_push_auth usd_push_token
             head_sha="$(git rev-parse HEAD)"
 
             printf '%s\n\n%s\n\n%s\n' \

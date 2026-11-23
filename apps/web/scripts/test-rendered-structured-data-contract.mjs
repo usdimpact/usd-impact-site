@@ -37,7 +37,11 @@ const dailyNodes = assertIdentity(dailyGraphs[0]);
 const dailyArticle = dailyNodes.find((node) => node['@type'] === 'NewsArticle');
 assert.ok(dailyArticle, 'Daily page must emit NewsArticle.');
 assert.equal(dailyArticle.url, 'https://www.usd-impact.com/news/2026-09-16');
-assert.equal(dailyArticle.datePublished, '2026-09-16');
+// PROPOSAL C1-N: NewsArticle without unverified dates; neutral visible edition date.
+assert.equal(Object.hasOwn(dailyArticle, 'datePublished'), false, 'Edition date is not a verified publication date.');
+assert.equal(Object.hasOwn(dailyArticle, 'dateModified'), false, 'lastReviewed is a review date, not a modification date.');
+assert.match(dailyHtml, /<p class="edition-meta">Edition date <time datetime="2026-09-16">September 16, 2026<\/time> · Last reviewed 2026-09-16<\/p>/);
+assert.doesNotMatch(dailyHtml, /<p class="edition-meta">Published /);
 
 const catalystRoute = '/news/catalysts/2026-09-15-fomc-meeting-and-press-conference-september-15-16-2026-preview';
 const catalystHtml = readRoute(catalystRoute);

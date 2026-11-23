@@ -70,8 +70,10 @@ function articleBase({ type, headline, description, pathname, datePublished, dat
   };
 }
 
+// PROPOSAL C1-N (not applied): datePublished/dateModified are optional for Google Article
+// markup. Pass them only as verified first-publication / modification instants; never
+// substitute an edition, preparation or review date.
 export function newsArticleStructuredData(input) {
-  if (!input?.datePublished) throw new Error('NewsArticle structured data requires datePublished.');
   return articleBase({ ...input, type: 'NewsArticle' });
 }
 

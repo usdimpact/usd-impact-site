@@ -97,8 +97,17 @@ assert.match(layout, /set:html=\{structuredDataJson\}/);
 
 const dailyPage = fs.readFileSync(new URL('../src/pages/news/[date].astro', import.meta.url), 'utf8');
 assert.match(dailyPage, /newsArticleStructuredData/);
-assert.match(dailyPage, /datePublished: entry\.data\.date/);
+// PROPOSAL C1-N: no unverified publication or modification date on edition pages.
+assert.doesNotMatch(dailyPage, /datePublished:/);
+assert.doesNotMatch(dailyPage, /dateModified:/);
+assert.match(dailyPage, /Edition date <time datetime=\{entry\.data\.date\}>/);
 assert.match(dailyPage, /structuredData=\{structuredData\}/);
+const undatedNews = newsArticleStructuredData({
+  headline: 'Undated edition', description: 'No verified publication instant.', pathname: '/news/2026-09-18',
+});
+assert.equal(undatedNews['@type'], 'NewsArticle');
+assert.equal(Object.hasOwn(undatedNews, 'datePublished'), false);
+assert.equal(Object.hasOwn(undatedNews, 'dateModified'), false);
 
 const catalystPage = fs.readFileSync(new URL('../src/pages/news/catalysts/[slug].astro', import.meta.url), 'utf8');
 assert.match(catalystPage, /articleStructuredData/);

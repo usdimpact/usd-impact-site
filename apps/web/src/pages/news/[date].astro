@@ -34,12 +34,13 @@ const formattedDate = new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 }).format(new Date(`${entry.data.date}T12:00:00Z`));
 const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]));
+// PROPOSAL C1-N (not applied): the edition date is the market day the edition covers, not a
+// verified first-publication instant, and lastReviewed is a review date, not a modification
+// date. Keep NewsArticle and omit both date properties.
 const structuredData = [newsArticleStructuredData({
   headline: entry.data.title,
   description: entry.data.metaDescription,
   pathname: `/news/${entry.data.date}`,
-  datePublished: entry.data.date,
-  dateModified: entry.data.lastReviewed,
 })];
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} structuredData={structuredData}>
@@ -48,7 +49,7 @@ const structuredData = [newsArticleStructuredData({
       <div class="eyebrow">{entry.data.category}</div>
       <h1>{entry.data.title}</h1>
       <p class="lead">{entry.data.summary}</p>
-      <p class="edition-meta">Published {formattedDate} · Last reviewed {entry.data.lastReviewed}</p>
+      <p class="edition-meta">Edition date <time datetime={entry.data.date}>{formattedDate}</time> · Last reviewed {entry.data.lastReviewed}</p>
     </div>
   </section>
 

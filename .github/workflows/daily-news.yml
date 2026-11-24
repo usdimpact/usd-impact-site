@@ -127,14 +127,14 @@ jobs:
       - name: Verify PR-author App installation before paid news generation
         id: daily_pr_author_preflight
         if: steps.config.outputs.configured == 'true'
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
           private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
           permission-contents: read
           permission-pull-requests: write
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         if: steps.config.outputs.configured == 'true'
         with:
           node-version: 24.x
@@ -328,7 +328,7 @@ jobs:
       - name: Mint short-lived Daily PR-author GitHub App token
         id: daily_pr_author_token
         if: steps.config.outputs.configured == 'true'
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
           private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}

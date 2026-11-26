@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import StartHereFiveMinuteGuide from '../components/StartHereFiveMinuteGuide.astro';
 import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import BookPurchaseCTA from '../components/BookPurchaseCTA.astro';
@@ -38,6 +39,7 @@ const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadP
   : checklistDownload;
 const isBookPage = normalizedSlug === bookSlug;
 const isThreeDialsPage = normalizedSlug === threeDialsSlug;
+const isFiveMinuteGuidePreview = normalizedSlug === '/start-here' && process.env.VERCEL_ENV === 'preview';
 const spanishAlternateHref = SPANISH_ALTERNATE_BY_ENGLISH_SLUG[normalizedSlug] ?? null;
 const requestedPrimary = entry.data.ctaPrimary;
 const requestedPrimaryHref = entry.data.ctaPrimaryHref;
@@ -54,7 +56,7 @@ const primaryHref = isLegacyBookAcquisition
 const secondaryHref = requestedSecondaryHref ?? downloadPath;
 const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
-<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} alternateLocaleHref={spanishAlternateHref}>
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} alternateLocaleHref={spanishAlternateHref} noindex={isFiveMinuteGuidePreview}>
   <main id="main-content" class="main-with-hero">
     <section class:list={["hero", { "book-hero": isBookPage }]}>
       <div class="container">
@@ -83,6 +85,7 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     {isThreeDialsPage && <ThreeDialsSnapshot />}
     <Content />
+    {isFiveMinuteGuidePreview && <StartHereFiveMinuteGuide />}
     {isBookPage && <WaitlistForm initiallyHidden />}
     <ComplianceNote text={entry.data.complianceNote} />
     </div>

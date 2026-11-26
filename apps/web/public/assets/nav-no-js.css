@@ -1,0 +1,6 @@
+/* Loaded only from <noscript> in BaseLayout.astro. Without JavaScript the header Menu button
+   cannot open the collapsed navigation, so keep the existing stacked navigation visible. */
+@media (max-width: 960px) {
+  html .nav-toggle { display: none; }
+  html .nav { display: flex; }
+}

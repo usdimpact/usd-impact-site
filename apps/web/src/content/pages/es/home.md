@@ -32,6 +32,8 @@ La disciplina es separar esas explicaciones en vez de convertir una sola variabl
 
 ## Recorrido en español
 
+**[Empieza a aprender gratis](/es/start-here/)** · **[Consulta el marco del dólar](/es/dollar-framework/)**
+
 1. **[Empieza aquí](/es/start-here/)** — define qué significa “el dólar” y aprende el orden de lectura.
 2. **[Marco del dólar](/es/dollar-framework/)** — usa tres diales: dirección del dólar, presión de tasas reales y estrés de liquidez.
 3. **[Cadena de transmisión](/es/framework/dollar-transmission-chain/)** — sigue el mecanismo desde información macro y política hasta los activos.

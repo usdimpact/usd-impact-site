@@ -48,23 +48,23 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
       <DailyCardToday headingTag="h3" />
     </section>
 
-    <section class="home-score">
+    <section class="home-score" data-score-home-state="rights-hold">
       <div class="section-heading">
         <div>
-          <div class="eyebrow">Weekly USD Impact Score</div>
-          <h2>A systematic dollar-regime reading</h2>
+          <div class="eyebrow">Historical USD Impact Score</div>
+          <h2>Explore the dollar-regime framework</h2>
         </div>
-        <a href="/score/">Open the score dashboard</a>
+        <a href="/score/">See Score publication status</a>
       </div>
       <div class="score-promo card">
         <div>
-          <p class="score-promo-kicker">Updated weekly by the USD Impact data pipeline</p>
-          <h3>Measure the regime before interpreting the asset move.</h3>
-          <p>The USD Impact Score condenses cross-asset dollar pressure into a single weekly reading, with supporting regime context and commentary.</p>
+          <p class="score-promo-kicker">New weekly Score editions paused pending source-data rights review</p>
+          <h3>Understand the historical Score, not a current trading signal.</h3>
+          <p>The last verified Score data week was <time datetime="2026-10-23">October 23, 2026</time> (checked November 7, 2026). Earlier readings are historical, not a measurement of today's markets. Daily USD Impact and independent Macro Weekly are separate publications.</p>
         </div>
         <div class="button-row">
-          <a class="button primary" href="/score/">View weekly score</a>
-          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV)} target="_blank" rel="noreferrer">Standalone dashboard</a>
+          <a class="button primary" href="/score/">Read historical Score status</a>
+          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV)} target="_blank" rel="noreferrer">Historical standalone display</a>
         </div>
       </div>
     </section>

@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
-  selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId, isAuthenticatedBotDispatch,
+  exactDailyPrQuery, selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
+  dispatchSourceRunId, isAuthenticatedBotDispatch, classifyPreMergeReadiness,
+  waitForProtectedPrChecks,
 } from './daily-news-auto-publish-policy.mjs';
 
 const auto = readFileSync(new URL('../../../.github/workflows/daily-news-auto-publish.yml', import.meta.url), 'utf8');
@@ -69,6 +73,236 @@ assert.throws(() => selectExactDailyPr([{ ...pr, draft: true }], run, base), /no
 assert.throws(() => selectExactDailyPr([{ ...pr, base: { ref: 'main', sha } }], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr([pr, pr], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr(Array(100).fill(pr), run, base), /incomplete/);
+
+const scopedQuery = exactDailyPrQuery(run);
+assert.equal(scopedQuery,
+  'pulls?state=open&base=main&head=usdimpact%3Aautomation%2Fdaily-usd-impact-2026-11-04-80001&per_page=100');
+const scopedFilters = new URLSearchParams(scopedQuery.split('?')[1]);
+assert.deepEqual([...scopedFilters.keys()], ['state', 'base', 'head', 'per_page']);
+assert.equal(scopedFilters.get('state'), 'open');
+assert.equal(scopedFilters.get('base'), 'main');
+assert.equal(scopedFilters.get('head'), 'usdimpact:' + branch);
+assert.equal(scopedFilters.get('per_page'), '100');
+assert.match(runtime, /const pulls = api\(exactDailyPrQuery\(source\)\);/);
+assert.doesNotMatch(runtime, /api\('pulls\?state=open&base=main&per_page=100'\)/,
+  'the privileged publisher must not reintroduce an unscoped 100-PR listing');
+for (const invalidRun of [null, { ...run, id: 0 },
+  { ...run, id: '80001' }, { ...run, id: Number.MAX_SAFE_INTEGER + 1 },
+  { ...run, created_at: 'invalid' }]) {
+  assert.throws(() => exactDailyPrQuery(invalidRun), /invalid-daily-pr-query-source/);
+}
+// Regress the 2026-11-10 real failure shape: 104 unrelated open base PRs.
+// GitHub's exact head filter must leave only the authentic candidate;
+// the downstream fail-closed max-100 and identity assertions remain intact.
+const heldPrs = Array.from({ length: 104 }, (_, i) => ({
+  ...pr, number: 2000 + i, head: { ...pr.head, ref: 'agent/held-' + i },
+}));
+const headFilteredPrs = [pr, ...heldPrs].filter((item) => item.head.ref === branch);
+assert.equal(headFilteredPrs.length, 1);
+assert.deepEqual(selectExactDailyPr(headFilteredPrs, run, base),
+  { prNumber: 1101, branch, headSha: sha, editionDate: day });
+assert.throws(() => selectExactDailyPr([...heldPrs, pr], run, base), /open-pr-evidence-incomplete/,
+  'the old unfiltered 105-PR response must still fail closed');
+assert.throws(() => selectExactDailyPr([{ ...pr,
+  head: { ...pr.head, repo: { full_name: 'other/repo' } } }], run, base), /not-unique/);
+assert.throws(() => selectExactDailyPr([{ ...pr,
+  title: 'Publish Daily USD Impact — 2026-11-03' }], run, base), /not-unique/);
+console.log('Daily exact-head PR query: 104-unrelated-PR and negative integrity fixtures PASS.');
+
+// Native required checks can start after separately dispatched jobs pass.
+// A bounded wait is permitted; conflicts, drift and bypasses are not.
+const cleanPr = { ...pr, mergeable: true, mergeable_state: 'clean' };
+assert.equal(classifyPreMergeReadiness(base, base, cleanPr, sha), 'ready');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'blocked' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: null, mergeable_state: 'unknown' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha),
+  'pre-merge-main-or-pr-changed', 'main drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, head: { ...cleanPr.head, sha: base } }, sha),
+  'pre-merge-main-or-pr-changed', 'head drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, base: { ...cleanPr.base, sha } }, sha),
+  'pre-merge-main-or-pr-changed', 'base drift must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, draft: true }, sha), 'pre-merge-main-or-pr-changed');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, state: 'closed' }, sha), 'pre-merge-main-or-pr-changed');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: false, mergeable_state: 'blocked' }, sha),
+  'pre-merge-pr-not-clean', 'a known conflict must never wait/merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'dirty' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'unstable' }, sha), 'pending',
+  'unstable can wait but cannot authorize the protected merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: null, mergeable_state: 'unstable' }, sha), 'pending');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable: false, mergeable_state: 'unstable' }, sha),
+  'pre-merge-pr-not-clean', 'known unmergeable PR must fail immediately');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'has_hooks' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'behind' }, sha), 'pre-merge-pr-not-clean');
+assert.equal(classifyPreMergeReadiness(base, base, null, sha), 'pre-merge-main-or-pr-changed');
+assert.match(runtime, /async function awaitProtectedMergeReadiness\(mainSha, prNumber, headSha\)/);
+assert.match(runtime, /const MAX_POLLS = 60/);
+assert.match(runtime, /return waitForProtectedPrChecks\(\{/);
+assert.match(runtime, /checkCutoff: ensureMorning/);
+assert.match(runtime, /pause: sleep/);
+assert.match(runtime, /maxPolls: MAX_POLLS/);
+assert.match(runtime, /retryDelayMs: 10000/);
+assert.match(runtime, /await awaitProtectedMergeReadiness\(mainSha, prNumber, headSha\);\s*ensureMorning\(\);/);
+assert.doesNotMatch(runtime, /gh pr merge --admin|merge_method=force/);
+
+
+const waitFixture = {
+  mainSha: base, prNumber: pr.number, headSha: sha,
+  readMain: () => base, readPr: () => cleanPr,
+  checkCutoff: () => {}, pause: async () => {}, report: () => {},
+  maxPolls: 3, retryDelayMs: 1,
+};
+assert.equal(await waitForProtectedPrChecks(waitFixture), 1);
+{
+  let n = 0, deadlines = 0, slept = 0;
+  const count = await waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: n++ === 0 ? 'blocked' : 'clean' }),
+    checkCutoff: () => { deadlines++; },
+    pause: async (ms) => { assert.equal(ms, 1); slept++; },
+  });
+  assert.equal(count, 2);
+  assert.equal(deadlines, 2);
+  assert.equal(slept, 1);
+}
+// Regress Nov 11's plausible transient check state; only a later fresh
+// clean snapshot may authorize the existing standard protected merge.
+{
+  let reads = 0, slept = 0, logs = [];
+  const polls = await waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state:
+      ['unstable', 'blocked', 'clean'][reads++] }),
+    pause: async () => { slept++; },
+    report: (message) => { logs.push(message); },
+  });
+  assert.equal(polls, 3);
+  assert.equal(slept, 2);
+  assert.equal(reads, 3);
+  assert.match(logs[0], /mergeable_state=unstable, mergeable=true/);
+}
+// Neither an unmergeable PR nor a false state may ever enter a wait or merge.
+{
+  const logs = [];
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable: false, mergeable_state: 'unstable' }),
+    report: (message) => { logs.push(message); },
+  }), /pre-merge-pr-not-clean/);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /mergeable_state=unstable, mergeable=false/);
+}
+{
+  let polls = 0, slept = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => { polls++; return { ...cleanPr, mergeable_state: 'unstable' }; },
+    pause: async () => { slept++; },
+  }), /pre-merge-pr-check-readiness-timeout/);
+  assert.equal(polls, 3);
+  assert.equal(slept, 2);
+}
+{
+  let reads = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: reads++ === 0 ? 'unstable' : 'dirty' }),
+  }), /pre-merge-pr-not-clean/, 'a conflict after transient state must stop');
+}
+{
+  let reads = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readMain: () => reads++ === 0 ? base : sha,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable' }),
+  }), /pre-merge-main-or-pr-changed/, 'main drift after unstable must stop');
+}
+{
+  let checks = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable' }),
+    checkCutoff: () => { if (++checks > 1) throw Error('after-first-us-release-cutoff'); },
+  }), /after-first-us-release-cutoff/, 'the existing cutoff must interrupt all retries');
+  assert.equal(checks, 2);
+}
+// Do not allow GitHub or attacker-controlled payloads into logs.
+{
+  const logs = [];
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'unstable\nsecret-payload',
+      body: 'secret-payload' }),
+    report: (message) => { logs.push(message); },
+  }), /pre-merge-pr-not-clean/);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /mergeable_state=other, mergeable=true/);
+  assert.doesNotMatch(logs[0], /secret-payload/);
+  assert.doesNotMatch(logs[0], /[\r\n]/, 'untrusted newlines must not enter log output');
+}
+{
+  let seen = 0, slept = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'blocked' }),
+    checkCutoff: () => { seen++; },
+    pause: async () => { slept++; },
+  }), /pre-merge-pr-check-readiness-timeout/);
+  assert.equal(seen, 3);
+  assert.equal(slept, 2);
+}
+{
+  let seen = 0;
+  await assert.rejects(waitForProtectedPrChecks({
+    ...waitFixture,
+    readPr: () => ({ ...cleanPr, mergeable_state: 'blocked' }),
+    checkCutoff: () => { if (++seen === 2) throw Error('after-first-us-release-cutoff'); },
+  }), /after-first-us-release-cutoff/);
+  assert.equal(seen, 2);
+}
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, readMain: () => sha,
+}), /pre-merge-main-or-pr-changed/);
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, readPr: () => ({ ...cleanPr, mergeable: false, mergeable_state: 'blocked' }),
+}), /pre-merge-pr-not-clean/);
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, readPr: () => { throw Error('github-api-failure'); },
+}), /github-api-failure/);
+await assert.rejects(waitForProtectedPrChecks({
+  ...waitFixture, maxPolls: 61,
+}), /invalid-protected-pr-readiness-bounds/);
+
+assert.match(runtime, /const finalMainSha = currentMain\(\);/);
+assert.match(runtime, /const finalPr = api\('pulls\/' \+ prNumber\);/);
+assert.match(runtime, /const finalDecision = classifyPreMergeReadiness\(finalMainSha, mainSha, finalPr, headSha\);/);
+assert.match(runtime, /if \(finalDecision !== 'ready'\) hold\('final-pr-readiness-' \+ finalDecision\);/);
+const afterExactChecks = runtime.lastIndexOf('requireExactChecks(requiredCheckSnapshot(headSha), headSha);');
+const afterFinalCheck = runtime.indexOf('const finalDecision = classifyPreMergeReadiness(');
+const mergeCall = runtime.indexOf("'repos/' + REPOSITORY + '/pulls/' + prNumber + '/merge'");
+assert.ok(afterExactChecks >= 0 && afterFinalCheck > afterExactChecks && mergeCall > afterFinalCheck,
+  'the immutable main/PR must be revalidated after final exact-head checks and before any merge');
+assert.equal(classifyPreMergeReadiness(base, base,
+  { ...cleanPr, mergeable_state: 'blocked' }, sha), 'pending',
+  'a PR that became blocked after the prior clean read must not pass final guard');
+assert.equal(classifyPreMergeReadiness(sha, base, cleanPr, sha), 'pre-merge-main-or-pr-changed',
+  'a base change after prior checks must not pass final guard');
+console.log('Daily pre-merge last-read protection: ordering and two negatives PASS.');
+
+console.log('Daily bounded protected PR wait: transient-unstable retries, safe diagnostics, adversarial HOLD cases PASS.');
+
 const comparison = {
   status: 'ahead', ahead_by: 1, behind_by: 0,
   files: [{ filename: 'apps/web/src/content/news/2026-11-04.md', status: 'added' }],
@@ -147,7 +381,33 @@ assert.match(auto, /workflow_run:[\s\S]*workflows: \["Daily USD Impact publicati
 assert.match(auto, /branches: \[main\]/);
 assert.match(auto, /cancel-in-progress: false/);
 assert.match(auto, /github\.event\.workflow_run\.conclusion == 'success'/);
-assert.match(auto, /vars\.DAILY_NEWS_AUTO_PUBLISH_DISABLED != 'true'/);
+assert.doesNotMatch(auto, /[^\x0A\x20-\x7E]/,
+  'Publisher workflow must be printable ASCII with LF line endings');
+const requirePublisherYaml = createRequire(import.meta.url);
+assert.equal(requirePublisherYaml('js-yaml/package.json').version, '4.3.2',
+  'Publisher YAML parser changes require independent review');
+const { load: parsePublisherYaml, FAILSAFE_SCHEMA: publisherFailsafeSchema } = requirePublisherYaml('js-yaml');
+const publisherDocument = parsePublisherYaml(auto, {
+  schema: publisherFailsafeSchema, json: false, maxDepth: 50,
+  onWarning: (warning) => { throw warning; },
+});
+assert.ok(publisherDocument && typeof publisherDocument === 'object'
+  && !Array.isArray(publisherDocument), 'Publisher workflow must be a YAML mapping');
+assert.ok(publisherDocument.jobs && typeof publisherDocument.jobs === 'object'
+  && !Array.isArray(publisherDocument.jobs), 'Publisher jobs must be a mapping');
+assert.deepEqual(Object.keys(publisherDocument),
+  ['name', 'run-name', 'on', 'permissions', 'concurrency', 'jobs'],
+  'Unexpected top-level publisher workflow key');
+assert.deepEqual(Object.keys(publisherDocument.jobs), ['publish-verified-daily'],
+  'An additional job could bypass the publication pause');
+assert.deepEqual(Object.keys(publisherDocument.jobs['publish-verified-daily']),
+  ['if', 'runs-on', 'timeout-minutes', 'steps'],
+  'Unexpected publisher job key');
+assert.equal(publisherDocument.jobs['publish-verified-daily'].if,
+  "${{ vars.DAILY_NEWS_AUTO_PUBLISH_DISABLED == 'false' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}",
+  'The parsed publisher condition must require explicit false');
+assert.doesNotMatch(auto, /DAILY_NEWS_AUTO_PUBLISH_DISABLED\s*!=\s*'true'/i,
+  'Do not reintroduce fail-open publisher admission');
 assert.match(auto, /persist-credentials: false/);
 assert.match(auto, /node apps\/web\/scripts\/daily-news-auto-publish\.mjs/);
 assert.doesNotMatch(auto, /checkout.*head_sha|gh pr merge --admin/);
@@ -158,6 +418,103 @@ assert.match(dep, /length == 1 and \.\[0\]\.filename == \$expected/);
 assert.match(dep, /base-ref: \$\{\{ github\.event_name == 'workflow_dispatch'/);
 assert.match(dep, /head-ref: \$\{\{ github\.event_name == 'workflow_dispatch'/);
 assert.match(mainDaily, /gh workflow run quality\.yml --ref "\$branch"/);
+
+// The generator must not spend on the next eligible Daily without a scoped,
+// independently owned GitHub App PR-author identity. The default GITHUB_TOKEN
+// can push the one-file branch, but cannot author an eligible PR event.
+assert.match(mainDaily, /DAILY_PR_APP_CLIENT_ID: \$\{\{ vars\.DAILY_NEWS_PR_APP_CLIENT_ID \}\}/);
+assert.match(mainDaily, /DAILY_PR_APP_PRIVATE_KEY: \$\{\{ secrets\.DAILY_NEWS_PR_APP_PRIVATE_KEY \}\}/);
+assert.match(mainDaily, /\[ -z "\$DAILY_PR_APP_CLIENT_ID" \] \|\| \[ -z "\$DAILY_PR_APP_PRIVATE_KEY" \]/);
+const appAction = mainDaily.match(
+  /      - name: Mint short-lived Daily PR-author GitHub App token\n([\s\S]*?)(?=\n      - name: Open and validate publication pull request)/,
+);
+assert.ok(appAction, 'App token must be minted immediately before the PR author step');
+assert.match(appAction[0], /actions\/create-github-app-token@[a-f0-9]{40}/);
+// Validate the actual App installation/permissions before any paid request.
+// Mint a second fresh PR token only after bounded background generation.
+const appPreflight = mainDaily.match(
+  /      - name: Verify PR-author App installation before paid news generation\n([\s\S]*?)(?=\n      - uses: actions\/setup-node@)/,
+);
+assert.ok(appPreflight, 'pre-paid installation-token probe must exist');
+assert.match(appPreflight[0], /if: steps\.config\.outputs\.configured == 'true'/);
+assert.match(appPreflight[0], /actions\/create-github-app-token@[a-f0-9]{40}/);
+assert.match(appPreflight[0], /permission-contents: read/);
+assert.match(appPreflight[0], /permission-pull-requests: write/);
+assert.doesNotMatch(appPreflight[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
+assert.doesNotMatch(appPreflight[0], /^\s+(?:owner|repositories):/m);
+assert.equal((mainDaily.match(/actions\/create-github-app-token@[a-f0-9]{40}/g) || []).length, 2);
+assert.ok(mainDaily.indexOf('Verify PR-author App installation before paid news generation')
+  < mainDaily.indexOf('Start background news generation'),
+  'actual installation check must complete before paid source requests');
+assert.ok(mainDaily.indexOf('Start background news generation')
+  < mainDaily.indexOf('Mint short-lived Daily PR-author GitHub App token'),
+  'fresh PR token must be minted after lengthy generation');
+
+assert.match(appAction[0], /permission-contents: read/);
+assert.match(appAction[0], /permission-pull-requests: write/);
+assert.doesNotMatch(appAction[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
+assert.doesNotMatch(appAction[0], /^\s+(?:owner|repositories):/m,
+  'omitting owner and repositories scopes token to this repository');
+assert.ok(mainDaily.indexOf('      - name: Validate publication content preflight')
+  < mainDaily.indexOf('      - name: Mint short-lived Daily PR-author GitHub App token'));
+const prAuthor = mainDaily.match(
+  /      - name: Open and validate publication pull request\n([\s\S]*?)(?=\n      # GITHUB_TOKEN-dispatched upstream runs)/,
+);
+assert.ok(prAuthor);
+assert.match(prAuthor[0], /DAILY_PR_APP_TOKEN: \$\{\{ steps\.daily_pr_author_token\.outputs\.token \}\}/);
+assert.ok(prAuthor[0].includes('if [ -z "$DAILY_PR_APP_TOKEN" ]; then'));
+assert.ok(prAuthor[0].includes('GH_TOKEN="$DAILY_PR_APP_TOKEN" gh pr create'),
+  'only the App token can create the PR event');
+assert.equal((prAuthor[0].match(/gh pr create/g) || []).length, 1);
+assert.ok(!prAuthor[0].includes('gh pr create --admin'));
+assert.doesNotMatch(mainDaily, /GH_TOKEN: \$\{\{ steps\.daily_pr_author_token\.outputs\.token \}\}/,
+  'subsequent CI dispatch and GitHub calls retain the ordinary Actions token');
+
+// Execute the actual pre-spend configuration shell using synthetic credentials.
+// No network or paid source generation. Verify missing App identity holds and
+// that its private key never appears in logs.
+const appConfigStep = mainDaily.match(
+  /      - name: Check newsfeed configuration\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      # Validate App installation and scoped token permissions)/,
+);
+assert.ok(appConfigStep, 'pre-spend configuration must be present');
+const configShell = appConfigStep[1].split('\n')
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+assert.equal(spawnSync('bash', ['-n'], { input: configShell, encoding: 'utf8' }).status, 0);
+const fakeEnv = {
+  ...process.env,
+  // Assigned per synthetic scenario to a temporary regular file below.
+  PUBLICATION_NEEDED: 'true',
+  NEWSFEED_ENDPOINT: 'https://invalid.example/daily-news-source',
+  NEWSFEED_BEARER_TOKEN: 'synthetic-newsfeed-only',
+  DAILY_PR_APP_CLIENT_ID: 'synthetic-app-id',
+  DAILY_PR_APP_PRIVATE_KEY: 'SYNTHETIC-PRIVATE-KEY-DO-NOT-USE',
+};
+// GITHUB_OUTPUT is a writable regular file in GitHub Actions; /dev/stdout
+// under node child-process pipes is not always reopenable on Linux.
+const appPreflightDir = mkdtempSync(join(tmpdir(), 'usdimpact-daily-app-preflight-'));
+try {
+  let scenario = 0;
+  for (const [label, changes, accepted] of [
+    ['complete fictional configuration', {}, true],
+    ['missing App ID', { DAILY_PR_APP_CLIENT_ID: '' }, false],
+    ['missing App private key', { DAILY_PR_APP_PRIVATE_KEY: '' }, false],
+    ['missing newsfeed token', { NEWSFEED_BEARER_TOKEN: '' }, false],
+    ['existing Daily article', { PUBLICATION_NEEDED: 'false' }, false],
+  ]) {
+    const outputFile = join(appPreflightDir, 'output-' + String(++scenario));
+    const test = spawnSync('bash', ['-c', 'set -euo pipefail\n' + configShell], {
+      encoding: 'utf8', env: { ...fakeEnv, ...changes, GITHUB_OUTPUT: outputFile }, timeout: 10000,
+    });
+    assert.equal(test.status, 0, label + ': ' + test.stderr);
+    assert.match(readFileSync(outputFile, 'utf8'), new RegExp('configured=' + String(accepted)), label);
+    assert.doesNotMatch(test.stdout + test.stderr, /SYNTHETIC-PRIVATE-KEY-DO-NOT-USE/,
+      'never print a private key');
+  }
+} finally {
+  rmSync(appPreflightDir, { recursive: true, force: true });
+}
+console.log('Daily PR GitHub App authorship: fixed SHA, scoped token, no-spend and 5 negative/positive configuration fixtures PASS');
+
 assert.doesNotMatch(mainDaily, /gh pr merge/);
 assert.match(runtime, /isSingleGeneratorCommit\(/);
 assert.match(runtime, /requireExactChecks\(/);

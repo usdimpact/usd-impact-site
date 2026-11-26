@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localizationManifest } from '../src/data/localization-manifest.js';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(scriptDir, '..');
@@ -109,6 +110,41 @@ const ga4Position = layout.indexOf('<GoogleAnalyticsClient />');
 const telemetryPosition = layout.indexOf('<TelemetryClient />');
 assert.ok(consentPosition >= 0 && ga4Position > consentPosition && telemetryPosition > ga4Position);
 
+// The first-visit notice stays a fixed overlay (no layout shift), but while it is shown the page reserves
+// the space it covers so keyboard focus and the end of the page scroll clear of it.
+const bannerRule = consent.match(/\.privacy-consent-banner \{([^}]*)\}/)?.[1] || '';
+assert.match(bannerRule, /position:\s*fixed;/, 'consent notice must remain a fixed overlay');
+assert.match(consent, /:global\(html\.privacy-consent-open\) \{ scroll-padding-bottom: var\(--privacy-consent-space, 0px\); \}/);
+assert.match(consent, /:global\(html\.privacy-consent-open body\) \{ padding-bottom: var\(--privacy-consent-space, 0px\); \}/);
+const sync = consent.slice(consent.indexOf('const syncBannerSpace = () => {'), consent.indexOf('const render = () => {'));
+assert.match(sync, /if \(!banner \|\| banner\.hidden\) \{\s*root\.classList\.remove\('privacy-consent-open'\);\s*root\.style\.removeProperty\('--privacy-consent-space'\);/);
+assert.match(sync, /root\.style\.setProperty\('--privacy-consent-space', `\$\{space\}px`\);/);
+assert.match(sync, /new ResizeObserver\(syncBannerSpace\)\.observe\(banner\)/);
+assert.match(sync, /window\.addEventListener\('resize', syncBannerSpace\);/);
+assert.match(consent, /analyticsToggle\.checked = analyticsAllowed\(\);\n    syncBannerSpace\(\);\n  \};/, 'render must resync the reserved space');
+assert.doesNotMatch(consent, /focusin|scrollIntoView|scrollBy\(|scrollTo\(|preventDefault\(\)/, 'no focus or scroll hijacking');
+
+// Short viewports (landscape phones, 400% zoom): the notice stays compact, its three choices stay visible, only the text scrolls.
+const shortRule = consent.match(/@media \(max-height: 560px\) \{([\s\S]*?)\n  \}/)?.[1] || '';
+assert.match(shortRule, /\.privacy-consent-banner \{ max-height: 55vh; display: flex; flex-direction: column;/);
+assert.match(shortRule, /\.privacy-consent-banner > div:first-child \{ min-height: 0; overflow-y: auto;/);
+assert.match(shortRule, /\.privacy-consent-actions \{ flex: none; display: flex; flex-wrap: nowrap;/);
+assert.doesNotMatch(shortRule, /position:\s*sticky/, 'actions must not overlay the notice text');
+assert.ok(consent.lastIndexOf('@media (max-height: 560px)') > consent.lastIndexOf('@media (max-width: 520px)'), 'short-viewport rule must follow the narrow-width rule');
+
+// About 400% zoom on laptop screens: heading plus at least one complete line stays readable, the privacy link
+// stays on one line, choices stay in one row, and the notice leaves room above it for tall focused page elements.
+const tinyRule = consent.match(/@media \(max-height: 300px\) \{([\s\S]*?)\n  \}/)?.[1] || '';
+assert.match(tinyRule, /\.privacy-consent-banner \{ max-height: none; bottom: 4px;/);
+assert.match(tinyRule, /\.privacy-consent-banner > div:first-child \{ max-height: max\(33px, calc\(100vh - 142px\)\); scroll-padding-top: 16px; \}/);
+assert.match(tinyRule, /\.privacy-consent-banner > div:first-child strong \{ position: sticky; top: 0;/);
+assert.match(tinyRule, /\.privacy-consent-banner p a \{ white-space: nowrap; \}/);
+assert.match(tinyRule, /\.privacy-consent-actions \{ flex-wrap: nowrap;/);
+assert.match(tinyRule, /\.privacy-consent-button \{ flex: 1 1 0; width: auto; min-height: 24px;/);
+assert.doesNotMatch(tinyRule, /display:\s*none|visibility:\s*hidden/, 'notice text and choices must never be hidden');
+assert.match(consent, /@media \(max-height: 560px\) \{\s*\.privacy-consent-banner > div:first-child a:focus-visible \{ outline: 2px solid #f3cc68; outline-offset: -2px; \}/, 'link focus indicator must stay inside the scrolling notice');
+assert.ok(consent.lastIndexOf('@media (max-height: 300px)') > consent.lastIndexOf('@media (max-height: 560px)'), 'tiny-viewport rule must follow the short-viewport rule');
+
 const telemetryGuard = telemetry.indexOf('if (!analyticsAllowed()) return false;');
 const telemetryRequest = telemetry.indexOf('fetch(TELEMETRY_ENDPOINT');
 assert.ok(telemetryGuard >= 0 && telemetryRequest > telemetryGuard);
@@ -204,8 +240,13 @@ assert.doesNotMatch(spanishReviewLayout, /<ConsentClient|import ConsentClient/);
 assert.match(spanishReviewLayout, /<BaseLayout/);
 assert.match(layout, /<ConsentClient\s+locale=\{locale\}/);
 assert.doesNotMatch(layout, /\{analyticsEnabled && \(\s*<ConsentClient/);
-assert.match(layout, /\{analyticsEnabled && <GoogleAnalyticsClient \/>\}/);
-assert.match(layout, /\{analyticsEnabled && <TelemetryClient \/>\}/);
+assert.match(layout, /\{measurementClientsEnabled && <GoogleAnalyticsClient \/>\}/);
+assert.match(layout, /\{measurementClientsEnabled && <TelemetryClient \/>\}/);
+assert.match(layout, /const analyticsEnabled = localizationManifest\.locales\[locale\]\?\.analyticsEnabled === true;/);
+assert.match(layout, /suppressReviewMeasurement = false,/);
+assert.match(layout, /const measurementClientsEnabled = analyticsEnabled && !suppressReviewMeasurement;/);
+assert.equal(localizationManifest.locales.en.analyticsEnabled, true);
+assert.equal(localizationManifest.locales.es.analyticsEnabled, false);
 assert.match(layout, /<button id="privacy-settings-button" class="footer-privacy-settings" type="button">Opciones de privacidad<\/button>/);
 assert.equal((layout.match(/id="privacy-settings-button"/g) ?? []).length, 2, 'one settings button per mutually exclusive locale footer');
 assert.match(spanishReviewLayout, /APROBADO POR EL PROPIETARIO/);

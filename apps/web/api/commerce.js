@@ -15,6 +15,7 @@ import {
   readResearchMembershipCheckoutConfig,
 } from '../src/lib/research-membership-first-purchase.js';
 import { publicResearchMembershipWebhookError } from '../src/lib/research-membership-webhook-handler.js';
+import { resolveLearningOfferCommercePolicy } from '../src/lib/learning-offer-commerce-policy.js';
 
 export const config = {
   api: {
@@ -126,6 +127,15 @@ async function handleCheckout(request, response) {
     return sendJson(response, 415, {
       error: 'Content type must be application/json.',
       code: 'INVALID_CONTENT_TYPE',
+    }, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
+  // Preserve existing request-method, cross-site and content-type rejection
+  // before applying the new offer policy. No body, account or provider is
+  // touched in free or pending-paid mode.
+  if (!resolveLearningOfferCommercePolicy(process.env).allowNewLibraryCheckout) {
+    return sendJson(response, 503, {
+      error: 'New Library Pass purchases are unavailable under the current learning offer policy.',
+      code: 'LEARNING_LIBRARY_CHECKOUT_DISABLED',
     }, { 'X-Robots-Tag': 'noindex, nofollow' });
   }
   const runtime = runtimeConfig(response);

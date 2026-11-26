@@ -197,9 +197,17 @@ try {
   };
   await writeBundle(livingSourceBundle);
 
-  const livingHistoricalDates = runImporter('--replace');
-  assert.equal(livingHistoricalDates.status, 0, livingHistoricalDates.stderr);
-  assert.match(livingHistoricalDates.stdout, /status review/);
+  const disallowedFedCalendar = runImporter('--replace');
+  assert.notEqual(disallowedFedCalendar.status, 0,
+    'mutable Fed month calendar must be discovery-only, not importable');
+  assert.match(disallowedFedCalendar.stderr,
+    /Federal Reserve monthly calendar index requires a directly linked dated original document/);
+  await assert.rejects(readFile(editionPath), { code: 'ENOENT' },
+    'invalid calendar must not write a new review edition');
+  assert.match(await readFile(historicalEditionPath, 'utf8'), /publishedAt: "2026-06-22"/,
+    'existing historical published edition must remain unchanged');
+  assert.match(await readFile(historicalCatalystPath, 'utf8'), /publishedAt: "2026-07-20"/,
+    'existing historical catalyst must remain unchanged');
 
   await rm(editionPath, { force: true });
   const blsCpiHomeUrl = 'https://www.bls.gov/cpi';

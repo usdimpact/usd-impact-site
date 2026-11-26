@@ -146,16 +146,15 @@ assert.match(accessibilityPage, /protected book PDF has not been verified as a t
 
 assert.match(dynamicPage, /<WaitlistForm initiallyHidden \/>/);
 assert.match(waitlistForm, /hidden=\{initiallyHidden\}/);
-assert.match(bookPurchaseCta, /waitlist\.hidden = presentation\.available/);
-assert.match(bookPurchaseCta, /No purchase control is shown without that verification/);
-assert.match(bookPurchaseCta, /aria-label="Read the Dollar First Library Pass offer"/);
-assert.match(bookPurchaseCta, /aria-describedby="book-purchase-message"/);
-assert.match(bookPurchaseCta, /Already purchased\?[\s\S]*href="\/account\/sign-in\/\?next=\/account\/"/);
-assert.match(bookPurchaseCta, /Complete English audiobook/);
-assert.match(bookPurchaseCta, /51-film Video Library/);
+assert.match(bookPurchaseCta, /aria-label="Read the Dollar First public sample and previous purchases"/);
+assert.match(bookPurchaseCta, /id="book-primary-cta"[\s\S]*href="\/book\/read-the-dollar-first\/preview\/"/);
+assert.match(bookPurchaseCta, /Already purchased a Library Pass\?[\s\S]*href="\/account\/sign-in\/\?next=\/account\/"/);
+assert.match(bookPurchaseCta, /protected full-book chapters, audiobook playback or member-only film playback/);
+assert.doesNotMatch(bookPurchaseCta, /href="\/checkout\/"|bookPurchasePresentation|USD 39\.00|USD 49\.00/);
 assert.match(bookProduct, /<section class="book-disclosures" aria-labelledby="book-details-heading">/);
+
 assert.equal(bookProduct.match(/<details class="book-disclosure">/g)?.length, 4);
-for (const summary of ['How the method works', 'Who it is for — and what it is not', 'Price, checkout and delivery', 'Common questions']) {
+for (const summary of ['How the method works', 'Who it is for — and what it is not', 'Current access and previous purchases', 'Common questions']) {
   assert.match(bookProduct, new RegExp(`<summary>${summary}<\\/summary>`));
 }
 

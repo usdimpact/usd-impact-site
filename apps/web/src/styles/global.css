@@ -326,7 +326,9 @@ main { padding: 56px 0; }
 .report-sources li { margin-bottom: 12px; padding-left: 6px; }
 .report-back { border: 1px solid #aeb7c3; color: var(--navy); background: var(--white); }
 
-@media (max-width: 760px) {
+/* Bring existing #1093's tablet header breakpoint into the QA integration.
+   Page-content mobile layout remains limited to 760px. */
+@media (max-width: 960px) {
   .header-inner { flex-wrap: wrap; gap: 10px; }
   .nav-toggle { display: inline-flex; margin-left: auto; }
   .nav { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; padding-top: 6px; }
@@ -334,6 +336,8 @@ main { padding: 56px 0; }
   .nav-group { width: 100%; }
   .nav-summary, .nav-direct { width: 100%; justify-content: space-between; }
   .nav-submenu { position: static; min-width: 0; margin-top: 3px; border-color: rgba(255,255,255,.1); box-shadow: none; }
+}
+@media (max-width: 760px) {
   .hero { padding: 52px 0; }
   .book-hero { padding: 36px 0; }
   .book-offer { grid-template-columns: 1fr; }

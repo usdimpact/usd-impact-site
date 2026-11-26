@@ -8,12 +8,18 @@ const fieldValues = (frontmatter, key) => [...frontmatter.matchAll(new RegExp(`^
 
 let files = [];
 try {
-  files = (await readdir(directory)).filter((file) => file.endsWith('.md')).sort();
+  files = (await readdir(directory, { recursive: true })).filter((file) => file.endsWith('.md')).sort();
 } catch (error) {
   if (error?.code !== 'ENOENT') throw error;
 }
 
 for (const file of files) {
+  // Astro's Catalyst loader walks **/*.md, so the validator must also
+  // enumerate nested files. The current public URL contract is flat;
+  // fail closed on an unexpected directory instead of silently skipping it.
+  if (path.basename(file) !== file) {
+    throw new Error(`${file}: nested Catalyst Brief files are unsupported and must not escape preflight validation`);
+  }
   const raw = await readFile(path.join(directory, file), 'utf8');
   const parts = raw.split(/^---\s*$/m);
   if (parts.length < 3) throw new Error(`${file}: missing YAML frontmatter`);

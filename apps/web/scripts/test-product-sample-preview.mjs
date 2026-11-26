@@ -36,7 +36,7 @@ for (const required of [
 if (!preview.includes('ctaPrimaryHref: "/start-here/"')) failures.push('Preview primary CTA must open the real public lesson.');
 if (!preview.includes('ctaSecondaryHref: "/start-here/quiz/"')) failures.push('Preview secondary CTA must open the real public quiz.');
 if (!preview.includes('Video playback remains protected.')) failures.push('Preview must state the protected video-playback boundary.');
-if (!preview.includes('does **not** unlock paid chapters')) failures.push('Preview must state the paid-content boundary.');
+if (!preview.includes('does **not** unlock protected chapters')) failures.push('Preview must state the protected-content boundary.');
 if (/cloudflarestream\.com|signedToken|<iframe/i.test(preview)) failures.push('Preview page must not embed or reference protected Stream playback.');
 
 if (!/^status:\s+"published"/m.test(lesson)) failures.push('Sample lesson must remain published.');
@@ -48,9 +48,15 @@ if (!sampleQuizAccess || sampleQuizAccess.released !== true || sampleQuizAccess.
   failures.push('Start Here sample quiz must remain a released first checkpoint.');
 }
 
-if (!product.includes('ctaSecondary: "Try a free sample"')) failures.push('Book product page must retain the free-sample CTA label.');
-if (!product.includes('ctaSecondaryHref: "/book/read-the-dollar-first/preview/"')) failures.push('Book product page must point its secondary CTA to the free sample.');
+if (!product.includes('ctaPrimary: "Read the public book sample"')) failures.push('Book product page must feature the public sample CTA.');
+if (!product.includes('ctaPrimaryHref: "/book/read-the-dollar-first/preview/"')) failures.push('Book product page primary CTA must point to the free sample.');
+if (!product.includes('ctaSecondary: "Download the weekly checklist"')) failures.push('Book product page secondary CTA must offer the public checklist.');
+if (!product.includes('ctaSecondaryDownload: true')) failures.push('Book product page must retain checklist download semantics.');
 if (!product.includes('[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)')) failures.push('Book product body must explain the free sample.');
+if (!preview.includes('Access for previous purchasers') || !preview.includes('/account/sign-in/?next=/account/')) failures.push('Public preview must preserve truthful prior purchaser access.');
+for (const obsolete of ['USD 39.00', 'USD 49.00', 'pricing and current availability']) {
+  if (preview.includes(obsolete)) failures.push(`Public preview retains an obsolete new-sale claim: ${obsolete}`);
+}
 
 for (const required of [
   'Open the protected library',

@@ -6,19 +6,25 @@ export type GuideAction =
   | { type: 'NEXT' | 'BACK' | 'RESTART' }
   | { type: 'LOCALE'; value: string | null }
   | { type: 'ANSWER'; index: number; value: string };
-type GuideCopy = {
+export type GuideQuestion = { question: string; correct: string; incorrect: string };
+export type GuideCopy = {
   title: string; intro: string; languageLabel: string; stepLabel: string; ofLabel: string;
+  eyebrow: string; navigationLabel: string;
   hypothetical: string; previous: string; next: string; restart: string; done: string;
   backToArticle: string; disclaimer: string; yes: string; no: string;
   steps: { heading: string; paragraphs: string[]; evidence: string }[];
-  questions: { question: string; correct: string; incorrect: string }[];
+  questions: GuideQuestion[];
 };
 export const TOTAL_STEPS = 5;
 export const LANGUAGES: readonly Locale[] = Object.freeze(['en', 'es-419']);
 
-export const COPY: Readonly<Record<Locale, GuideCopy>> = Object.freeze({
+// Lesson copy is serialized into the Preview-only HTML by the component frontmatter.
+// The client script must never import COPY, so Production builds emit no lesson text.
+export const COPY: Readonly<Record<Locale, GuideCopy>> = /* @__PURE__ */ Object.freeze({
   en: {
     title: 'Your first five minutes with the dollar',
+    eyebrow: 'USD Impact · Learning Preview',
+    navigationLabel: 'Learning guide navigation',
     intro: 'Five short steps. Hypothetical examples, not current quotes. No account, score or saved answers.',
     languageLabel: 'Language',
     stepLabel: 'Step',
@@ -86,6 +92,8 @@ export const COPY: Readonly<Record<Locale, GuideCopy>> = Object.freeze({
   },
   'es-419': {
     title: 'Tus primeros cinco minutos con el dólar',
+    eyebrow: 'USD Impact · Vista previa de aprendizaje',
+    navigationLabel: 'Navegación de la guía',
     intro: 'Cinco pasos breves. Ejemplos hipotéticos, no cotizaciones actuales. Sin cuenta, puntaje ni respuestas guardadas.',
     languageLabel: 'Idioma',
     stepLabel: 'Paso',
@@ -161,10 +169,10 @@ export function isComplete(state: GuideState): boolean {
   return state.step === TOTAL_STEPS - 1 &&
     state.answers.length === 2 && state.answers.every((answer) => answer === 'yes' || answer === 'no');
 }
-export function questionFeedback(state: GuideState, index: number): string {
+export function questionFeedback(state: GuideState, index: number, questions: readonly GuideQuestion[]): string {
   const answer = state.answers[index];
   if (answer !== 'yes' && answer !== 'no') return '';
-  const item = COPY[state.locale]?.questions[index];
+  const item = questions[index];
   if (!item) return '';
   return answer === 'no' ? item.correct : item.incorrect;
 }

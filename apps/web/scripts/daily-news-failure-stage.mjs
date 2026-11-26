@@ -38,6 +38,11 @@ function safeDetail(payload) {
 }
 
 export function classifyDailyPayloadFailure(payload) {
+  // An initial billed generation may have run, but this cutoff guarantees that
+  // a new paid regeneration did not. Preserve the distinction in incident #840.
+  if (payload?.code === 'regeneration-withheld-cutoff') {
+    return { stage: 'generation', gate: 'paid-regeneration-cutoff', detail: safeDetail(payload) };
+  }
   const text = payloadText(payload);
   const repairAttempts = Number(payload?.repairAttempts ?? 0);
 

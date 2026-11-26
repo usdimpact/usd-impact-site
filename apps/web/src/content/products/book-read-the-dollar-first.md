@@ -1,7 +1,7 @@
 ---
 title: "Read the Dollar First"
 metaTitle: "Read the Dollar First | USD Impact Book"
-metaDescription: "Explore the Read the Dollar First Guided Interactive Edition, try the free sample, review one-time pricing, and check launch availability."
+metaDescription: "Explore the free Read the Dollar First public lesson and learn how previous Library Pass purchasers access their existing materials."
 slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
@@ -20,9 +20,11 @@ internalLinks:
   - "/practice/weekly-regime"
   - "/video-library"
   - "/lead-magnets/weekly-dollar-regime-checklist"
-ctaPrimary: "Check Library Pass availability"
-ctaSecondary: "Try a free sample"
-ctaSecondaryHref: "/book/read-the-dollar-first/preview/"
+ctaPrimary: "Read the public book sample"
+ctaPrimaryHref: "/book/read-the-dollar-first/preview/"
+ctaSecondary: "Download the weekly checklist"
+ctaSecondaryHref: "/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf"
+ctaSecondaryDownload: true
 hero: "Most investors watch markets asset by asset. This book teaches a different starting point: read the dollar regime first."
 subhero: "Learn how dollar direction, real rates, liquidity stress and funding conditions transmit into oil, gold, Bitcoin, gas, FX, equities and broader market regimes."
 ---
@@ -30,9 +32,9 @@ subhero: "Learn how dollar direction, real rates, liquidity stress and funding c
 
 Build a repeatable way to separate DXY from the broader dollar, read real rates and liquidity together, and trace those conditions into oil, gold, Bitcoin, gas, FX and equities. The Guided Interactive Edition turns that framework into a chapter-by-chapter learning path with checks and practice.
 
-## See the method before you buy
+## Explore the public lesson
 
-The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)** includes a real public lesson, the live ten-question **Start Here** checkpoint and the complete 51-film syllabus. It does not unlock paid chapters, audiobook or protected film playback, saved progress or protected resources.
+The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)** includes a real public lesson, the live ten-question **Start Here** checkpoint and the complete 51-film syllabus. It does not unlock protected chapters, audiobook or film playback, saved progress or protected resources.
 
 <section class="book-disclosures" aria-labelledby="book-details-heading">
   <p class="eyebrow">Product details</p>
@@ -55,23 +57,23 @@ The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)*
   </details>
 
   <details class="book-disclosure">
-    <summary>Price, checkout and delivery</summary>
+    <summary>Current access and previous purchases</summary>
     <div>
-      <p>The approved launch offer has no quantity cutoff. The standard price applies after the approved launch offer ends. The Library Pass is a one-time purchase with ongoing access to the purchased edition and no recurring subscription fee.</p>
-      <p>Lemon Squeezy is the selected Merchant of Record. Applicable taxes and any supported currency conversion are calculated and displayed during checkout. This page verifies the current Live release state before showing a purchase link and fails closed to the waitlist if checkout availability cannot be confirmed.</p>
+      <p>The public lesson and learning tools are available without buying a Library Pass. This page does not promote a new Library Pass sale. Earlier purchasers keep access to their contracted learning materials through their original account; that access is separate from Research Membership.</p>
+      <p>Lemon Squeezy was the Merchant of Record for historical Library Pass transactions. Existing purchase and refund conditions remain governed by the terms shown at the time of purchase and applicable consumer law. This public page does not initiate a new Library Pass checkout.</p>
       <p>USD Impact is operated by <strong>KELA LEADS S.R.L.</strong>, CUI <strong>40790448</strong>, Trade Register <strong>J38/820/2020</strong>, EUID <strong>ROONRC.J38/820/2020</strong>. See the <a href="/refund-policy/">14-day Refund Policy</a>, <a href="/terms/">Terms &amp; Conditions</a>, <a href="/privacy/">Privacy Notice</a> and Lemon Squeezy <a href="https://www.lemonsqueezy.com/buyer-terms">Buyer Terms</a>.</p>
-      <p>After Lemon Squeezy confirms a completed payment through a verified commercial event, access is attached to the verified USD Impact account used for purchase. If access does not appear, contact <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.</p>
+      <p>For a previous Library Pass purchase, sign in with the verified USD Impact account used for the order. If purchased access does not appear, contact <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>. Do not send passwords or sign-in codes by email.</p>
     </div>
   </details>
 
   <details class="book-disclosure">
     <summary>Common questions</summary>
     <div class="book-faq">
-      <h3>What is included?</h3>
-      <p>The complete Guided Interactive Edition, English audiobook, 51-film USD Impact Video Library in five collections with verified English captions, protected reference resources, interactive quizzes and progress tracking.</p>
+      <h3>What was included with an eligible Library Pass purchase?</h3>
+      <p>The historical Library Pass described the complete Guided Interactive Edition, English audiobook, 51-film USD Impact Video Library in five collections with verified English captions, protected reference resources, interactive quizzes and progress tracking. These protected items are not automatically public or included with the free sample.</p>
       <h3>Can existing purchasers go straight to their library?</h3>
       <p>Yes. <a href="/account/sign-in/?next=/account/">Sign in with the verified account used for purchase</a>.</p>
-      <h3>Can I listen before deciding?</h3>
+      <h3>What about audiobook access?</h3>
       <p>You can <a href="/audiobook/read-the-dollar-first/">review the 20-chapter audiobook page</a>; full playback requires an eligible signed-in Library Pass account.</p>
       <h3>Where can I get help?</h3>
       <p>Email <a href="mailto:support@usd-impact.com">support@usd-impact.com</a> for account or billing support.</p>

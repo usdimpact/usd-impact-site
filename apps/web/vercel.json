@@ -33,9 +33,17 @@
     {
       "path": "/api/daily-news-grounded-background",
       "schedule": "32 9 * * 1-5"
+    },
+    {
+      "path": "/api/daily-news-late-wake",
+      "schedule": "47 15 * * 1-5"
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/daily-news-late-wake",
+      "destination": "/api/daily-news-grounded-background"
+    },
     {
       "source": "/guided-edition/book",
       "destination": "/api/guided-edition?__book=1"

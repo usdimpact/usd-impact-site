@@ -94,6 +94,22 @@ export function isTrustedBackstop(backstops, run) {
   );
 }
 
+// GitHub may have more than 100 unrelated open PRs. Scope the API request
+// to the immutable source-run branch rather than truncating a repository-wide
+// listing. The full PR identity and source commit are verified separately.
+export function exactDailyPrQuery(run) {
+  if (!run || typeof run.created_at !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}T/.test(run.created_at)
+      || !Number.isSafeInteger(run.id) || run.id < 1) {
+    throw new Error('invalid-daily-pr-query-source');
+  }
+  const day = run.created_at.slice(0, 10);
+  const branch = 'automation/daily-usd-impact-' + day + '-' + run.id;
+  const owner = REPOSITORY.split('/')[0];
+  return 'pulls?state=open&base=main&head='
+    + encodeURIComponent(owner + ':' + branch) + '&per_page=100';
+}
+
 export function selectExactDailyPr(pulls, run, mainSha) {
   if (!Array.isArray(pulls) || pulls.length >= 100) throw new Error('open-pr-evidence-incomplete');
   const day = run.created_at.slice(0, 10);
@@ -171,4 +187,65 @@ export function requireExactChecks(checkRuns, headSha) {
     }
   }
   return true;
+}
+
+// A fresh GitHub App pull_request may still be running native required checks
+// after separately dispatched supplemental checks have completed. "pending"
+// only permits a bounded retry: it never authorizes merge or bypass.
+export function classifyPreMergeReadiness(freshMainSha, mainSha, freshPr, headSha) {
+  if (!freshPr || freshMainSha !== mainSha
+      || freshPr.head?.sha !== headSha || freshPr.base?.sha !== mainSha
+      || freshPr.state !== 'open' || freshPr.draft
+      || freshPr.head?.repo?.full_name !== REPOSITORY) {
+    return 'pre-merge-main-or-pr-changed';
+  }
+  if (freshPr.mergeable === true && freshPr.mergeable_state === 'clean') return 'ready';
+  // GitHub may report 'unstable' for a pending OR failed non-required
+  // check. It may never settle; never infer success from time elapsed.
+  // This is a bounded wait ONLY. An unchanged main/head and a fresh
+  // mergeable=true, state='clean' read are mandatory before merging.
+  if ((freshPr.mergeable === true || freshPr.mergeable === null)
+      && ['blocked', 'unknown', 'unstable'].includes(freshPr.mergeable_state)) return 'pending';
+  return 'pre-merge-pr-not-clean';
+}
+
+
+// Only an allowlisted GitHub mergeability enum is safe to log. Never emit a
+// raw PR body, unbounded REST field or untrusted newline in the publisher log.
+function safeMergeabilitySnapshot(pr) {
+  const states = ['clean', 'blocked', 'unknown', 'unstable', 'dirty', 'behind', 'has_hooks', 'draft'];
+  const state = states.includes(pr?.mergeable_state) ? pr.mergeable_state : 'other';
+  const mergeable = pr?.mergeable === true ? 'true'
+    : pr?.mergeable === false ? 'false' : 'unknown';
+  return 'mergeable_state=' + state + ', mergeable=' + mergeable;
+}
+
+// Real GitHub reads and a cutoff are dependency-injected. The trusted runner
+// supplies them; offline test receipts exercise the actual loop without IO.
+export async function waitForProtectedPrChecks({
+  mainSha, prNumber, headSha, readMain, readPr, checkCutoff, pause, report,
+  maxPolls = 60, retryDelayMs = 10000,
+}) {
+  if (!Number.isInteger(maxPolls) || maxPolls < 1 || maxPolls > 60
+      || !Number.isInteger(retryDelayMs) || retryDelayMs < 0 || retryDelayMs > 10000) {
+    throw new Error('invalid-protected-pr-readiness-bounds');
+  }
+  for (let poll = 0; poll < maxPolls; poll++) {
+    checkCutoff();
+    const actualMain = readMain();
+    const pr = readPr(prNumber);
+    const decision = classifyPreMergeReadiness(actualMain, mainSha, pr, headSha);
+    if (decision === 'ready') return poll + 1;
+    if (decision !== 'pending') {
+      report('Protected PR readiness HOLD: PR #' + prNumber + ', '
+        + safeMergeabilitySnapshot(pr) + ', decision=' + decision);
+      throw new Error(decision);
+    }
+    if (poll === 0 || (poll + 1) % 12 === 0) {
+      report('Waiting for native protected PR checks: PR #' + prNumber
+        + ', ' + safeMergeabilitySnapshot(pr) + ', poll ' + (poll + 1));
+    }
+    if (poll + 1 < maxPolls) await pause(retryDelayMs);
+  }
+  throw new Error('pre-merge-pr-check-readiness-timeout');
 }

@@ -139,6 +139,9 @@ try {
   assert.ok(providerBody.include.includes('web_search_call.action.sources'));
   assert.ok(providerBody.tools[0].filters.allowed_domains.includes('bls.gov'));
   assert.match(providerBody.input, /Copy every sources\[\]\.url exactly/);
+  assert.match(providerBody.input, /reusable EIA WPSR schedule\.php/);
+  assert.match(providerBody.input, /dated original document URL/);
+  assert.match(providerBody.input, /do not change historical citation dates/);
   assert.deepEqual(providerBody.text.format.schema.properties.statusLabel.enum,
     ['scheduled-confirmed', 'rescheduled', 'cancelled']);
   assert.match(providerBody.input, /For preview, statusLabel must be scheduled-confirmed/);

@@ -20,6 +20,12 @@ for (const locale of LANGUAGES) {
   test(`${locale}: parity, answer combinations and explanations`, () => {
     assert.equal(COPY[locale].steps.length, TOTAL_STEPS);
     assert.equal(COPY[locale].questions.length, 2);
+    assert.ok(COPY[locale].eyebrow && COPY[locale].navigationLabel);
+    assert.ok(COPY[locale].backToArticle && COPY[locale].disclaimer);
+    COPY[locale].steps.forEach((step, i) => {
+      assert.equal(step.paragraphs.length, COPY.en.steps[i].paragraphs.length, `step ${i + 1} paragraph parity`);
+      assert.equal(Boolean(step.evidence), Boolean(COPY.en.steps[i].evidence), `step ${i + 1} example parity`);
+    });
     for (const [first, second, expected] of [
       [null, null, false], ['no', null, false], [null, 'yes', false],
       ['no', 'no', true], ['no', 'yes', true], ['yes', 'no', true], ['yes', 'yes', true],
@@ -28,10 +34,10 @@ for (const locale of LANGUAGES) {
       if (first) state = updateState(state, { type: 'ANSWER', index: 0, value: first });
       if (second) state = updateState(state, { type: 'ANSWER', index: 1, value: second });
       assert.equal(isComplete(state), expected);
-      assert.equal(Boolean(questionFeedback(state, 0)), Boolean(first));
-      assert.equal(Boolean(questionFeedback(state, 1)), Boolean(second));
-      if (first) assert.equal(questionFeedback(state, 0), first === 'no' ? COPY[locale].questions[0].correct : COPY[locale].questions[0].incorrect);
-      if (second) assert.equal(questionFeedback(state, 1), second === 'no' ? COPY[locale].questions[1].correct : COPY[locale].questions[1].incorrect);
+      assert.equal(Boolean(questionFeedback(state, 0, COPY[locale].questions)), Boolean(first));
+      assert.equal(Boolean(questionFeedback(state, 1, COPY[locale].questions)), Boolean(second));
+      if (first) assert.equal(questionFeedback(state, 0, COPY[locale].questions), first === 'no' ? COPY[locale].questions[0].correct : COPY[locale].questions[0].incorrect);
+      if (second) assert.equal(questionFeedback(state, 1, COPY[locale].questions), second === 'no' ? COPY[locale].questions[1].correct : COPY[locale].questions[1].incorrect);
     }
   });
 
@@ -65,4 +71,16 @@ test('fail-closed Preview-only integration; no public QA routes', () => {
   assert.match(view, /container\.lang = state\.locale/);
   assert.match(view, /container\.hidden = false/);
   assert.match(view, /<progress/);
+  assert.match(view, /meter\.value = isComplete\(state\) \? TOTAL_STEPS : state\.step/);
+  assert.match(view, /five-minute-guide__step h3:focus/);
+  assert.match(view, /five-minute-guide__language button\[aria-pressed="true"\]/);
+  assert.match(route, /isLegacyBookAcquisition/);
+  assert.doesNotMatch(route, /isLibraryPassAcquisition/);
+  const clientScripts = [...view.matchAll(/<script(?![^>]*type="application\/json")[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+  assert.doesNotMatch(clientScripts, /import\s*\{[^}]*\bCOPY\b/, 'client bundle must not import lesson copy');
+  assert.match(view, /<script type="application\/json" data-guide-copy set:html=\{copyJson\}><\/script>/);
+  assert.doesNotMatch(view, /class="five-minute-guide__step"[^>]*aria-labelledby/, 'no accessible name on a generic div');
+  assert.match(view, /data-guide-locale="en" lang="en"/);
+  assert.match(view, /data-guide-locale="es-419" lang="es-419"/);
+  assert.doesNotMatch(route, /suppressReviewMeasurement/, 'privacy-owner HOLD: do not change measurement policy in this update');
 });

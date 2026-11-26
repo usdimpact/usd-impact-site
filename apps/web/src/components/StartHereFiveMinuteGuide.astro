@@ -1,27 +1,31 @@
 ---
-/** Isolated Preview-only lesson; importing this does not change the public site shell. */
+/** Isolated Preview-only lesson. Lesson copy is serialized here, server-side, only when this component renders. */
+import { COPY } from '../lib/five-minute-guide-model';
+const en = COPY.en;
+const copyJson = JSON.stringify(COPY).replace(/</g, '\\u003c');
 ---
 <section id="five-minute-guide" class="five-minute-guide" data-five-minute-guide lang="en" aria-labelledby="five-minute-guide-title" hidden>
+  <script type="application/json" data-guide-copy set:html={copyJson}></script>
   <div class="five-minute-guide__heading">
     <div>
-      <p class="five-minute-guide__eyebrow">USD Impact · Learning Preview</p>
-      <h2 id="five-minute-guide-title" data-guide-title>Your first five minutes with the dollar</h2>
-      <p data-guide-intro>Five short steps. Hypothetical examples, not current quotes.</p>
+      <p class="five-minute-guide__eyebrow" data-guide-eyebrow>{en.eyebrow}</p>
+      <h2 id="five-minute-guide-title" data-guide-title>{en.title}</h2>
+      <p data-guide-intro>{en.intro}</p>
     </div>
-    <div class="five-minute-guide__language" role="group" aria-label="Language" data-language-group>
-      <button type="button" data-guide-locale="en" aria-pressed="true">English</button>
-      <button type="button" data-guide-locale="es-419" aria-pressed="false">Español</button>
+    <div class="five-minute-guide__language" role="group" aria-label={en.languageLabel} data-language-group>
+      <button type="button" data-guide-locale="en" lang="en" aria-pressed="true">English</button>
+      <button type="button" data-guide-locale="es-419" lang="es-419" aria-pressed="false">Español</button>
     </div>
   </div>
 
-  <p class="five-minute-guide__notice" data-guide-notice>HYPOTHETICAL EXAMPLE — NOT CURRENT MARKET QUOTES</p>
+  <p class="five-minute-guide__notice" data-guide-notice>{en.hypothetical}</p>
   <div class="five-minute-guide__progress">
-    <p data-guide-progress aria-live="polite">Step 1 of 5</p>
-    <progress value="1" max="5" data-guide-meter aria-label="Learning progress"></progress>
+    <p data-guide-progress aria-live="polite">{`${en.stepLabel} 1 ${en.ofLabel} 5`}</p>
+    <progress value="1" max="5" data-guide-meter aria-label={`${en.stepLabel} 1 ${en.ofLabel} 5`}></progress>
   </div>
 
-  <div class="five-minute-guide__step" aria-labelledby="five-minute-guide-step-heading">
-    <h3 id="five-minute-guide-step-heading" data-guide-heading tabindex="-1">The dollar is more than DXY</h3>
+  <div class="five-minute-guide__step">
+    <h3 id="five-minute-guide-step-heading" data-guide-heading tabindex="-1">{en.steps[0].heading}</h3>
     <div data-guide-paragraphs></div>
     <p class="five-minute-guide__example" data-guide-example></p>
     <div data-guide-quiz hidden>
@@ -45,21 +49,27 @@
     </div>
   </div>
 
-  <nav class="five-minute-guide__actions" aria-label="Learning guide navigation" data-guide-navigation>
-    <button type="button" data-guide-action="back" hidden>Previous</button>
-    <button type="button" data-guide-action="next">Next</button>
-    <button type="button" data-guide-action="restart" hidden>Restart</button>
-    <a href="#main-content" data-guide-return>Return to the Start Here article</a>
+  <nav class="five-minute-guide__actions" aria-label={en.navigationLabel} data-guide-navigation>
+    <button type="button" data-guide-action="back" hidden>{en.previous}</button>
+    <button type="button" data-guide-action="next">{en.next}</button>
+    <button type="button" data-guide-action="restart" hidden>{en.restart}</button>
+    <a href="#main-content" data-guide-return>{en.backToArticle}</a>
   </nav>
-  <p class="five-minute-guide__disclaimer" data-guide-disclaimer>Educational content only. This is not investment advice or a recommendation to buy or sell.</p>
+  <p class="five-minute-guide__disclaimer" data-guide-disclaimer>{en.disclaimer}</p>
 </section>
 
 <script>
-  import { COPY, TOTAL_STEPS, initialState, isComplete, questionFeedback, updateState } from '../lib/five-minute-guide-model';
+  // Logic only: lesson copy is read from the server-rendered JSON block, never bundled here.
+  import { TOTAL_STEPS, initialState, isComplete, questionFeedback, updateState } from '../lib/five-minute-guide-model';
+  import type { GuideCopy, Locale } from '../lib/five-minute-guide-model';
 
   const root = document.querySelector('[data-five-minute-guide]');
-  if (root instanceof HTMLElement) {
+  const copySource = root?.querySelector('script[data-guide-copy]');
+  let COPY: Record<Locale, GuideCopy> | null = null;
+  try { COPY = copySource ? JSON.parse(copySource.textContent || '') : null; } catch { COPY = null; }
+  if (root instanceof HTMLElement && COPY) {
     const container = root;
+    const copies = COPY;
     let state = initialState();
     const get = (selector: string): Element | null => container.querySelector(selector);
     const write = (selector: string, value: string): void => {
@@ -68,9 +78,10 @@
     };
 
     function render({ focusHeading = false, rerenderStep = true }: { focusHeading?: boolean; rerenderStep?: boolean } = {}): void {
-      const copy = COPY[state.locale];
+      const copy = copies[state.locale];
       const step = copy.steps[state.step];
       container.lang = state.locale;
+      write('[data-guide-eyebrow]', copy.eyebrow);
       write('[data-guide-title]', copy.title);
       write('[data-guide-intro]', copy.intro);
       write('[data-guide-notice]', copy.hypothetical);
@@ -80,12 +91,14 @@
       write('[data-guide-return]', copy.backToArticle);
       const group = get('[data-language-group]');
       if (group) group.setAttribute('aria-label', copy.languageLabel);
+      const navigation = get('[data-guide-navigation]');
+      if (navigation) navigation.setAttribute('aria-label', copy.navigationLabel);
       container.querySelectorAll('[data-guide-locale]').forEach((button) => {
         button.setAttribute('aria-pressed', String(button.getAttribute('data-guide-locale') === state.locale));
       });
       const meter = get('[data-guide-meter]');
       if (meter instanceof HTMLProgressElement) {
-        meter.value = state.step + 1;
+        meter.value = isComplete(state) ? TOTAL_STEPS : state.step;
         meter.setAttribute('aria-label', `${copy.stepLabel} ${state.step + 1} ${copy.ofLabel} ${TOTAL_STEPS}`);
       }
       const paragraphs = get('[data-guide-paragraphs]');
@@ -104,7 +117,7 @@
       if (quiz instanceof HTMLElement) quiz.hidden = !showQuiz;
       copy.questions.forEach((q, index) => {
         write(`[data-guide-question-label="${index}"]`, q.question);
-        write(`[data-guide-feedback="${index}"]`, questionFeedback(state, index));
+        write(`[data-guide-feedback="${index}"]`, questionFeedback(state, index, copy.questions));
       });
       container.querySelectorAll('[data-guide-yes]').forEach((el) => { el.textContent = copy.yes; });
       container.querySelectorAll('[data-guide-no]').forEach((el) => { el.textContent = copy.no; });
@@ -171,6 +184,8 @@
   .five-minute-guide__progress p { margin: 0 0 .4rem; font-weight: 750; }
   .five-minute-guide__progress progress { width: 100%; height: .65rem; accent-color: var(--navy); }
   .five-minute-guide__step h3 { margin: 1.25rem 0 .85rem; }
+  .five-minute-guide__step h3:focus { outline: 3px solid var(--gold-text); outline-offset: 4px; }
+  .five-minute-guide__language button[aria-pressed="true"] { box-shadow: inset 0 -4px 0 var(--navy); font-weight: 800; text-decoration: underline; text-underline-offset: .18em; }
   .five-minute-guide__step > div > p { max-width: 75ch; }
   .five-minute-guide__example { padding: 1rem; border-left: 4px solid var(--gold); background: #f5f7fa; color: var(--graphite); }
   .five-minute-guide__question { margin: 1rem 0; padding: 1rem; border: 1px solid #d8dee6; border-radius: 14px; min-width: 0; }

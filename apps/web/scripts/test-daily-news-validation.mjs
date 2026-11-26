@@ -33,7 +33,7 @@ assert.match(SOURCE_ID_RULES, /same normalized source id/i);
 
 assert.equal(
   sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-september.htm'),
-  SOURCE_DATE_BASIS.LAST_UPDATED,
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/calendar.htm'),
@@ -68,12 +68,12 @@ assert.equal(
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/news.release/cpi.nr0.htm'),
-  SOURCE_DATE_BASIS.PUBLISHED,
-  'BLS current-release alias remains outside the narrow CPI-homepage exception',
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
+  'BLS current-release alias is discovery-only and cannot carry a stable publication date',
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
-  SOURCE_DATE_BASIS.PUBLISHED,
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php'),
@@ -127,9 +127,17 @@ assert.equal(
 );
 assert.equal(isLivingSourceUrl('https://www.bea.gov/data/personal-consumption-expenditures-price-index'), true);
 assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
-assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
+assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), false);
+assert.equal(sourceDateBasisForUrl('https://bea.gov/data/income-saving/disposable-personal-income'), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+assert.equal(sourceDateBasisForUrl('https://www.bea.gov/data/income-saving/personal-income'), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+assert.equal(sourceDateAttributionIssue('https://www.federalreserve.gov/newsevents/2026-november.htm')?.includes('monthly calendar index'), true);
+assert.equal(sourceDateAttributionIssue('https://www.bea.gov/data/income-saving/disposable-personal-income')?.includes('rolling landing index'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
+assert.equal(sourceDateBasisForUrl('https://www.bls.gov/news.release/cpi.htm'), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+assert.equal(sourceDateAttributionIssue('https://www.bls.gov/news.release/cpi.htm')?.includes('current-release index'), true);
+assert.equal(sourceDateBasisForUrl('https://www.bls.gov/news.release/archives/cpi_11102026.htm'), SOURCE_DATE_BASIS.PUBLISHED);
+assert.match(SOURCE_DATE_RULES, /BLS CPI news/);
 assert.equal(isLivingSourceUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=example'), true);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');

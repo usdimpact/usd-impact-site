@@ -227,26 +227,31 @@ elif [[ "$args" == *"--include --silent"* ]]; then
     transport) exit 1 ;;
     *) echo 'HTTP/2 404 Not Found'; exit 1 ;;
   esac
-elif [[ "$args" == pr\\ list* ]]; then
-  if [ "$SCENARIO" = closed-pr ]; then printf '900\\tCLOSED\\thttps://github.com/usdimpact/usd-impact-site/pull/900\\n'; fi
-elif [[ "$args" == *'daily-news.yml/runs?per_page=30'* ]]; then
-  case "$SCENARIO" in
-    active) echo '{"workflow_runs":[{"created_at":"2026-10-19T09:31:00Z","status":"in_progress","event":"schedule"}]}' ;;
-    used) echo '{"workflow_runs":[{"created_at":"2026-10-19T09:31:00Z","status":"completed","event":"workflow_dispatch","conclusion":"failure"}]}' ;;
-    *) echo '{"workflow_runs":[]}' ;;
-  esac
+elif [[ "$args" == *'pulls?state=all&base=main&per_page=100&page='* ]]; then
+  if [ "$SCENARIO" = closed-pr ]; then
+    printf '%s\\n' '[{"number":900,"title":"Publish Daily USD Impact \u2014 2026-10-19","head":{"ref":"automation/daily-usd-impact-2026-10-19-fixture"},"state":"closed","html_url":"https://github.com/usdimpact/usd-impact-site/pull/900"}]'
+  else printf '[]\\n'; fi
+elif [[ "$args" == *'daily-news.yml/runs?created='* ]]; then
+  if grep -q '^workflow run ' "$FAKE_CALLS"; then
+    case "$SCENARIO" in
+      no-receipt) echo '{"total_count":0,"workflow_runs":[]}' ;;
+      duplicate-receipt) echo '{"total_count":2,"workflow_runs":[{"event":"workflow_dispatch","head_branch":"main","html_url":"https://github.com/usdimpact/usd-impact-site/actions/runs/1"},{"event":"workflow_dispatch","head_branch":"main","html_url":"https://github.com/usdimpact/usd-impact-site/actions/runs/2"}]}' ;;
+      *) echo '{"total_count":1,"workflow_runs":[{"event":"workflow_dispatch","head_branch":"main","html_url":"https://github.com/usdimpact/usd-impact-site/actions/runs/1"}]}' ;;
+    esac
+  else
+    case "$SCENARIO" in
+      active) echo '{"total_count":1,"workflow_runs":[{"created_at":"2026-10-19T09:31:00Z","status":"in_progress","event":"schedule"}]}' ;;
+      used) echo '{"total_count":1,"workflow_runs":[{"created_at":"2026-10-19T09:31:00Z","status":"completed","event":"workflow_dispatch","conclusion":"failure"}]}' ;;
+      incomplete-run-history) echo '{"total_count":101,"workflow_runs":[]}' ;;
+      *) echo '{"total_count":0,"workflow_runs":[]}' ;;
+    esac
+  fi
 elif [[ "$args" == *'daily-news-schedule-backstop.yml/runs?'* ]]; then
   if [ "$SCENARIO" = prior-failed ]; then
     echo '{"total_count":1,"workflow_runs":[{"id":98,"status":"completed","conclusion":"failure"}]}'
   else echo '{"total_count":0,"workflow_runs":[]}'; fi
 elif [[ "$args" == workflow\\ run* ]]; then
   if [ "$SCENARIO" = ack-lost ]; then exit 1; fi
-elif [[ "$args" == *'daily-news.yml/runs?created='* ]]; then
-  case "$SCENARIO" in
-    no-receipt) echo '{"total_count":0,"workflow_runs":[]}' ;;
-    duplicate-receipt) echo '{"total_count":2,"workflow_runs":[{"event":"workflow_dispatch","head_branch":"main","html_url":"https://github.com/usdimpact/usd-impact-site/actions/runs/1"},{"event":"workflow_dispatch","head_branch":"main","html_url":"https://github.com/usdimpact/usd-impact-site/actions/runs/2"}]}' ;;
-    *) echo '{"total_count":1,"workflow_runs":[{"event":"workflow_dispatch","head_branch":"main","html_url":"https://github.com/usdimpact/usd-impact-site/actions/runs/1"}]}' ;;
-  esac
 else echo 'Unexpected mock invocation' >&2; exit 99; fi
 `;
   const date = `#!/bin/bash
@@ -281,6 +286,19 @@ for (let i = 0; i < args.length; i++) {
   else if (!args[i].startsWith('-')) query = args[i];
 }
 const data = JSON.parse(readFileSync(0, 'utf8'));
+if (Array.isArray(data)) {
+  if (query.includes('if type == "array" and length <= 100')) {
+    if (data.length > 100) process.exit(2);
+    console.log(data.length); process.exit(0);
+  }
+  if (query.includes('(.head.ref // "")') && query.includes('@tsv')) {
+    const matched = data.find(pr => pr.title === vars.title &&
+      String(pr.head?.ref || '').startsWith(vars.prefix));
+    if (matched) console.log([matched.number, matched.state, matched.html_url].join(String.fromCharCode(9)));
+    process.exit(0);
+  }
+  process.exit(2);
+}
 const runs = data.workflow_runs;
 if (!Array.isArray(runs)) process.exit(2);
 if (query.includes('.total_count ==')) {
@@ -313,7 +331,9 @@ else process.exit(2);
     ['wrong-us-date', 0, 0, 'UTC and US edition dates differ'],
     ['bad-us-clock', 1, 0, 'invalid US local time'],
     ['closed-pr', 0, 0, 'publication PR already exists'], ['active', 0, 0, 'already active'],
-    ['used', 0, 0, 'one-recovery budget is exhausted'], ['prior-failed', 1, 0, 'earlier backstop did not succeed'],
+    ['used', 0, 0, 'one-recovery budget is exhausted'],
+    ['incomplete-run-history', 1, 0, 'incomplete current-day Daily run history'],
+    ['prior-failed', 1, 0, 'earlier backstop did not succeed'],
     ['ack-lost', 1, 1, 'acknowledgement is unknown'], ['no-receipt', 1, 1, 'no visible run receipt'],
     ['duplicate-receipt', 1, 1, 'more than one recovery run'], ['receipt', 0, 1, 'Recovery run receipt'],
   ]) {

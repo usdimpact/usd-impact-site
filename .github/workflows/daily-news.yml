@@ -61,14 +61,29 @@ jobs:
             exit 1
           fi
 
-          existing_pr="$(gh pr list \
-            --repo "$GITHUB_REPOSITORY" \
-            --state all \
-            --base main \
-            --limit 100 \
-            --json number,title,headRefName,state,url \
-            --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .state, .url] | @tsv" \
-            | head -n 1)"
+          # A partial 100-PR listing cannot prove absence, including closed
+          # editorial PRs. Traverse complete, bounded REST pages before
+          # permitting new paid generation or a recovery dispatch.
+          existing_pr=''
+          pr_scan_complete=false
+          for pr_page in $(seq 1 20); do
+            pr_page_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=all&base=main&per_page=100&page=$pr_page")"
+            pr_page_count="$(jq -er 'if type == "array" and length <= 100 then length else error("invalid-pull-page") end' <<< "$pr_page_json")"
+            existing_pr="$(jq -r --arg title "$expected_title" --arg prefix "$expected_head_prefix" \
+              '[.[] | select(.title == $title and ((.head.ref // "") | startswith($prefix))) | [.number, .state, .html_url] | @tsv] | .[0] // empty' \
+              <<< "$pr_page_json")"
+            if [ -n "$existing_pr" ]; then
+              break
+            fi
+            if [ "$pr_page_count" -lt 100 ]; then
+              pr_scan_complete=true
+              break
+            fi
+          done
+          if [ -z "$existing_pr" ] && [ "$pr_scan_complete" != true ]; then
+            echo "::error::Daily PR enumeration exceeded 20 full pages; HOLD without paid generation."
+            exit 1
+          fi
 
           if [ -n "$existing_pr" ]; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
@@ -86,6 +101,8 @@ jobs:
           PUBLICATION_NEEDED: ${{ steps.preflight.outputs.needed }}
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+          DAILY_PR_APP_CLIENT_ID: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          DAILY_PR_APP_PRIVATE_KEY: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
         run: |
           if [ "$PUBLICATION_NEEDED" != "true" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
@@ -96,9 +113,26 @@ jobs:
           if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "::notice::NEWSFEED_ENDPOINT or NEWSFEED_BEARER_TOKEN is not configured; no edition was generated."
+          elif [ -z "$DAILY_PR_APP_CLIENT_ID" ] || [ -z "$DAILY_PR_APP_PRIVATE_KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Daily PR-author GitHub App is not provisioned; no paid generation was started."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Validate App installation and scoped token permissions before any paid
+      # source generation. A present but invalid/misinstalled private key must
+      # never permit spending merely to fail on PR creation after generation.
+      # This token is not passed to source generation or Git commands.
+      - name: Verify PR-author App installation before paid news generation
+        id: daily_pr_author_preflight
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         if: steps.config.outputs.configured == 'true'
@@ -118,6 +152,10 @@ jobs:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
+          if ! bash scripts/guard-daily-news-paid-start.sh; then
+            echo "::error::Initial paid generation withheld by the launch cutoff; no provider POST sent."
+            exit 1
+          fi
           background_endpoint="$(node -e '
             const url = new URL(process.env.NEWSFEED_ENDPOINT);
             if (!/\/daily-news-source\/?$/.test(url.pathname)) {
@@ -219,6 +257,11 @@ jobs:
               fi
 
               if [ "$regeneration_used" = "false" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then
+                if ! bash scripts/guard-daily-news-paid-start.sh; then
+                  printf '{"code":"regeneration-withheld-cutoff","error":"Bounded paid regeneration was withheld by the 07:10 America/New_York cutoff before provider POST","status":"failed","generationAttempt":1}\n' > "$poll_payload"
+                  echo "::error::Paid regeneration withheld by cutoff; no second provider POST sent."
+                  exit 1
+                fi
                 echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt."
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
@@ -277,12 +320,34 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         run: node scripts/validate-publication-content.mjs --preflight
 
+      # This installation token is minted only after source generation/validation,
+      # avoiding 1-hour expiration during the bounded background generation lease.
+      # Omitted owner/repositories inputs scope the token to this repository only.
+      # The action revokes it at job exit. App must have Contents: read,
+      # Pull requests: write; no merge, Actions, issues or admin permissions.
+      - name: Mint short-lived Daily PR-author GitHub App token
+        id: daily_pr_author_token
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+
       - name: Open and validate publication pull request
         id: publish_pr
         if: steps.config.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          DAILY_PR_APP_TOKEN: ${{ steps.daily_pr_author_token.outputs.token }}
         run: |
+          # Do not silently fall back to GITHUB_TOKEN for PR creation: a
+          # GitHub Actions-authored PR suppresses the required PR check events.
+          if [ -z "$DAILY_PR_APP_TOKEN" ]; then
+            echo "::error::No scoped App PR-author token; automatic PR creation held."
+            exit 1
+          fi
           if [ -z "$(git status --porcelain src/content/news)" ]; then
             echo "No news changes to publish."
             exit 0
@@ -316,7 +381,7 @@ jobs:
               'The generator validates this exact commit with Web quality and submits its PR to a separately gated automatic publisher. Any failing source, calendar, security, Preview or timing gate leaves the PR open for protected owner review; a failed validation or build never changes Production.' \
               > "$RUNNER_TEMP/daily-news-pr.md"
 
-            pr_url="$(gh pr create \
+            pr_url="$(GH_TOKEN="$DAILY_PR_APP_TOKEN" gh pr create \
               --base main \
               --head "$branch" \
               --title "Publish Daily USD Impact — ${edition_date}" \

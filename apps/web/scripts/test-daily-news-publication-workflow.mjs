@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, chmod, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -26,7 +26,7 @@ assert.match(
 );
 assert.match(
   workflow,
-  /existing_pr="\$\(gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
+  /pr_scan_complete=false[\s\S]*for pr_page in \$\(seq 1 20\)[\s\S]*pulls\?state=all&base=main&per_page=100&page=\$pr_page[\s\S]*pr_scan_complete=true[\s\S]*pr_scan_complete" != true/,
   'the publication preflight must respect any exact current-day Daily PR state',
 );
 assert.match(
@@ -101,64 +101,207 @@ assert.match(workflow, /stage='preflight'[\s\S]*gate='publication-existence-look
 const preflightShell = preflightStep[1].split('\n')
   .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
   .join('\n');
+const originalPr = (number, { title = 'Other editorial PR', branch = 'agent/other-' + number,
+  state = 'open' } = {}) => ({
+  number, title, state,
+  head: { ref: branch }, base: { ref: 'main' },
+  html_url: 'https://github.com/usdimpact/usd-impact-site/pull/' + number,
+});
+const matchingPr = originalPr(880, {
+  title: 'Publish Daily USD Impact — 2026-10-30',
+  branch: 'automation/daily-usd-impact-2026-10-30-90001',
+  state: 'closed',
+});
+const hundredUnrelated = JSON.stringify(Array.from({ length: 100 }, (_, i) => originalPr(i + 1)));
+const hundredOne = JSON.stringify(Array.from({ length: 101 }, (_, i) => originalPr(i + 1)));
+const firstWithMatch = JSON.stringify([matchingPr]);
+const secondWithMatch = JSON.stringify([matchingPr]);
+const wrongHead = JSON.stringify([originalPr(881, {
+  title: matchingPr.title, branch: 'automation/daily-usd-impact-2026-10-29-90001',
+})]);
 const preflightMock = [
   'date() {',
   '  case "$*" in',
   '    "-u +%F") echo "2026-10-30" ;;',
   '    "-u +%u") echo "$MOCK_WEEKDAY" ;;',
+  '    "+%F") echo "2026-10-30" ;;',
+  '    "+%H:%M") echo "06:47" ;;',
   '    *) return 92 ;;',
   '  esac',
   '}',
   'gh() {',
   '  case "$1" in',
   '    api)',
-  '      if [ "$MOCK_STATUS" = "transport" ]; then return 7; fi',
-  "      printf 'HTTP/2 %s\\r\\n' \"$MOCK_STATUS\"",
-  '      [ "$MOCK_STATUS" = "200" ] ;;',
-  '    pr)',
-  '      [ "$MOCK_STATUS" = "404" ] || return 93',
-  '      if [ "$MOCK_PR" = "existing" ]; then',
-  "        printf '1100\\tOPEN\\thttps://github.com/usdimpact/usd-impact-site/pull/1100\\n'",
-  '      fi ;;',
+  '      if [ "$2" = "--include" ]; then',
+  '        if [ "$MOCK_STATUS" = "transport" ]; then return 7; fi',
+  "        printf 'HTTP/2 %s\\r\\n' \"$MOCK_STATUS\"",
+  '        [ "$MOCK_STATUS" = "200" ]',
+  '      elif [[ "$2" == *"/pulls?state=all&base=main&per_page=100&page="* ]]; then',
+  '        page="$(printf "%s" "$2" | sed -E "s/^.*page=//")"',
+  '        if [ "$MOCK_PR_ERROR_PAGE" = "$page" ]; then return 7; fi',
+  '        if [ "$MOCK_PR_BAD_PAGE" = "$page" ]; then printf "malformed{\\n"; return 0; fi',
+  '        if [ "$MOCK_PR_ALL_FULL" = "true" ]; then printf "%s\\n" "$MOCK_PR_FULL"; return 0; fi',
+  '        case "$page" in',
+  '          1) printf "%s\\n" "$MOCK_PR_PAGE1" ;;',
+  '          2) printf "%s\\n" "$MOCK_PR_PAGE2" ;;',
+  '          *) printf "[]\\n" ;;',
+  '        esac',
+  '      elif [ "$2" = "repos/$GITHUB_REPOSITORY" ]; then',
+  '        printf "main\\n"',
+  "      elif [[ \"$2\" == *\"/actions/workflows/daily-news.yml/runs?created=\"* ]]; then",
+  "        if [ \"$MOCK_RUN_HISTORY_INCOMPLETE\" = \"true\" ]; then",
+  "          printf '{\"total_count\":101,\"workflow_runs\":[]}\\n'",
+  "        else",
+  "          printf '{\"total_count\":1,\"workflow_runs\":[{\"created_at\":\"2026-10-30T09:17:00Z\",\"status\":\"in_progress\",\"conclusion\":null,\"event\":\"schedule\"}]}\\n'",
+  "        fi",
+  '      else return 94; fi ;;',
+  '    workflow) printf "MOCK_UNAUTHORIZED_DISPATCH\\n" >&2; return 97 ;;',
   '    *) return 94 ;;',
   '  esac',
   '}',
 ].join('\n');
+
 const preflightCases = [
-  { status: '200', expected: 'reason=published', exit: 0 },
-  { status: '404', expected: 'reason=missing', exit: 0 },
-  { status: '404', pr: 'existing', expected: 'reason=publication-pr-exists', exit: 0 },
-  { status: '401', exit: 1 }, { status: '403', exit: 1 },
-  { status: '429', exit: 1 }, { status: '500', exit: 1 },
-  { status: 'transport', exit: 1 },
-  { status: '404', weekday: '6', expected: 'reason=outside-scheduled-weekday', exit: 0 },
-  { status: '404', weekday: '6', event: 'workflow_dispatch', expected: 'reason=missing', exit: 0 },
+  { label: 'already on main', status: '200', expected: 'reason=published', exit: 0 },
+  { label: 'empty history', status: '404', expected: 'reason=missing', exit: 0 },
+  { label: 'closed exact PR in first page', status: '404', page1: firstWithMatch,
+    expected: 'reason=publication-pr-exists', exit: 0 },
+  { label: 'closed exact PR after first full page', status: '404',
+    page1: hundredUnrelated, page2: secondWithMatch,
+    expected: 'reason=publication-pr-exists', exit: 0 },
+  { label: 'exactly 100 unrelated PRs is not a complete scan', status: '404',
+    page1: hundredUnrelated, expected: 'reason=missing', exit: 0 },
+  { label: '101 unrelated PRs across two pages', status: '404',
+    page1: hundredUnrelated, page2: JSON.stringify([originalPr(102)]),
+    expected: 'reason=missing', exit: 0 },
+  { label: 'wrong date branch is not a current-day PR', status: '404',
+    page1: wrongHead, expected: 'reason=missing', exit: 0 },
+  { label: 'overlong page fails closed', status: '404', page1: hundredOne, exit: 1 },
+  { label: 'pagination transport error fails closed', status: '404',
+    page1: hundredUnrelated, prErrorPage: '2', exit: 1 },
+  { label: 'malformed later page fails closed', status: '404',
+    page1: hundredUnrelated, prBadPage: '2', exit: 1 },
+  { label: '20 full pages cannot authorize spend', status: '404',
+    prAllFull: true, exit: 1 },
+  { label: '401 file lookup', status: '401', exit: 1 },
+  { label: '403 file lookup', status: '403', exit: 1 },
+  { label: '429 file lookup', status: '429', exit: 1 },
+  { label: '500 file lookup', status: '500', exit: 1 },
+  { label: 'transport file lookup', status: 'transport', exit: 1 },
+  { label: 'Saturday native schedule', status: '404', weekday: '6',
+    expected: 'reason=outside-scheduled-weekday', exit: 0 },
+  { label: 'Saturday manual source', status: '404', weekday: '6',
+    event: 'workflow_dispatch', expected: 'reason=missing', exit: 0 },
 ];
+
+// The Vercel build image may lack jq. Exercise both the real jq (when present)
+// and a deliberately narrow offline interpreter for exactly the workflow's
+// fixture queries; no GitHub calls, credentials, or publication side effects.
+const nativeJqAvailable = spawnSync('bash', ['-c', 'command -v jq'], { encoding: 'utf8' }).status === 0;
+const jqFixtureModes = nativeJqAvailable ? ['native', 'portable'] : ['portable'];
+const portableJqSource = '#!' + process.execPath + '\n' + "// This substitute executes only offline fixture queries; Production continues to use native jq.\nconst { readFileSync } = require('node:fs');\ntry {\n  const args = process.argv.slice(2);\n  const variables = {};\n  let query = '';\n  for (let i = 0; i < args.length; i++) {\n    if (args[i] === '--arg') {\n      variables[args[++i]] = args[++i];\n    } else if (args[i] === '-r' || args[i] === '-e' || args[i] === '-er') {\n      // Query and input are both supplied by the offline test harness.\n    } else if (!args[i].startsWith('-')) {\n      query = args[i];\n    } else {\n      throw new Error('unsupported-flag');\n    }\n  }\n  const input = JSON.parse(readFileSync(0, 'utf8'));\n  if (Array.isArray(input)) {\n    if (query === 'if type == \"array\" and length <= 100 then length else error(\"invalid-pull-page\") end') {\n      if (input.length > 100) throw new Error('invalid-pull-page');\n      console.log(input.length);\n    } else if (query.includes('select(.title == $title') && query.includes('startswith($prefix)') && query.includes('@tsv')) {\n      const found = input.find(pr => pr?.title === variables.title &&\n        typeof pr?.head?.ref === 'string' && pr.head.ref.startsWith(variables.prefix));\n      if (found) console.log([found.number, found.state, found.html_url].join('\\t'));\n    } else {\n      throw new Error('unsupported-pull-query');\n    }\n  } else if (input && typeof input === 'object') {\n    if (!Array.isArray(input.workflow_runs)) throw new Error('invalid-run-history');\n    if (query === '.total_count == (.workflow_runs | length) and .total_count <= 100') {\n      const complete = Number.isInteger(input.total_count) &&\n        input.total_count === input.workflow_runs.length && input.total_count <= 100;\n      console.log(complete);\n      if (!complete) process.exitCode = 1;\n    } else if (query.includes('.workflow_runs[]') && query.endsWith('| length')) {\n      if (typeof variables.day !== 'string') throw new Error('missing-day');\n      let matching = input.workflow_runs.filter(run =>\n        typeof run?.created_at === 'string' && run.created_at.startsWith(variables.day));\n      if (query.includes('.status != \"completed\"'))\n        matching = matching.filter(run => run.status !== 'completed');\n      if (query.includes('.status == \"completed\"'))\n        matching = matching.filter(run => run.status === 'completed');\n      if (query.includes('.conclusion == \"success\"'))\n        matching = matching.filter(run => run.conclusion === 'success');\n      if (query.includes('.conclusion != \"success\"'))\n        matching = matching.filter(run => run.conclusion !== 'success');\n      if (query.includes('.event == \"workflow_dispatch\"'))\n        matching = matching.filter(run => run.event === 'workflow_dispatch');\n      console.log(matching.length);\n    } else {\n      throw new Error('unsupported-run-query');\n    }\n  } else {\n    throw new Error('invalid-json-type');\n  }\n} catch {\n  console.error('offline-jq-fixture-rejected-input');\n  process.exitCode = 2;\n}\n";
+async function installPortableJq(directory) {
+  const executable = join(directory, 'jq');
+  await writeFile(executable, portableJqSource);
+  await chmod(executable, 0o700);
+}
 const preflightTemp = await mkdtemp(join(tmpdir(), 'usd-daily-preflight-offline-'));
+await installPortableJq(preflightTemp);
+
 try {
-  for (const scenario of preflightCases) {
+  for (const jqMode of jqFixtureModes) {
+    for (const scenario of preflightCases) {
     const outPath = join(preflightTemp, 'outputs');
     await writeFile(outPath, '');
-    const result = spawnSync('bash', ['-c', preflightMock + '\n' + preflightShell], {
-      encoding: 'utf8', timeout: 5000,
+    const test = spawnSync('bash', ['-c', preflightMock + '\n' + preflightShell], {
+      encoding: 'utf8', timeout: 10000,
       env: {
-        PATH: '/usr/bin:/bin', GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
+        PATH: jqMode === 'portable' ? `${preflightTemp}:${process.env.PATH}` : process.env.PATH, GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
         GITHUB_OUTPUT: outPath, GITHUB_EVENT_NAME: scenario.event ?? 'schedule',
         MOCK_STATUS: scenario.status, MOCK_WEEKDAY: scenario.weekday ?? '5',
-        MOCK_PR: scenario.pr ?? '', GH_TOKEN: 'offline-fixture-not-a-real-token',
+        MOCK_PR_PAGE1: scenario.page1 ?? '[]', MOCK_PR_PAGE2: scenario.page2 ?? '[]',
+        MOCK_PR_FULL: hundredUnrelated, MOCK_PR_ALL_FULL: scenario.prAllFull ? 'true' : 'false',
+        MOCK_PR_ERROR_PAGE: scenario.prErrorPage ?? '',
+        MOCK_PR_BAD_PAGE: scenario.prBadPage ?? '',
+        MOCK_RUN_HISTORY_INCOMPLETE: scenario.runHistoryIncomplete ? 'true' : 'false',
+        GH_TOKEN: 'offline-fixture-not-a-real-token',
       },
     });
-    assert.equal(result.status, scenario.exit,
-      scenario.status + ': unexpected preflight exit ' + result.stderr);
+    if (scenario.exit === 0) assert.equal(test.status, 0,
+      scenario.label + ': unexpected preflight exit ' + test.stderr);
+    else assert.notEqual(test.status, 0,
+      scenario.label + ': uncertainty must fail closed: ' + test.stderr);
     const evidence = await readFile(outPath, 'utf8');
     if (scenario.expected) assert.ok(evidence.includes(scenario.expected),
-      scenario.status + ': ' + scenario.expected + ' not found in ' + evidence);
+      scenario.label + ': ' + scenario.expected + ' not found in ' + evidence);
     if (scenario.exit !== 0) assert.ok(!evidence.includes('needed=true'),
-      scenario.status + ': uncertain GitHub state authorized generation');
+      scenario.label + ': uncertain GitHub state authorized paid generation');
+    assert.doesNotMatch(test.stderr, /MOCK_UNAUTHORIZED_DISPATCH/,
+      scenario.label + ': preflight should not dispatch an extra Daily');
+    }
   }
 } finally {
   await rm(preflightTemp, { recursive: true, force: true });
 }
+console.log('Daily initial preflight: 18 offline duplicate/complete-page/negative tests PASS.');
+
+// Exercise the actual independent schedule-backstop shell with the same mocked
+// GitHub API. An active run receipt stops genuine recovery in the missing case.
+const backstopPreflight = backstop.match(
+  /      - name: Check whether Daily recovery is needed\n[\s\S]*?        run: \|\n([\s\S]*)$/,
+);
+assert.ok(backstopPreflight);
+const backstopShellForMock = backstopPreflight[1].split('\n')
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+const backstopScenarios = [...preflightCases.filter((caseItem) => caseItem.weekday !== '6'
+  && caseItem.event !== 'workflow_dispatch'),
+  { label: 'incomplete current-day run history', status: '404',
+    runHistoryIncomplete: true, exit: 1 }];
+const backstopTemp = await mkdtemp(join(tmpdir(), 'usd-daily-backstop-preflight-offline-'));
+await installPortableJq(backstopTemp);
+try {
+  for (const jqMode of jqFixtureModes) {
+    for (const scenario of backstopScenarios) {
+    const outPath = join(backstopTemp, 'summary');
+    await writeFile(outPath, '');
+    const test = spawnSync('bash', ['-c', preflightMock + '\n' + backstopShellForMock], {
+      encoding: 'utf8', timeout: 10000,
+      env: {
+        PATH: jqMode === 'portable' ? `${backstopTemp}:${process.env.PATH}` : process.env.PATH, GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
+        GITHUB_STEP_SUMMARY: outPath, GITHUB_RUN_ID: '90001',
+        GITHUB_EVENT_NAME: 'schedule', MOCK_STATUS: scenario.status,
+        MOCK_WEEKDAY: '5',
+        MOCK_PR_PAGE1: scenario.page1 ?? '[]', MOCK_PR_PAGE2: scenario.page2 ?? '[]',
+        MOCK_PR_FULL: hundredUnrelated, MOCK_PR_ALL_FULL: scenario.prAllFull ? 'true' : 'false',
+        MOCK_PR_ERROR_PAGE: scenario.prErrorPage ?? '',
+        MOCK_PR_BAD_PAGE: scenario.prBadPage ?? '',
+        MOCK_RUN_HISTORY_INCOMPLETE: scenario.runHistoryIncomplete ? 'true' : 'false',
+        GH_TOKEN: 'offline-fixture-not-a-real-token',
+      },
+    });
+    if (scenario.exit === 0) assert.equal(test.status, 0,
+      'backstop ' + scenario.label + ': ' + test.stderr);
+    else assert.notEqual(test.status, 0,
+      'backstop ' + scenario.label + ': uncertainty must fail closed: ' + test.stderr);
+    const evidence = await readFile(outPath, 'utf8');
+    if (scenario.expected === 'reason=publication-pr-exists') {
+      assert.match(evidence, /publication PR already exists/,
+        'backstop must respect an existing original or human-closed Daily PR');
+    }
+    if (scenario.expected === 'reason=missing') {
+      assert.match(evidence, /already active/,
+        'without a prior PR, a live current-day source run must suppress recovery');
+    }
+    if (scenario.prAllFull) assert.match(evidence, /enumeration exceeded 20 full pages/,
+      'ambiguous 20-page PR inventory must hold recovery');
+    assert.doesNotMatch(test.stderr, /MOCK_UNAUTHORIZED_DISPATCH/,
+      'backstop must not dispatch a second paid Daily in the test');
+    }
+  }
+} finally {
+  await rm(backstopTemp, { recursive: true, force: true });
+}
+console.log('Daily recovery backstop: 17 offline duplicate/complete-page/negative tests PASS.');
 
 const pollStep = workflow.match(
   /      - name: Poll background news generation\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Import as published content)/,
@@ -311,12 +454,12 @@ assert.match(
 );
 assert.match(
   backstop,
-  /gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
+  /pr_scan_complete=false[\s\S]*for pr_page in \$\(seq 1 20\)[\s\S]*pulls\?state=all&base=main&per_page=100&page=\$pr_page[\s\S]*pr_scan_complete=true[\s\S]*pr_scan_complete" != true/,
   'the backstop must respect any exact current-day publication PR, including a human-closed PR',
 );
 assert.match(
   backstop,
-  /actions\/workflows\/daily-news\.yml\/runs\?per_page=30/,
+  /actions\/workflows\/daily-news\.yml\/runs\?created=\$today&per_page=100[\s\S]*\.total_count == \(\.workflow_runs \| length\) and \.total_count <= 100/,
   'the backstop must inspect current-day Daily runs before dispatching recovery',
 );
 assert.match(

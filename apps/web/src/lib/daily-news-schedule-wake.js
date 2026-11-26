@@ -5,6 +5,7 @@ const REPO = 'usdimpact/usd-impact-site';
 const ROOT = `https://api.github.com/repos/${REPO}`;
 const DAILY = 'daily-news.yml';
 const BACKSTOP = 'daily-news-schedule-backstop.yml';
+const LATE = 'daily-news-late-carryforward.yml';
 const MAX_PAGES = 20;
 const SHA = /^[a-f0-9]{40}$/;
 const KNOWN_STATUSES = new Set(['queued', 'in_progress', 'completed', 'waiting', 'pending', 'requested']);
@@ -27,9 +28,11 @@ function utcDay(now) {
   return now.toISOString().slice(0, 10);
 }
 
-function inWindow(now) {
+function inWindow(now, late = false) {
   const minute = now.getUTCHours() * 60 + now.getUTCMinutes();
-  return now.getUTCDay() >= 1 && now.getUTCDay() <= 5 && minute >= 572 && minute < 990;
+  return now.getUTCDay() >= 1 && now.getUTCDay() <= 5 && (late
+    ? minute >= 940 && minute < 1050 // 15:40-17:30 UTC; separate no-paid afternoon publication candidate
+    : minute >= 572 && minute < 940); // 09:32-15:40 UTC; unchanged morning wake dispatch authority
 }
 
 function checkedRuns(payload, filename, day) {
@@ -71,7 +74,11 @@ export async function wakeDailyBackstop({ env = process.env, fetchImpl = globalT
   try {
     const now = clock();
     day = utcDay(now);
-    if (!inWindow(now)) return no('outside-weekday-window', day);
+    const late = now.getUTCHours() * 60 + now.getUTCMinutes() >= 940;
+    if (late && env.DAILY_NEWS_LATE_FALLBACK_ENABLED !== 'true') {
+      return no('outside-weekday-window', day);
+    }
+    if (!inWindow(now, late)) return no('outside-weekday-window', day);
     const token = env.DAILY_NEWS_SCHEDULE_GITHUB_TOKEN;
     if (typeof token !== 'string' || token.length < 20 || /[\r\n]/.test(token)) {
       throw hold('missing-dispatch-credential');
@@ -112,8 +119,10 @@ export async function wakeDailyBackstop({ env = process.env, fetchImpl = globalT
         if (!Number.isSafeInteger(pr.number) || typeof pr.title !== 'string' ||
             typeof pr.head?.ref !== 'string' || pr.base?.ref !== 'main' ||
             !['open', 'closed'].includes(pr.state)) throw hold('invalid-pr-history');
-        if (pr.title === `Publish Daily USD Impact \u2014 ${day}` &&
-            pr.head.ref.startsWith(`automation/daily-usd-impact-${day}-`)) {
+        if ((pr.title === `Publish Daily USD Impact \u2014 ${day}` &&
+            pr.head.ref.startsWith(`automation/daily-usd-impact-${day}-`)) ||
+            (pr.title === `Publish Daily USD Impact \u2014 ${day} (late verified carry-forward)` &&
+            pr.head.ref.startsWith(`automation/daily-carryforward-${day}-`))) {
           return no('publication-pr-exists', day);
         }
       }
@@ -123,24 +132,34 @@ export async function wakeDailyBackstop({ env = process.env, fetchImpl = globalT
 
     const dailyRuns = checkedRuns(await get(`/actions/workflows/${DAILY}/runs?branch=main&created=${day}&per_page=100`), DAILY, day);
     if (dailyRuns.some((run) => run.status !== 'completed')) return no('daily-active', day);
-    if (dailyRuns.some((run) => run.event === 'workflow_dispatch')) return no('recovery-budget-used', day);
+    if (late) {
+      // No second paid generation: the late workflow only reuses reviewed archive sources.
+      const lateRuns = checkedRuns(await get(`/actions/workflows/${LATE}/runs?branch=main&created=${day}&per_page=100`), LATE, day);
+      if (lateRuns.some((run) => run.status !== 'completed')) return no('late-fallback-active', day);
+      if (lateRuns.some((run) => run.conclusion !== 'success')) throw hold('previous-late-fallback-not-successful');
+      if (lateRuns.some((run) => run.event === 'workflow_dispatch' || run.event === 'schedule')) {
+        return no('late-fallback-already-started', day);
+      }
+    }
+    if (!late && dailyRuns.some((run) => run.event === 'workflow_dispatch')) return no('recovery-budget-used', day);
     const backstopRuns = checkedRuns(await get(`/actions/workflows/${BACKSTOP}/runs?branch=main&created=${day}&per_page=100`), BACKSTOP, day);
     if (backstopRuns.some((run) => run.status !== 'completed')) return no('backstop-active', day);
-    if (backstopRuns.some((run) => run.conclusion !== 'success')) throw hold('previous-backstop-not-successful');
-    if (backstopRuns.some((run) => run.event === 'workflow_dispatch')) return no('wake-already-requested', day);
+    if (!late && backstopRuns.some((run) => run.conclusion !== 'success')) throw hold('previous-backstop-not-successful');
+    if (!late && backstopRuns.some((run) => run.event === 'workflow_dispatch')) return no('wake-already-requested', day);
 
     // Recheck publication and clock immediately before the ONLY write.
     if (await articleExists()) return no('edition-already-on-main', day);
     const justBeforePost = clock();
-    if (utcDay(justBeforePost) !== day || !inWindow(justBeforePost)) return no('window-expired', day);
+    if (utcDay(justBeforePost) !== day || !inWindow(justBeforePost, late)) return no('window-expired', day);
     postStarted = true;
-    const response = await fetchImpl(`${ROOT}/actions/workflows/${BACKSTOP}/dispatches`, {
+    const targetWorkflow = late ? LATE : BACKSTOP;
+    const response = await fetchImpl(`${ROOT}/actions/workflows/${targetWorkflow}/dispatches`, {
       method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ ref: 'main' }), signal: abort.signal, redirect: 'error', cache: 'no-store',
     });
     if (response.status !== 204) throw hold('wake-dispatch-not-confirmed');
     return { state: 'wake-requested', reason: 'github-accepted-backstop-dispatch', day,
-      targetWorkflow: BACKSTOP, origin: 'external-vercel-scheduler', nativeAcceptance: false };
+      targetWorkflow, origin: 'external-vercel-scheduler', nativeAcceptance: false };
   } catch (error) {
     return { state: 'hold', reason: postStarted ? 'wake-dispatch-unknown-do-not-retry' :
       (error?.safeReason || 'inspection-unavailable'), day, nativeAcceptance: false };
